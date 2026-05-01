@@ -6,6 +6,7 @@ import { Menu, Search, X } from "lucide-react"
 import { CATEGORIES } from "@/lib/posts"
 import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/search-bar"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -42,7 +43,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
@@ -52,6 +53,7 @@ export function SiteHeader() {
           >
             {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
           </Button>
+          <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"

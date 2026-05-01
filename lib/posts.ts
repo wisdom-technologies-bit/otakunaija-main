@@ -21,16 +21,10 @@ export type Post = {
 export const CATEGORIES = ["Shonen", "Romance", "Action", "Guides"] as const
 
 export function getCoverImage(post: Pick<Post, "cover_image" | "title" | "category">, w = 900, h = 600) {
-  if (!post.cover_image) {
-    return `/placeholder.svg?height=${h}&width=${w}&query=${encodeURIComponent(`anime ${post.category} ${post.title}`)}`
-  }
-  // Already a placeholder URL or external URL — use as is
-  if (post.cover_image.startsWith("/placeholder.svg") || post.cover_image.startsWith("http")) {
+  if (post.cover_image && post.cover_image.trim().length > 0) {
     return post.cover_image
   }
-  // Convert descriptive path like "/anime-jujutsu-kaisen-dark-purple.jpg" into a placeholder query
-  const stripped = post.cover_image.replace(/^\//, "").replace(/\.(jpg|jpeg|png|webp)$/i, "").replace(/-/g, " ")
-  return `/placeholder.svg?height=${h}&width=${w}&query=${encodeURIComponent(stripped)}`
+  return `/placeholder.svg?height=${h}&width=${w}&query=${encodeURIComponent(`anime ${post.category} ${post.title}`)}`
 }
 
 export async function getFeaturedPosts(limit = 4): Promise<Post[]> {
