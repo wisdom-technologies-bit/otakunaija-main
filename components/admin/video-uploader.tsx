@@ -64,19 +64,26 @@ export function VideoUploader({
       // Get upload signature from server
       // This is a server-side-only operation: server generates and returns a signature
       // without receiving the actual video file, protecting our Cloudinary secret
+      console.log("[v0] Requesting Cloudinary signature...")
       const signRes = await fetch("/api/cloudinary/sign", { 
         method: "POST",
-        credentials: "include"  // CRITICAL: Include cookies for session authentication
+        credentials: "include",  // CRITICAL: Include cookies for session authentication
+        headers: {
+          "Content-Type": "application/json",
+        }
       })
+      
+      console.log("[v0] Signature response status:", signRes.status)
+      
       if (!signRes.ok) {
         const errorData = await signRes.json().catch(() => ({}))
         const errorMsg = errorData.error || "Failed to get upload signature"
-        console.error("[v0] Sign endpoint error:", signRes.status, errorMsg)
+        console.error("[v0] Sign endpoint error:", signRes.status, errorMsg, errorData)
         
         if (signRes.status === 401) {
-          throw new Error("You are not authenticated. Please log in again.")
+          throw new Error("You are not authenticated. Your session may have expired. Please refresh the page and log in again.")
         } else if (signRes.status === 500) {
-          throw new Error("Cloudinary configuration error. Please contact support.")
+          throw new Error("Cloudinary configuration error: " + errorMsg + ". Please contact support.")
         }
         throw new Error(errorMsg)
       }
@@ -107,6 +114,8 @@ export function VideoUploader({
       })
 
       xhr.addEventListener("load", () => {
+        console.log("[v0] Cloudinary upload response:", xhr.status, xhr.responseText?.substring(0, 100))
+        
         if (xhr.status === 200 || xhr.status === 201) {
           try {
             const response = JSON.parse(xhr.responseText) as {
@@ -114,6 +123,8 @@ export function VideoUploader({
               secure_url: string
               duration: number
             }
+
+            console.log("[v0] Cloudinary upload successful:", response.public_id)
 
             // Build video URL with Cloudinary transforms for auto format and quality
             const videoUrlWithTransform = `https://res.cloudinary.com/${cloud_name}/video/upload/f_auto,q_auto/${response.public_id}.mp4`
@@ -137,11 +148,13 @@ export function VideoUploader({
               })
             }
           } catch (e) {
+            console.error("[v0] Failed to parse Cloudinary response:", e)
             setError("Failed to parse Cloudinary response")
             setUploading(false)
           }
         } else {
-          setError(`Upload failed with status ${xhr.status}`)
+          console.error("[v0] Cloudinary upload failed with status:", xhr.status, xhr.responseText?.substring(0, 200))
+          setError(`Upload failed with status ${xhr.status}. Please check your session and try again.`)
           setUploading(false)
         }
       })

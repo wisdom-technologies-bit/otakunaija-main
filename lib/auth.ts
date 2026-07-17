@@ -81,7 +81,9 @@ export async function setSessionCookie(email: string): Promise<void> {
   c.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // Use 'true' if explicitly set to secure, otherwise respect NODE_ENV
+    // This ensures cookies work in development (http) but are secure in production (https)
+    secure: process.env.SECURE_COOKIES === "true" ? true : process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_DAYS * 24 * 60 * 60,
   })

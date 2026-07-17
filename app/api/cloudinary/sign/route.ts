@@ -2,6 +2,8 @@ import { createHmac } from "crypto"
 import { NextResponse } from "next/server"
 import { getCurrentSession } from "@/lib/auth"
 
+export const runtime = "nodejs"
+
 /**
  * Generate a signed upload signature for Cloudinary.
  *
@@ -17,15 +19,19 @@ import { getCurrentSession } from "@/lib/auth"
  * Security: The Cloudinary API secret is stored server-side and never exposed to
  * the browser, so only authenticated requests from our server can generate valid signatures.
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
     // Verify user is authenticated before generating signature
+    console.log("[v0] Cloudinary sign endpoint called")
+    
     const session = await getCurrentSession()
+    console.log("[v0] Session validation result:", session ? `Valid - ${session.email}` : "No session")
+    
     if (!session) {
-      console.error("[v0] Unauthorized attempt to generate Cloudinary signature")
+      console.error("[v0] Unauthorized: No valid session found. Session authentication failed.")
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "Unauthorized - No valid session" },
+        { status: 401, headers: { "Content-Type": "application/json" } }
       )
     }
 
@@ -34,12 +40,18 @@ export async function POST() {
     const apiSecret = process.env.CLOUDINARY_API_SECRET
 
     if (!cloudName || !apiKey || !apiSecret) {
-      console.error("[v0] Missing Cloudinary env vars")
+      console.error("[v0] Missing Cloudinary env vars:", {
+        cloudName: !!cloudName,
+        apiKey: !!apiKey,
+        apiSecret: !!apiSecret,
+      })
       return NextResponse.json(
-        { error: "Cloudinary not configured" },
-        { status: 500 }
+        { error: "Cloudinary not configured. Contact support." },
+        { status: 500, headers: { "Content-Type": "application/json" } }
       )
     }
+    
+    console.log("[v0] Cloudinary configured. Generating signature...")  
 
     const timestamp = Math.floor(Date.now() / 1000)
 
@@ -70,16 +82,20 @@ export async function POST() {
         cloud_name: cloudName,
       },
       {
+        status: 200,
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0",
         },
       }
     )
   } catch (error) {
-    console.error("[v0] Cloudinary sign error:", error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.error("[v0] Cloudinary sign error:", errorMsg, error)
     return NextResponse.json(
-      { error: "Failed to generate signature" },
-      { status: 500 }
+      { error: "Failed to generate signature: " + errorMsg },
+      { status: 500, headers: { "Content-Type": "application/json" } }
     )
   }
 }
