@@ -1,17 +1,26 @@
 import Link from "next/link"
-import { FileText, Eye, Users, Mail, Plus, ArrowRight } from "lucide-react"
+import { FileText, Eye, Users, Mail, Plus, ArrowRight, Folder, Film } from "lucide-react"
 import { getAdminStats, getAdminPosts } from "@/lib/admin-queries"
+import { getAllCreators, getAllSeriesForAdmin, getAllEpisodesForAdmin } from "@/lib/db/queries"
 import { formatDate } from "@/lib/posts"
 
 export const metadata = { title: "Dashboard" }
 
 export default async function AdminDashboard() {
-  const [stats, posts] = await Promise.all([getAdminStats(), getAdminPosts()])
+  const [stats, posts, creators, seriesData, episodesData] = await Promise.all([
+    getAdminStats(),
+    getAdminPosts(),
+    getAllCreators(),
+    getAllSeriesForAdmin(),
+    getAllEpisodesForAdmin(),
+  ])
   const recent = posts.slice(0, 5)
 
   const cards = [
     { label: "Total Posts", value: stats.totalPosts, icon: FileText, href: "/admin/posts" },
     { label: "Total Views", value: stats.totalViews.toLocaleString(), icon: Eye, href: "/admin/posts" },
+    { label: "Total Series", value: seriesData.length, icon: Folder, href: "/admin/series" },
+    { label: "Total Episodes", value: episodesData.length, icon: Film, href: "/admin/episodes" },
     { label: "Subscribers", value: stats.totalSubscribers, icon: Users, href: "/admin/subscribers" },
     { label: "Messages", value: stats.totalMessages, icon: Mail, href: "/admin/messages" },
   ]
@@ -31,7 +40,7 @@ export default async function AdminDashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {cards.map((c) => {
           const Icon = c.icon
           return (

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, FileText, Mail, Users, LogOut, Plus, ExternalLink } from "lucide-react"
+import { LayoutDashboard, FileText, Mail, Users, LogOut, Plus, ExternalLink, User, Folder, Film } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { logoutAction } from "@/app/actions/admin"
@@ -11,6 +11,9 @@ import { ThemeToggle } from "@/components/theme-toggle"
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/posts", label: "Posts", icon: FileText },
+  { href: "/admin/creators", label: "Creators", icon: User },
+  { href: "/admin/series", label: "Series", icon: Folder },
+  { href: "/admin/episodes", label: "Episodes", icon: Film },
   { href: "/admin/subscribers", label: "Subscribers", icon: Users },
   { href: "/admin/messages", label: "Messages", icon: Mail },
 ]

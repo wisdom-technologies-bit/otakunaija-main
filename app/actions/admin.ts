@@ -15,6 +15,23 @@ import {
   type CreatePostInput,
   type UpdatePostInput,
 } from "@/lib/admin-queries"
+import {
+  createCreator,
+  updateCreator,
+  deleteCreator,
+  createSeries,
+  updateSeries,
+  deleteSeries,
+  createEpisode,
+  updateEpisode,
+  deleteEpisode,
+  type CreateCreatorInput,
+  type UpdateCreatorInput,
+  type CreateSeriesInput,
+  type UpdateSeriesInput,
+  type CreateEpisodeInput,
+  type UpdateEpisodeInput,
+} from "@/lib/db/queries"
 
 export async function loginAction(_prev: unknown, formData: FormData) {
   const email = String(formData.get("email") || "")
@@ -96,6 +113,199 @@ export async function updatePostAction(_prev: unknown, formData: FormData) {
   revalidatePath("/admin")
   revalidatePath("/admin/posts")
   return { ok: true as const, error: null, savedAt: Date.now() }
+}
+
+// ============ CREATORS ACTIONS ============
+
+export async function createCreatorAction(_prev: unknown, formData: FormData) {
+  await requireSession()
+  const input: CreateCreatorInput = {
+    name: String(formData.get("name") || "").trim(),
+    slug: String(formData.get("slug") || "").trim() || undefined,
+    bio: String(formData.get("bio") || "").trim() || null,
+    avatar_url: String(formData.get("avatar_url") || "").trim() || null,
+    facebook_url: String(formData.get("facebook_url") || "").trim() || null,
+  }
+
+  if (!input.name) {
+    return { ok: false as const, error: "Creator name is required" }
+  }
+
+  const creator = await createCreator(input)
+  revalidatePath("/admin")
+  revalidatePath("/admin/creators")
+  revalidatePath("/admin/series")
+  redirect(`/admin/creators/${creator.id}/edit?created=1`)
+}
+
+export async function updateCreatorAction(_prev: unknown, formData: FormData) {
+  await requireSession()
+  const id = Number(formData.get("id") || 0)
+  if (!id) return { ok: false as const, error: "Missing creator id" }
+
+  const input: UpdateCreatorInput = {
+    id,
+    name: String(formData.get("name") || "").trim(),
+    slug: String(formData.get("slug") || "").trim() || undefined,
+    bio: String(formData.get("bio") || "").trim() || null,
+    avatar_url: String(formData.get("avatar_url") || "").trim() || null,
+    facebook_url: String(formData.get("facebook_url") || "").trim() || null,
+  }
+
+  if (!input.name) {
+    return { ok: false as const, error: "Creator name is required" }
+  }
+
+  await updateCreator(input)
+  revalidatePath("/admin")
+  revalidatePath("/admin/creators")
+  revalidatePath("/admin/series")
+  return { ok: true as const, error: null, savedAt: Date.now() }
+}
+
+export async function deleteCreatorAction(formData: FormData) {
+  await requireSession()
+  const id = Number(formData.get("id") || 0)
+  if (!id) throw new Error("Missing creator id")
+
+  try {
+    await deleteCreator(id)
+    revalidatePath("/admin/creators")
+    revalidatePath("/admin/series")
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to delete" }
+  }
+}
+
+// ============ SERIES ACTIONS ============
+
+export async function createSeriesAction(_prev: unknown, formData: FormData) {
+  await requireSession()
+  const input: CreateSeriesInput = {
+    creator_id: Number(formData.get("creator_id") || 0),
+    title: String(formData.get("title") || "").trim(),
+    slug: String(formData.get("slug") || "").trim() || undefined,
+    synopsis: String(formData.get("synopsis") || "").trim() || null,
+    cover_image_url: String(formData.get("cover_image_url") || "").trim() || null,
+    status: (String(formData.get("status") || "ongoing").trim() as "ongoing" | "completed") || "ongoing",
+    genre: String(formData.get("genre") || "").trim() || null,
+  }
+
+  if (!input.creator_id || !input.title) {
+    return { ok: false as const, error: "Creator and title are required" }
+  }
+
+  const series = await createSeries(input)
+  revalidatePath("/admin")
+  revalidatePath("/admin/series")
+  revalidatePath("/episodes")
+  redirect(`/admin/series/${series.id}/edit?created=1`)
+}
+
+export async function updateSeriesAction(_prev: unknown, formData: FormData) {
+  await requireSession()
+  const id = Number(formData.get("id") || 0)
+  if (!id) return { ok: false as const, error: "Missing series id" }
+
+  const input: UpdateSeriesInput = {
+    id,
+    creator_id: Number(formData.get("creator_id") || 0),
+    title: String(formData.get("title") || "").trim(),
+    slug: String(formData.get("slug") || "").trim() || undefined,
+    synopsis: String(formData.get("synopsis") || "").trim() || null,
+    cover_image_url: String(formData.get("cover_image_url") || "").trim() || null,
+    status: (String(formData.get("status") || "ongoing").trim() as "ongoing" | "completed") || "ongoing",
+    genre: String(formData.get("genre") || "").trim() || null,
+  }
+
+  if (!input.creator_id || !input.title) {
+    return { ok: false as const, error: "Creator and title are required" }
+  }
+
+  await updateSeries(input)
+  revalidatePath("/admin")
+  revalidatePath("/admin/series")
+  revalidatePath("/episodes")
+  return { ok: true as const, error: null, savedAt: Date.now() }
+}
+
+export async function deleteSeriesAction(formData: FormData) {
+  await requireSession()
+  const id = Number(formData.get("id") || 0)
+  if (!id) throw new Error("Missing series id")
+
+  try {
+    await deleteSeries(id)
+    revalidatePath("/admin/series")
+    revalidatePath("/episodes")
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Failed to delete" }
+  }
+}
+
+// ============ EPISODES ACTIONS ============
+
+export async function createEpisodeAction(_prev: unknown, formData: FormData) {
+  await requireSession()
+  const input: CreateEpisodeInput = {
+    series_id: Number(formData.get("series_id") || 0),
+    episode_number: Number(formData.get("episode_number") || 0),
+    title: String(formData.get("title") || "").trim(),
+    slug: String(formData.get("slug") || "").trim() || undefined,
+    synopsis: String(formData.get("synopsis") || "").trim() || null,
+    video_public_id: String(formData.get("video_public_id") || "").trim(),
+    video_url: String(formData.get("video_url") || "").trim(),
+    thumbnail_url: String(formData.get("thumbnail_url") || "").trim(),
+    duration_seconds: Number(formData.get("duration_seconds") || 0) || null,
+  }
+
+  if (!input.series_id || !input.episode_number || !input.title || !input.video_url) {
+    return { ok: false as const, error: "Series, episode number, title, and video are required" }
+  }
+
+  const episode = await createEpisode(input)
+  revalidatePath("/admin")
+  revalidatePath("/admin/episodes")
+  revalidatePath("/episodes")
+  redirect(`/admin/episodes/${episode.id}/edit?created=1`)
+}
+
+export async function updateEpisodeAction(_prev: unknown, formData: FormData) {
+  await requireSession()
+  const id = Number(formData.get("id") || 0)
+  if (!id) return { ok: false as const, error: "Missing episode id" }
+
+  const input: UpdateEpisodeInput = {
+    id,
+    series_id: Number(formData.get("series_id") || 0),
+    episode_number: Number(formData.get("episode_number") || 0),
+    title: String(formData.get("title") || "").trim(),
+    slug: String(formData.get("slug") || "").trim() || undefined,
+    synopsis: String(formData.get("synopsis") || "").trim() || null,
+    video_public_id: String(formData.get("video_public_id") || "").trim(),
+    video_url: String(formData.get("video_url") || "").trim(),
+    thumbnail_url: String(formData.get("thumbnail_url") || "").trim(),
+    duration_seconds: Number(formData.get("duration_seconds") || 0) || null,
+  }
+
+  if (!input.series_id || !input.episode_number || !input.title || !input.video_url) {
+    return { ok: false as const, error: "Series, episode number, title, and video are required" }
+  }
+
+  await updateEpisode(input)
+  revalidatePath("/admin/episodes")
+  revalidatePath("/episodes")
+  return { ok: true as const, error: null, savedAt: Date.now() }
+}
+
+export async function deleteEpisodeAction(formData: FormData) {
+  await requireSession()
+  const id = Number(formData.get("id") || 0)
+  if (!id) throw new Error("Missing episode id")
+
+  await deleteEpisode(id)
+  revalidatePath("/admin/episodes")
+  revalidatePath("/episodes")
 }
 
 export async function deletePostAction(formData: FormData) {
