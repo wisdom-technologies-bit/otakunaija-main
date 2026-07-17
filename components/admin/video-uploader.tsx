@@ -68,10 +68,11 @@ export function VideoUploader({
       if (!signRes.ok) {
         throw new Error("Failed to get upload signature")
       }
-      const { signature, timestamp, api_key } = (await signRes.json()) as {
+      const { signature, timestamp, api_key, cloud_name } = (await signRes.json()) as {
         signature: string
         timestamp: number
         api_key: string
+        cloud_name: string
       }
 
       // Build FormData for Cloudinary direct upload
@@ -104,10 +105,10 @@ export function VideoUploader({
             }
 
             // Build video URL with Cloudinary transforms for auto format and quality
-            const videoUrlWithTransform = `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/f_auto,q_auto/${response.public_id}.mp4`
+            const videoUrlWithTransform = `https://res.cloudinary.com/${cloud_name}/video/upload/f_auto,q_auto/${response.public_id}.mp4`
 
             // Build thumbnail URL from Cloudinary (auto-generated poster frame)
-            const thumbnailUrlGenerated = `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/f_auto,q_auto,w_400,h_225,c_fill/${response.public_id}.jpg`
+            const thumbnailUrlGenerated = `https://res.cloudinary.com/${cloud_name}/video/upload/f_auto,q_auto,w_400,h_225,c_fill/${response.public_id}.jpg`
 
             setVideoUrl(videoUrlWithTransform)
             setThumbnailUrl(thumbnailUrlGenerated)
@@ -138,7 +139,7 @@ export function VideoUploader({
         throw new Error("Upload cancelled.")
       })
 
-      xhr.open("POST", `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload`)
+      xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`)
       xhr.send(formData)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed")

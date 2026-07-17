@@ -18,8 +18,8 @@ import { NextResponse } from "next/server"
  */
 export async function POST() {
   try {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+    const apiKey = process.env.CLOUDINARY_API_KEY
     const apiSecret = process.env.CLOUDINARY_API_SECRET
 
     if (!cloudName || !apiKey || !apiSecret) {
@@ -57,6 +57,7 @@ export async function POST() {
         signature,
         timestamp,
         api_key: apiKey,
+        cloud_name: cloudName,
       },
       {
         headers: {
