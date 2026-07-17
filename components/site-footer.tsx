@@ -38,6 +38,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/episodes" className="text-muted-foreground hover:text-primary">
+                  Episodes
+                </Link>
+              </li>
+              <li>
                 <Link href="/about" className="text-muted-foreground hover:text-primary">
                   About
                 </Link>
