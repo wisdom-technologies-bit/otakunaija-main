@@ -82,7 +82,6 @@ export function VideoUploader({
       formData.append("signature", signature)
       formData.append("timestamp", timestamp.toString())
       formData.append("folder", "otakunaija/episodes")
-      formData.append("resource_type", "video")
 
       // Upload directly to Cloudinary from browser
       // This avoids routing large video files through Vercel, which has request/execution limits
