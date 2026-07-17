@@ -3,6 +3,7 @@ import { Inter, Outfit } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
+import { HideV0Badge } from "@/components/HideV0Badge"
 import "./globals.css"
 
 const inter = Inter({
@@ -120,6 +121,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <HideV0Badge />
           {children}
           <Toaster richColors position="top-center" />
         </ThemeProvider>

@@ -114,6 +114,8 @@ export function VideoUploader({
             setThumbnailUrl(thumbnailUrlGenerated)
             setDuration(Math.round(response.duration))
             setPublicId(response.public_id)
+            setProgress(100)
+            setUploading(false)
 
             if (onUploadComplete) {
               onUploadComplete({
@@ -124,24 +126,29 @@ export function VideoUploader({
               })
             }
           } catch (e) {
-            throw new Error("Failed to parse Cloudinary response")
+            setError("Failed to parse Cloudinary response")
+            setUploading(false)
           }
         } else {
-          throw new Error(`Upload failed with status ${xhr.status}`)
+          setError(`Upload failed with status ${xhr.status}`)
+          setUploading(false)
         }
       })
 
       xhr.addEventListener("error", () => {
-        throw new Error("Upload failed. Check your connection and try again.")
+        setError("Upload failed. Check your connection and try again.")
+        setUploading(false)
       })
 
       xhr.addEventListener("abort", () => {
-        throw new Error("Upload cancelled.")
+        setError("Upload cancelled.")
+        setUploading(false)
       })
 
       xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`)
       xhr.send(formData)
     } catch (err) {
+      // This catch only handles errors from the signature fetch and synchronous code before xhr.send()
       setError(err instanceof Error ? err.message : "Upload failed")
       setUploading(false)
     } finally {

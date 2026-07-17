@@ -131,6 +131,14 @@
 }
 
 @layer utilities {
+  [class*="v0"],
+  [id*="v0"],
+  a[href*="v0.app"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
   .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
