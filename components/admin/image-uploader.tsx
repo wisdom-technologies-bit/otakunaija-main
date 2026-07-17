@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { ImagePlus, Loader2, X } from "lucide-react"
 
 type Props = {
@@ -13,6 +13,11 @@ type Props = {
 export function ImageUploader({ name, defaultValue, label = "Cover Image" }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [url, setUrl] = useState<string>(defaultValue || "")
+
+  // Sync state when defaultValue prop changes (e.g., when loading an existing record for edit)
+  useEffect(() => {
+    setUrl(defaultValue || "")
+  }, [defaultValue])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
