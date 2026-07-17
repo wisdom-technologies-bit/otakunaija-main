@@ -66,7 +66,16 @@ export function VideoUploader({
       // without receiving the actual video file, protecting our Cloudinary secret
       const signRes = await fetch("/api/cloudinary/sign", { method: "POST" })
       if (!signRes.ok) {
-        throw new Error("Failed to get upload signature")
+        const errorData = await signRes.json().catch(() => ({}))
+        const errorMsg = errorData.error || "Failed to get upload signature"
+        console.error("[v0] Sign endpoint error:", signRes.status, errorMsg)
+        
+        if (signRes.status === 401) {
+          throw new Error("You are not authenticated. Please log in again.")
+        } else if (signRes.status === 500) {
+          throw new Error("Cloudinary configuration error. Please contact support.")
+        }
+        throw new Error(errorMsg)
       }
       const { signature, timestamp, api_key, cloud_name } = (await signRes.json()) as {
         signature: string

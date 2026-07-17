@@ -1,5 +1,6 @@
 import { createHmac } from "crypto"
 import { NextResponse } from "next/server"
+import { getCurrentSession } from "@/lib/auth"
 
 /**
  * Generate a signed upload signature for Cloudinary.
@@ -18,6 +19,16 @@ import { NextResponse } from "next/server"
  */
 export async function POST() {
   try {
+    // Verify user is authenticated before generating signature
+    const session = await getCurrentSession()
+    if (!session) {
+      console.error("[v0] Unauthorized attempt to generate Cloudinary signature")
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME
     const apiKey = process.env.CLOUDINARY_API_KEY
     const apiSecret = process.env.CLOUDINARY_API_SECRET
