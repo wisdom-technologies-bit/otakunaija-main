@@ -1,6 +1,6 @@
-import { createHmac } from "crypto"
 import { NextResponse } from "next/server"
 import { getCurrentSession } from "@/lib/auth"
+import { getCloudinary } from "@/lib/cloudinary"
 
 export const runtime = "nodejs"
 
@@ -22,13 +22,9 @@ export const runtime = "nodejs"
 export async function POST(request: Request) {
   try {
     // Verify user is authenticated before generating signature
-    console.log("[v0] Cloudinary sign endpoint called")
-    
     const session = await getCurrentSession()
-    console.log("[v0] Session validation result:", session ? `Valid - ${session.email}` : "No session")
     
     if (!session) {
-      console.error("[v0] Unauthorized: No valid session found. Session authentication failed.")
       return NextResponse.json(
         { error: "Unauthorized - No valid session" },
         { status: 401, headers: { "Content-Type": "application/json" } }
@@ -40,39 +36,26 @@ export async function POST(request: Request) {
     const apiSecret = process.env.CLOUDINARY_API_SECRET
 
     if (!cloudName || !apiKey || !apiSecret) {
-      console.error("[v0] Missing Cloudinary env vars:", {
-        cloudName: !!cloudName,
-        apiKey: !!apiKey,
-        apiSecret: !!apiSecret,
-      })
       return NextResponse.json(
         { error: "Cloudinary not configured. Contact support." },
         { status: 500, headers: { "Content-Type": "application/json" } }
       )
     }
-    
-    console.log("[v0] Cloudinary configured. Generating signature...")  
+
+    // Get Cloudinary instance which is configured with credentials
+    const cloudinary = getCloudinary()
 
     const timestamp = Math.floor(Date.now() / 1000)
 
-    // Build the string to sign
-    const paramsToSign = {
+    // Use Cloudinary's official method to generate the signature
+    // This ensures compatibility with Cloudinary's expectations
+    const params = {
       timestamp,
       folder: "otakunaija/episodes",
     }
 
-    // Convert to string format: "key1=value1&key2=value2&...&api_secret"
-    const sortedParams = Object.entries(paramsToSign)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
-      .join("&")
-
-    const stringToSign = `${sortedParams}${apiSecret}`
-
-    // Generate HMAC SHA-1 signature
-    const signature = createHmac("sha1", apiSecret)
-      .update(stringToSign)
-      .digest("hex")
+    // Use Cloudinary's built-in api_sign_request method which handles the signature calculation correctly
+    const signature = cloudinary.utils.api_sign_request(params, apiSecret)
 
     return NextResponse.json(
       {
@@ -92,7 +75,6 @@ export async function POST(request: Request) {
     )
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
-    console.error("[v0] Cloudinary sign error:", errorMsg, error)
     return NextResponse.json(
       { error: "Failed to generate signature: " + errorMsg },
       { status: 500, headers: { "Content-Type": "application/json" } }
