@@ -36,7 +36,6 @@ export async function POST() {
     const paramsToSign = {
       timestamp,
       folder: "otakunaija/episodes",
-      resource_type: "video",
     }
 
     // Convert to string format: "key1=value1&key2=value2&...&api_secret"

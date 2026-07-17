@@ -178,8 +178,8 @@ export async function createCreator(input: CreateCreatorInput) {
       name: input.name,
       slug,
       bio: input.bio || null,
-      avatar_url: input.avatar_url || null,
-      facebook_url: input.facebook_url || null,
+      avatarUrl: input.avatar_url || null,
+      facebookUrl: input.facebook_url || null,
     })
     .returning()
   return result[0]
@@ -193,8 +193,8 @@ export async function updateCreator(input: UpdateCreatorInput) {
       name: input.name,
       slug: slug || input.slug,
       bio: input.bio,
-      avatar_url: input.avatar_url,
-      facebook_url: input.facebook_url,
+      avatarUrl: input.avatar_url,
+      facebookUrl: input.facebook_url,
     })
     .where(eq(creators.id, input.id))
     .returning()
@@ -275,7 +275,7 @@ export async function createSeries(input: CreateSeriesInput) {
       title: input.title,
       slug,
       synopsis: input.synopsis || null,
-      cover_image_url: input.cover_image_url || null,
+      coverImageUrl: input.cover_image_url || null,
       status: input.status || 'ongoing',
       genre: input.genre || null,
     })
@@ -292,7 +292,7 @@ export async function updateSeries(input: UpdateSeriesInput) {
       title: input.title,
       slug: slug || input.slug,
       synopsis: input.synopsis,
-      cover_image_url: input.cover_image_url,
+      coverImageUrl: input.cover_image_url,
       status: input.status,
       genre: input.genre,
     })
