@@ -64,7 +64,10 @@ export function VideoUploader({
       // Get upload signature from server
       // This is a server-side-only operation: server generates and returns a signature
       // without receiving the actual video file, protecting our Cloudinary secret
-      const signRes = await fetch("/api/cloudinary/sign", { method: "POST" })
+      const signRes = await fetch("/api/cloudinary/sign", { 
+        method: "POST",
+        credentials: "include"  // CRITICAL: Include cookies for session authentication
+      })
       if (!signRes.ok) {
         const errorData = await signRes.json().catch(() => ({}))
         const errorMsg = errorData.error || "Failed to get upload signature"
