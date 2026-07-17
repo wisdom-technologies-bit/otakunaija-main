@@ -79,7 +79,8 @@ export function EpisodeEditor({ mode, episode, series, justCreated }: Props) {
           </Link>
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || (mode === "create" && !videoData)}
+            title={mode === "create" && !videoData ? "Please upload a video first" : ""}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <Save className="h-4 w-4" /> {pending ? "Saving..." : "Save"}

@@ -259,15 +259,36 @@ export async function createEpisodeAction(_prev: unknown, formData: FormData) {
     duration_seconds: Number(formData.get("duration_seconds") || 0) || null,
   }
 
-  if (!input.series_id || !input.episode_number || !input.title || !input.video_url) {
-    return { ok: false as const, error: "Series, episode number, title, and video are required" }
+  // Validate all required fields
+  if (!input.series_id) {
+    return { ok: false as const, error: "Series is required" }
+  }
+  if (!input.episode_number) {
+    return { ok: false as const, error: "Episode number is required" }
+  }
+  if (!input.title) {
+    return { ok: false as const, error: "Title is required" }
+  }
+  if (!input.video_url) {
+    return { ok: false as const, error: "Video upload is required. Please upload a video before saving." }
+  }
+  if (!input.video_public_id) {
+    return { ok: false as const, error: "Video public ID is missing. Please re-upload the video." }
+  }
+  if (!input.thumbnail_url) {
+    return { ok: false as const, error: "Video thumbnail is missing. Please re-upload the video." }
   }
 
-  const episode = await createEpisode(input)
-  revalidatePath("/admin")
-  revalidatePath("/admin/episodes")
-  revalidatePath("/episodes")
-  redirect(`/admin/episodes/${episode.id}/edit?created=1`)
+  try {
+    const episode = await createEpisode(input)
+    revalidatePath("/admin")
+    revalidatePath("/admin/episodes")
+    revalidatePath("/episodes")
+    redirect(`/admin/episodes/${episode.id}/edit?created=1`)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create episode"
+    return { ok: false as const, error: message }
+  }
 }
 
 export async function updateEpisodeAction(_prev: unknown, formData: FormData) {
@@ -288,14 +309,35 @@ export async function updateEpisodeAction(_prev: unknown, formData: FormData) {
     duration_seconds: Number(formData.get("duration_seconds") || 0) || null,
   }
 
-  if (!input.series_id || !input.episode_number || !input.title || !input.video_url) {
-    return { ok: false as const, error: "Series, episode number, title, and video are required" }
+  // Validate all required fields
+  if (!input.series_id) {
+    return { ok: false as const, error: "Series is required" }
+  }
+  if (!input.episode_number) {
+    return { ok: false as const, error: "Episode number is required" }
+  }
+  if (!input.title) {
+    return { ok: false as const, error: "Title is required" }
+  }
+  if (!input.video_url) {
+    return { ok: false as const, error: "Video upload is required. Please upload a video before saving." }
+  }
+  if (!input.video_public_id) {
+    return { ok: false as const, error: "Video public ID is missing. Please re-upload the video." }
+  }
+  if (!input.thumbnail_url) {
+    return { ok: false as const, error: "Video thumbnail is missing. Please re-upload the video." }
   }
 
-  await updateEpisode(input)
-  revalidatePath("/admin/episodes")
-  revalidatePath("/episodes")
-  return { ok: true as const, error: null, savedAt: Date.now() }
+  try {
+    await updateEpisode(input)
+    revalidatePath("/admin/episodes")
+    revalidatePath("/episodes")
+    return { ok: true as const, error: null, savedAt: Date.now() }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update episode"
+    return { ok: false as const, error: message }
+  }
 }
 
 export async function deleteEpisodeAction(formData: FormData) {
