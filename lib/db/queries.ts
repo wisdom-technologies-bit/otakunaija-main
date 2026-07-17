@@ -370,10 +370,10 @@ export async function createEpisode(input: CreateEpisodeInput) {
       title: input.title,
       slug,
       synopsis: input.synopsis || null,
-      video_public_id: input.video_public_id,
-      video_url: input.video_url,
-      thumbnail_url: input.thumbnail_url,
-      duration_seconds: input.duration_seconds || null,
+      videoPublicId: input.video_public_id,
+      videoUrl: input.video_url,
+      thumbnailUrl: input.thumbnail_url,
+      durationSeconds: input.duration_seconds || null,
     })
     .returning()
   return result[0]
@@ -389,10 +389,10 @@ export async function updateEpisode(input: UpdateEpisodeInput) {
       title: input.title,
       slug: slug || input.slug,
       synopsis: input.synopsis,
-      video_public_id: input.video_public_id,
-      video_url: input.video_url,
-      thumbnail_url: input.thumbnail_url,
-      duration_seconds: input.duration_seconds,
+      videoPublicId: input.video_public_id,
+      videoUrl: input.video_url,
+      thumbnailUrl: input.thumbnail_url,
+      durationSeconds: input.duration_seconds,
     })
     .where(eq(episodes.id, input.id))
     .returning()
