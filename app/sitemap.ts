@@ -30,5 +30,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
-  return [...staticRoutes, ...categoryRoutes, ...postRoutes]
+  const episodesLandingRoute: MetadataRoute.Sitemap = [
+    { url: `${BASE}/episodes`, changeFrequency: "daily", priority: 0.9 },
+  ]
+
+  const seriesRoutes: MetadataRoute.Sitemap = allSeries.map((s) => ({
+    url: `${BASE}/episodes/${s.slug}`,
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }))
+
+  const episodeRoutes: MetadataRoute.Sitemap = allSeries.flatMap((s) =>
+    s.episodes.map((e) => ({
+      url: `${BASE}/episodes/${s.slug}/${e.slug}`,
+      lastModified: e.publishedAt ? new Date(e.publishedAt) : undefined,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }))
+  )
+
+  return [
+    ...staticRoutes,
+    ...categoryRoutes,
+    ...postRoutes,
+    ...episodesLandingRoute,
+    ...seriesRoutes,
+    ...episodeRoutes,
+  ]
 }
