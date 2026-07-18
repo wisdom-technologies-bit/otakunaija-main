@@ -13,9 +13,11 @@ export function SiteFooter() {
         <div className="grid gap-10 py-12 md:grid-cols-4">
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2 font-display text-xl font-bold">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
-                ON
-              </span>
+              <img
+                src="/logo.png"
+                alt="OtakuNaija logo"
+                className="h-8 w-8 rounded-md object-cover"
+              />
               Otaku<span className="text-primary">Naija</span>
             </Link>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
