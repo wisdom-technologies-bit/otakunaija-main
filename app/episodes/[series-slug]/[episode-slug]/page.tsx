@@ -5,6 +5,7 @@ import {
   getPreviousAndNextEpisode,
   getEpisodesBySeries,
 } from '@/lib/db/queries'
+import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 import { VideoPlayer } from '@/components/episodes/video-player'
@@ -100,6 +101,8 @@ export default async function WatchPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SiteHeader />
+
       {/* Breadcrumb */}
       <div className="border-b border-border/40 px-4 md:px-6 py-3">
         <div className="mx-auto max-w-7xl text-sm text-foreground/70">

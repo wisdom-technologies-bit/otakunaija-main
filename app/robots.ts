@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/"],
       },
     ],
-    sitemap: "https://otakunaija.com.ng/sitemap.xml",
-    host: "https://otakunaija.com.ng",
+    sitemap: "https://otakunaija.name.ng/sitemap.xml",
+    host: "https://otakunaija.name.ng",
   }
 }

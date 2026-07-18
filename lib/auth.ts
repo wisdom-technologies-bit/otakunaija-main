@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 export const SESSION_COOKIE = "otakunaija_session"
 const SESSION_TTL_DAYS = 7
 
-export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "support@otakunaija.com.ng").toLowerCase()
+export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "support@otakunaija.name.ng").toLowerCase()
 
 function getSecret(): string {
   return process.env.SESSION_SECRET || "otakunaija-dev-secret-change-me"

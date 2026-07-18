@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next"
 import { CATEGORIES, getAllSlugs } from "@/lib/posts"
 
-const BASE = "https://otakunaija.com.ng"
+const BASE = "https://otakunaija.name.ng"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await getAllSlugs()

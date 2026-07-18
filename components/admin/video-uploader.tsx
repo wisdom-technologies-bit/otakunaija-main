@@ -61,41 +61,37 @@ export function VideoUploader({
     setUploading(true)
 
     try {
-      // Get upload signature from server
-      // This is a server-side-only operation: server generates and returns a signature
-      // without receiving the actual video file, protecting our Cloudinary secret
-      const signRes = await fetch("/api/cloudinary/sign", { 
+      // Get presigned URL from server
+      // Server generates a presigned PUT URL for R2, valid for 10 minutes
+      const presignRes = await fetch("/api/r2/presign", {
         method: "POST",
-        credentials: "include"  // CRITICAL: Include cookies for session authentication
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+        }),
       })
-      
-      if (!signRes.ok) {
-        const errorData = await signRes.json().catch(() => ({}))
-        const errorMsg = errorData.error || "Failed to get upload signature"
-        
-        if (signRes.status === 401) {
+
+      if (!presignRes.ok) {
+        const errorData = await presignRes.json().catch(() => ({}))
+        const errorMsg = errorData.error || "Failed to get presigned URL"
+
+        if (presignRes.status === 401) {
           throw new Error("You are not authenticated. Your session may have expired. Please refresh the page and log in again.")
-        } else if (signRes.status === 500) {
-          throw new Error("Cloudinary configuration error: " + errorMsg + ". Please contact support.")
+        } else if (presignRes.status === 500) {
+          throw new Error("R2 configuration error: " + errorMsg + ". Please contact support.")
         }
         throw new Error(errorMsg)
       }
-      const { signature, timestamp, api_key, cloud_name } = (await signRes.json()) as {
-        signature: string
-        timestamp: number
-        api_key: string
-        cloud_name: string
+
+      const { presignedUrl, objectKey, publicUrl } = (await presignRes.json()) as {
+        presignedUrl: string
+        objectKey: string
+        publicUrl: string
       }
 
-      // Build FormData for Cloudinary direct upload
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("api_key", api_key)
-      formData.append("signature", signature)
-      formData.append("timestamp", timestamp.toString())
-      formData.append("folder", "otakunaija/episodes")
-
-      // Upload directly to Cloudinary from browser
+      // Upload directly to R2 from browser using presigned URL
       // This avoids routing large video files through Vercel, which has request/execution limits
       const xhr = new XMLHttpRequest()
 
@@ -107,37 +103,28 @@ export function VideoUploader({
       })
 
       xhr.addEventListener("load", () => {
-        if (xhr.status === 200 || xhr.status === 201) {
+        if (xhr.status === 200) {
           try {
-            const response = JSON.parse(xhr.responseText) as {
-              public_id: string
-              secure_url: string
-              duration: number
-            }
+            // For R2 presigned PUT, a 200 status means success
+            // We don't get duration info back, so we'll set it to 0 for now
+            // (the server can update this if needed, or we can use video metadata API later)
 
-            // Build video URL with Cloudinary transforms for auto format and quality
-            const videoUrlWithTransform = `https://res.cloudinary.com/${cloud_name}/video/upload/f_auto,q_auto/${response.public_id}.mp4`
-
-            // Build thumbnail URL from Cloudinary (auto-generated poster frame)
-            const thumbnailUrlGenerated = `https://res.cloudinary.com/${cloud_name}/video/upload/f_auto,q_auto,w_400,h_225,c_fill/${response.public_id}.jpg`
-
-            setVideoUrl(videoUrlWithTransform)
-            setThumbnailUrl(thumbnailUrlGenerated)
-            setDuration(Math.round(response.duration))
-            setPublicId(response.public_id)
+            setVideoUrl(publicUrl)
+            setDuration(0) // Duration will be set by server or video metadata API
+            setPublicId(objectKey) // Store the R2 object key instead of public_id
             setProgress(100)
             setUploading(false)
 
             if (onUploadComplete) {
               onUploadComplete({
-                video_url: videoUrlWithTransform,
-                thumbnail_url: thumbnailUrlGenerated,
-                duration: Math.round(response.duration),
-                public_id: response.public_id,
+                video_url: publicUrl,
+                thumbnail_url: "", // Thumbnail handled separately by Cloudinary
+                duration: 0,
+                public_id: objectKey,
               })
             }
           } catch (e) {
-            setError("Failed to parse Cloudinary response")
+            setError("Failed to process upload response")
             setUploading(false)
           }
         } else {
@@ -156,10 +143,13 @@ export function VideoUploader({
         setUploading(false)
       })
 
-      xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`)
-      xhr.send(formData)
+      // Use PUT request with the presigned URL
+      // The file is sent as the request body with the appropriate Content-Type header
+      xhr.open("PUT", presignedUrl)
+      xhr.setRequestHeader("Content-Type", file.type)
+      xhr.send(file)
     } catch (err) {
-      // This catch only handles errors from the signature fetch and synchronous code before xhr.send()
+      // This catch only handles errors from the presign fetch and synchronous code before xhr.send()
       setError(err instanceof Error ? err.message : "Upload failed")
       setUploading(false)
     } finally {

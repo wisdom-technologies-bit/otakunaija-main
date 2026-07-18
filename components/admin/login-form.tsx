@@ -29,11 +29,11 @@ export function LoginForm({ from }: { from?: string }) {
             id="email"
             name="email"
             type="email"
-            placeholder="support@otakunaija.com.ng"
+            placeholder="support@otakunaija.name.ng"
             required
             autoComplete="email"
             className="pl-9"
-            defaultValue="support@otakunaija.com.ng"
+            defaultValue="support@otakunaija.name.ng"
           />
         </div>
       </div>

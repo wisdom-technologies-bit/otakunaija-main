@@ -48,10 +48,10 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Email</p>
                       <a
-                        href="mailto:hello@otakunaija.com.ng"
+                        href="mailto:hello@otakunaija.name.ng"
                         className="text-muted-foreground hover:text-primary"
                       >
-                        hello@otakunaija.com.ng
+                        hello@otakunaija.name.ng
                       </a>
                     </div>
                   </li>

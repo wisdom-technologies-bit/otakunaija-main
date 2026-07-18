@@ -23,7 +23,7 @@ export default function TermsPage() {
 
           <div className="prose-anime mt-10">
             <p>
-              By accessing or using OtakuNaija (otakunaija.com.ng), you agree to be bound by these Terms &amp;
+              By accessing or using OtakuNaija (otakunaija.name.ng), you agree to be bound by these Terms &amp;
               Conditions. If you do not agree, please do not use the site.
             </p>
 
@@ -89,7 +89,7 @@ export default function TermsPage() {
 
             <h2>Contact</h2>
             <p>
-              Questions? Email <a href="mailto:hello@otakunaija.com.ng">hello@otakunaija.com.ng</a>.
+              Questions? Email <a href="mailto:hello@otakunaija.name.ng">hello@otakunaija.name.ng</a>.
             </p>
           </div>
         </div>

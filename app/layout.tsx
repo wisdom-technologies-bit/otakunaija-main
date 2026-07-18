@@ -18,7 +18,7 @@ const outfit = Outfit({
   display: "swap",
 })
 
-const SITE_URL = "https://otakunaija.com.ng"
+const SITE_URL = "https://otakunaija.name.ng"
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT
 
 export const metadata: Metadata = {

@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             <p>
               At OtakuNaija (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;), we respect your privacy and are committed
               to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard
-              the data we receive when you visit otakunaija.com.ng.
+              the data we receive when you visit otakunaija.name.ng.
             </p>
 
             <h2>Information we collect</h2>
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
             <h2>Your rights</h2>
             <p>
               You can request access to, correction of, or deletion of any personal data we hold about you by
-              emailing <a href="mailto:hello@otakunaija.com.ng">hello@otakunaija.com.ng</a>. We will respond within 30
+              emailing <a href="mailto:hello@otakunaija.name.ng">hello@otakunaija.name.ng</a>. We will respond within 30
               days.
             </p>
 
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
             <h2>Contact</h2>
             <p>
               Questions about this policy? Email us at{" "}
-              <a href="mailto:hello@otakunaija.com.ng">hello@otakunaija.com.ng</a>.
+              <a href="mailto:hello@otakunaija.name.ng">hello@otakunaija.name.ng</a>.
             </p>
           </div>
         </div>

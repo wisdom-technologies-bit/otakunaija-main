@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getSeriesBySlugWithEpisodes } from '@/lib/db/queries'
+import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 import { EpisodeRow } from '@/components/episodes/episode-row'
@@ -60,6 +61,8 @@ export default async function SeriesPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SiteHeader />
+
       {/* Breadcrumb */}
       <div className="border-b border-border/40 px-4 md:px-6 py-3">
         <div className="mx-auto max-w-7xl text-sm text-foreground/70">

@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { getAllSeriesWithCreators, getEpisodesBySeries } from '@/lib/db/queries'
+import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { AdSlot } from '@/components/ad-slot'
 import { SeriesCard } from '@/components/episodes/series-card'
@@ -41,6 +42,8 @@ export default async function EpisodesPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SiteHeader />
+
       {/* Page Header */}
       <section className="border-b border-border/40 py-12 md:py-16">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
