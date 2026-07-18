@@ -2,6 +2,36 @@ import { db } from './index'
 import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
 import { eq, asc, desc, and, lt, gt, sql } from 'drizzle-orm'
 
+// Get all series with all their episodes, for sitemap generation
+export async function getAllSeriesWithEpisodesForSitemap() {
+  const result = await db
+    .select({
+      series: series,
+      episode: episodes,
+    })
+    .from(series)
+    .leftJoin(episodes, eq(series.id, episodes.seriesId))
+
+  const seriesMap = new Map<number, { slug: string; episodes: { slug: string; publishedAt: Date | null }[] }>()
+
+  for (const row of result) {
+    if (!seriesMap.has(row.series.id)) {
+      seriesMap.set(row.series.id, { slug: row.series.slug, episodes: [] })
+    }
+    if (row.episode) {
+      seriesMap.get(row.series.id)!.episodes.push({
+        slug: row.episode.slug,
+        publishedAt: row.episode.publishedAt,
+      })
+    }
+  }
+
+  return Array.from(seriesMap.values())
+}
+
+// Get all series with their creators
+export async function getAllSeriesWithCreators() {
+
 // Get all series with their creators
 export async function getAllSeriesWithCreators() {
   return db
