@@ -31,9 +31,6 @@ export async function getAllSeriesWithEpisodesForSitemap() {
 
 // Get all series with their creators
 export async function getAllSeriesWithCreators() {
-
-// Get all series with their creators
-export async function getAllSeriesWithCreators() {
   return db
     .select({
       series: series,

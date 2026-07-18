@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next"
 import { CATEGORIES, getAllSlugs } from "@/lib/posts"
+import { getAllSeriesWithEpisodesForSitemap } from "@/lib/db/queries"
 
 const BASE = "https://otakunaija.name.ng"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await getAllSlugs()
+  const allSeries = await getAllSeriesWithEpisodesForSitemap()
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, changeFrequency: "daily", priority: 1.0 },
