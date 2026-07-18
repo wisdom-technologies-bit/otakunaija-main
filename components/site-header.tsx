@@ -99,6 +99,7 @@ export function SiteHeader() {
             ))}
           </div>
         </div>
+      )}
 
       {mobileOpen ? (
         <div className="md:hidden border-t border-border bg-background">
