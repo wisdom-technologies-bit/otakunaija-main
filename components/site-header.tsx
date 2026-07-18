@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 import { Menu, Search, X } from "lucide-react"
 import { CATEGORIES } from "@/lib/posts"
@@ -19,6 +19,7 @@ export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const isEpisodesSection = pathname?.startsWith("/episodes")
   const isHome = pathname === "/"
   const visibleNavLinks = NAV_LINKS.filter((l) => {
@@ -58,7 +59,13 @@ export function SiteHeader() {
             variant="ghost"
             size="icon"
             aria-label="Toggle search"
-            onClick={() => setSearchOpen((s) => !s)}
+            onClick={() => {
+              if (isEpisodesSection) {
+                router.push("/episodes/search")
+                return
+              }
+              setSearchOpen((s) => !s)
+            }}
             className="text-foreground/80 hover:text-primary"
           >
             {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
