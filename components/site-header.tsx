@@ -113,21 +113,23 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <div className="mt-2 border-t border-border pt-3">
-              <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Categories
-              </p>
-              {CATEGORIES.map((c) => (
-                <Link
-                  key={c}
-                  href={`/blog?category=${encodeURIComponent(c)}`}
-                  onClick={() => setMobileOpen(false)}
-                  className="block rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-card hover:text-primary"
-                >
-                  {c}
-                </Link>
-              ))}
-            </div>
+            {!isEpisodesSection && (
+              <div className="mt-2 border-t border-border pt-3">
+                <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Categories
+                </p>
+                {CATEGORIES.map((c) => (
+                  <Link
+                    key={c}
+                    href={`/blog?category=${encodeURIComponent(c)}`}
+                    onClick={() => setMobileOpen(false)}
+                    className="block rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-card hover:text-primary"
+                  >
+                    {c}
+                  </Link>
+                ))}
+              </div>
+            )}
           </nav>
         </div>
       ) : null}
