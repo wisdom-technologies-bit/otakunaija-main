@@ -99,23 +99,26 @@ export default async function SeriesPage({ params }: Props) {
                 </span>
               )}
               <span
-                className={`rounded-full px-3 py-1 text-sm font-medium text-white ${
-                  series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
-                }`}
+                className={`rounded-full px-3 py-1 text-sm font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
+                  }`}
               >
                 {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
               </span>
             </div>
 
-            {series.synopsis && (
-              <p className="max-w-2xl text-foreground/90">{series.synopsis}</p>
-            )}
           </div>
         </div>
       </section>
 
       {/* Creator Credit */}
       {creator && <CreatorCredit creator={creator} />}
+
+      {/* Synopsis */}
+      {series.synopsis && (
+        <div className="mx-auto w-full max-w-7xl px-4 md:px-6 pt-8">
+          <p className="max-w-2xl text-foreground/90">{series.synopsis}</p>
+        </div>
+      )}
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-12">
         {/* Episodes Header */}
