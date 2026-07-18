@@ -9,10 +9,10 @@ import { NewsletterSignup } from '@/components/newsletter-signup'
 
 export const metadata: Metadata = {
   title: 'OtakuNaija Originals | Episodes',
-  description: 'Watch original anime episodes from licensed Nigerian and independent animators. Discover exclusive content from talented creators.',
+  description: 'Watch original anime series. Discover exclusive anime content.',
   openGraph: {
     title: 'OtakuNaija Originals | Episodes',
-    description: 'Watch original anime episodes from licensed Nigerian and independent animators.',
+    description: 'Watch original anime series and episodes.',
   },
 }
 
@@ -57,7 +57,7 @@ export default async function EpisodesPage() {
                 Watch Original Anime Episodes
               </h1>
               <p className="max-w-2xl text-lg text-foreground/70">
-                Discover exclusive anime series from licensed Nigerian and independent animators. Explore original content crafted by talented creators.
+                Discover exclusive anime series and episodes. Explore original content.
               </p>
             </div>
             <div className="max-w-2xl">
