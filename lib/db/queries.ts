@@ -1,6 +1,6 @@
 import { db } from './index'
-import { creators, series, episodes } from './schema'
-import { eq, asc, desc, and, lt, gt } from 'drizzle-orm'
+import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
+import { eq, asc, desc, and, lt, gt, sql } from 'drizzle-orm'
 
 // Get all series with their creators
 export async function getAllSeriesWithCreators() {
@@ -96,6 +96,31 @@ export async function getEpisodesBySeries(seriesId: number) {
     .from(episodes)
     .where(eq(episodes.seriesId, seriesId))
     .orderBy(asc(episodes.episodeNumber))
+}
+
+// Search episodes and series by query
+export async function searchEpisodesAndSeries(query: string) {
+  const searchLike = `%${query}%`
+  
+  // Search series
+  const seriesResults = await db
+    .select()
+    .from(series)
+    .where(sql`${series.title} ILIKE ${searchLike} OR ${series.synopsis} ILIKE ${searchLike}`)
+    .orderBy(desc(series.createdAt))
+  
+  // Search episodes
+  const episodesResults = await db
+    .select({
+      episode: episodes,
+      series: series,
+    })
+    .from(episodes)
+    .leftJoin(series, eq(episodes.seriesId, series.id))
+    .where(sql`${episodes.title} ILIKE ${searchLike} OR ${episodes.synopsis} ILIKE ${searchLike}`)
+    .orderBy(desc(episodes.publishedAt))
+  
+  return { seriesResults, episodesResults }
 }
 
 // Get episode count for a series
@@ -401,4 +426,119 @@ export async function updateEpisode(input: UpdateEpisodeInput) {
 
 export async function deleteEpisode(id: number) {
   await db.delete(episodes).where(eq(episodes.id, id))
+}
+
+// ============ VIEW TRACKING ============
+
+// Record a post view for a device
+export async function recordPostView(postId: number, deviceId: string) {
+  try {
+    await db
+      .insert(postViews)
+      .values({
+        postId,
+        deviceId,
+      })
+      .onConflictDoNothing()
+    
+    // Increment post view count
+    // This is a simplified approach - in production with actual posts table this would be more complex
+  } catch (err) {
+    console.error('Error recording post view:', err)
+  }
+}
+
+// Record an episode view for a device
+export async function recordEpisodeView(episodeId: number, deviceId: string) {
+  try {
+    const result = await db
+      .insert(episodeViews)
+      .values({
+        episodeId,
+        deviceId,
+      })
+      .onConflictDoNothing()
+      .returning()
+    
+    // If this is the first view from this device, increment episode view count
+    if (result.length > 0) {
+      await db
+        .update(episodes)
+        .set({
+          viewCount: sql`${episodes.viewCount} + 1`,
+        })
+        .where(eq(episodes.id, episodeId))
+    }
+  } catch (err) {
+    console.error('Error recording episode view:', err)
+  }
+}
+
+// ============ WATCH-TIME TRACKING ============
+
+// Record watch time ping for an episode
+export async function recordEpisodeWatchPing(episodeId: number, deviceId: string, minutesWatched: number = 1) {
+  try {
+    const now = new Date()
+    
+    // Check if there's an existing ping for this episode+device
+    const existing = await db
+      .select()
+      .from(episodeWatchPings)
+      .where(
+        and(
+          eq(episodeWatchPings.episodeId, episodeId),
+          eq(episodeWatchPings.deviceId, deviceId)
+        )
+      )
+      .limit(1)
+    
+    if (existing.length > 0) {
+      // Update last ping time and accumulated minutes
+      const lastPing = existing[0]
+      const timeSinceLastPing = (now.getTime() - new Date(lastPing.lastPingAt!).getTime()) / 1000
+      
+      // Only accept if at least 50 seconds have passed (allowing some tolerance for network delay)
+      if (timeSinceLastPing < 50) {
+        return { accepted: false, reason: 'ping_too_soon' }
+      }
+      
+      await db
+        .update(episodeWatchPings)
+        .set({
+          minutesWatched: sql`${episodeWatchPings.minutesWatched} + ${minutesWatched}`,
+          lastPingAt: now,
+        })
+        .where(
+          and(
+            eq(episodeWatchPings.episodeId, episodeId),
+            eq(episodeWatchPings.deviceId, deviceId)
+          )
+        )
+    } else {
+      // Create new ping record
+      await db
+        .insert(episodeWatchPings)
+        .values({
+          episodeId,
+          deviceId,
+          minutesWatched,
+          lastPingAt: now,
+        })
+        .onConflictDoNothing()
+    }
+    
+    // Increment total_watch_minutes on the episode
+    await db
+      .update(episodes)
+      .set({
+        totalWatchMinutes: sql`${episodes.totalWatchMinutes} + ${minutesWatched}`,
+      })
+      .where(eq(episodes.id, episodeId))
+    
+    return { accepted: true }
+  } catch (err) {
+    console.error('Error recording watch ping:', err)
+    return { accepted: false, reason: 'error' }
+  }
 }

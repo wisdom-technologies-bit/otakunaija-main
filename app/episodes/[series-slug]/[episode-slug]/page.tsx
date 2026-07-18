@@ -11,6 +11,7 @@ import { NewsletterSignup } from '@/components/newsletter-signup'
 import { VideoPlayer } from '@/components/episodes/video-player'
 import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { EpisodeNavigation } from '@/components/episodes/episode-navigation'
+import { EpisodeTracker } from '@/components/episodes/episode-tracker'
 import { MoreEpisodes } from '@/components/episodes/more-episodes'
 import { formatPublishedDate, formatViewCount } from '@/lib/episode-utils'
 
@@ -102,6 +103,7 @@ export default async function WatchPage({ params }: Props) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
+      <EpisodeTracker episodeId={episode.id} />
 
       {/* Breadcrumb */}
       <div className="border-b border-border/40 px-4 md:px-6 py-3">
@@ -146,6 +148,14 @@ export default async function WatchPage({ params }: Props) {
               <span>·</span>
               <span>{formatViewCount(episode.viewCount)} views</span>
               <span>·</span>
+              <span>
+                {episode.totalWatchMinutes && episode.totalWatchMinutes > 0
+                  ? episode.totalWatchMinutes > 59
+                    ? `${Math.floor(episode.totalWatchMinutes / 60)}h ${episode.totalWatchMinutes % 60}m watched`
+                    : `${episode.totalWatchMinutes}m watched`
+                  : 'Just started'}
+              </span>
+              <span>·</span>
               <span>{formatPublishedDate(episode.publishedAt || new Date())}</span>
             </div>
           </div>
@@ -156,6 +166,7 @@ export default async function WatchPage({ params }: Props) {
             currentEpisode={episode}
             previousEpisode={navData.previous}
             nextEpisode={navData.next}
+            allEpisodes={allEpisodes}
           />
 
           {/* Creator Credit */}

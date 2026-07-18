@@ -105,24 +105,76 @@ export function VideoUploader({
       xhr.addEventListener("load", () => {
         if (xhr.status === 200) {
           try {
-            // For R2 presigned PUT, a 200 status means success
-            // We don't get duration info back, so we'll set it to 0 for now
-            // (the server can update this if needed, or we can use video metadata API later)
+            // For R2 presigned PUT, a 200 status means success with EMPTY response body
+            // R2 does not return JSON like Cloudinary did
+            
+            // Extract duration from the video file client-side
+            const tempVideo = document.createElement('video')
+            const objectUrl = URL.createObjectURL(file)
+            tempVideo.src = objectUrl
+            
+            tempVideo.addEventListener('loadedmetadata', () => {
+              const videoDuration = Math.round(tempVideo.duration)
+              
+              // Generate thumbnail from video at ~1 second
+              const canvas = document.createElement('canvas')
+              canvas.width = 320
+              canvas.height = 180
+              const ctx = canvas.getContext('2d')
+              if (ctx) {
+                tempVideo.currentTime = Math.min(1, tempVideo.duration * 0.1) // 1 second or 10% in
+                tempVideo.addEventListener('seeked', () => {
+                  ctx.drawImage(tempVideo, 0, 0, 320, 180)
+                  canvas.toBlob(async (blob) => {
+                    if (blob) {
+                      try {
+                        // Upload thumbnail to Cloudinary using the existing image upload endpoint
+                        const fd = new FormData()
+                        fd.append('file', blob, 'thumbnail.jpg')
+                        const thumbRes = await fetch('/api/admin/upload', { 
+                          method: 'POST', 
+                          body: fd,
+                          credentials: 'include'
+                        })
+                        const thumbData = (await thumbRes.json()) as { url?: string; error?: string }
+                        
+                        if (!thumbRes.ok || !thumbData.url) {
+                          throw new Error(thumbData.error || "Thumbnail upload failed")
+                        }
+                        
+                        // All successful - set state
+                        setVideoUrl(publicUrl)
+                        setThumbnailUrl(thumbData.url)
+                        setDuration(videoDuration)
+                        setPublicId(objectKey)
+                        setProgress(100)
+                        setUploading(false)
+                        setError(null)
 
-            setVideoUrl(publicUrl)
-            setDuration(0) // Duration will be set by server or video metadata API
-            setPublicId(objectKey) // Store the R2 object key instead of public_id
-            setProgress(100)
-            setUploading(false)
-
-            if (onUploadComplete) {
-              onUploadComplete({
-                video_url: publicUrl,
-                thumbnail_url: "", // Thumbnail handled separately by Cloudinary
-                duration: 0,
-                public_id: objectKey,
-              })
-            }
+                        if (onUploadComplete) {
+                          onUploadComplete({
+                            video_url: publicUrl,
+                            thumbnail_url: thumbData.url,
+                            duration: videoDuration,
+                            public_id: objectKey,
+                          })
+                        }
+                      } catch (thumbErr) {
+                        setError(thumbErr instanceof Error ? thumbErr.message : "Thumbnail generation failed")
+                        setUploading(false)
+                      }
+                    }
+                    URL.revokeObjectURL(objectUrl)
+                  }, 'image/jpeg', 0.8)
+                }, { once: true })
+              }
+            }, { once: true })
+            
+            tempVideo.addEventListener('error', (e) => {
+              URL.revokeObjectURL(objectUrl)
+              setError("Failed to read video metadata")
+              setUploading(false)
+            }, { once: true })
           } catch (e) {
             setError("Failed to process upload response")
             setUploading(false)

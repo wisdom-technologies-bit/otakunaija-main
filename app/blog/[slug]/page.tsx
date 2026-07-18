@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar"
 import { PostCard } from "@/components/post-card"
 import { AdSlot } from "@/components/ad-slot"
 import { NewsletterForm } from "@/components/newsletter-form"
+import { BlogViewTracker } from "@/components/blog-view-tracker"
 import {
   formatDate,
   getAllSlugs,
@@ -173,6 +174,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
+      <BlogViewTracker postId={post.id} />
 
       <script
         type="application/ld+json"

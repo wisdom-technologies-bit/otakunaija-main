@@ -4,6 +4,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { AdSlot } from '@/components/ad-slot'
 import { SeriesCard } from '@/components/episodes/series-card'
+import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 
 export const metadata: Metadata = {
@@ -47,16 +48,21 @@ export default async function EpisodesPage() {
       {/* Page Header */}
       <section className="border-b border-border/40 py-12 md:py-16">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-              OtakuNaija Originals
-            </p>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-              Watch Original Anime Episodes
-            </h1>
-            <p className="max-w-2xl text-lg text-foreground/70">
-              Discover exclusive anime series from licensed Nigerian and independent animators. Explore original content crafted by talented creators.
-            </p>
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                OtakuNaija Originals
+              </p>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+                Watch Original Anime Episodes
+              </h1>
+              <p className="max-w-2xl text-lg text-foreground/70">
+                Discover exclusive anime series from licensed Nigerian and independent animators. Explore original content crafted by talented creators.
+              </p>
+            </div>
+            <div className="max-w-2xl">
+              <EpisodesSearchBar />
+            </div>
           </div>
         </div>
       </section>

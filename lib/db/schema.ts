@@ -40,7 +40,46 @@ export const episodes = pgTable('episodes', {
   durationSeconds: integer('duration_seconds'),
   publishedAt: timestamp('published_at').defaultNow(),
   viewCount: integer('view_count').default(0),
+  totalWatchMinutes: integer('total_watch_minutes').default(0),
 })
+
+export const postViews = pgTable(
+  'post_views',
+  {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id').notNull(),
+    deviceId: text('device_id').notNull(),
+    viewedAt: timestamp('viewed_at').defaultNow(),
+  },
+  (table) => [unique('post_views_post_device_unique').on(table.postId, table.deviceId)],
+)
+
+export const episodeViews = pgTable(
+  'episode_views',
+  {
+    id: serial('id').primaryKey(),
+    episodeId: integer('episode_id')
+      .notNull()
+      .references(() => episodes.id),
+    deviceId: text('device_id').notNull(),
+    viewedAt: timestamp('viewed_at').defaultNow(),
+  },
+  (table) => [unique('episode_views_episode_device_unique').on(table.episodeId, table.deviceId)],
+)
+
+export const episodeWatchPings = pgTable(
+  'episode_watch_pings',
+  {
+    id: serial('id').primaryKey(),
+    episodeId: integer('episode_id')
+      .notNull()
+      .references(() => episodes.id),
+    deviceId: text('device_id').notNull(),
+    minutesWatched: integer('minutes_watched').notNull().default(1),
+    lastPingAt: timestamp('last_ping_at').defaultNow(),
+  },
+  (table) => [unique('episode_watch_pings_episode_device_unique').on(table.episodeId, table.deviceId)],
+)
 
 // Relations
 export const creatorsRelations = relations(creators, ({ many }) => ({
@@ -69,3 +108,9 @@ export type Series = typeof series.$inferSelect
 export type SeriesInsert = typeof series.$inferInsert
 export type Episode = typeof episodes.$inferSelect
 export type EpisodeInsert = typeof episodes.$inferInsert
+export type PostView = typeof postViews.$inferSelect
+export type PostViewInsert = typeof postViews.$inferInsert
+export type EpisodeView = typeof episodeViews.$inferSelect
+export type EpisodeViewInsert = typeof episodeViews.$inferInsert
+export type EpisodeWatchPing = typeof episodeWatchPings.$inferSelect
+export type EpisodeWatchPingInsert = typeof episodeWatchPings.$inferInsert

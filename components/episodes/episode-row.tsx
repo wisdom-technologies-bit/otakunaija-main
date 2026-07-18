@@ -8,9 +8,10 @@ import { formatDuration, formatViewCount } from '@/lib/episode-utils'
 interface EpisodeRowProps {
   episode: Episode
   seriesSlug: string
+  seriesTitle?: string
 }
 
-export function EpisodeRow({ episode, seriesSlug }: EpisodeRowProps) {
+export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps) {
   const publishedDate = new Date(episode.publishedAt || new Date()).toLocaleDateString(
     'en-US',
     { year: 'numeric', month: 'short', day: 'numeric' }
@@ -47,6 +48,11 @@ export function EpisodeRow({ episode, seriesSlug }: EpisodeRowProps) {
 
         {/* Content */}
         <div className="flex flex-1 flex-col justify-center min-w-0">
+          {seriesTitle && (
+            <p className="text-xs text-foreground/60 mb-1">
+              {seriesTitle}
+            </p>
+          )}
           <h3 className="line-clamp-1 font-bold text-foreground group-hover:text-primary transition-colors">
             {episode.title}
           </h3>
