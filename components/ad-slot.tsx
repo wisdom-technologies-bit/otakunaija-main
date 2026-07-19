@@ -29,7 +29,19 @@ export function AdSlot({ slot, label = "Sponsored", className }: AdSlotProps) {
 
   useEffect(() => {
     if (!zoneId || !containerRef.current) return
-    // PASTE_MONETAG_SCRIPT_LOGIC_HERE — see step 7 below for exact replacement
+
+    const script = document.createElement("script")
+    script.src = "https://quge5.com/88/tag.min.js"
+    script.dataset.zone = zoneId
+    script.async = true
+    script.dataset.cfasync = "false"
+    containerRef.current.appendChild(script)
+
+    return () => {
+      if (containerRef.current?.contains(script)) {
+        containerRef.current.removeChild(script)
+      }
+    }
   }, [zoneId])
 
   if (!zoneId) {
