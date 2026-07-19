@@ -31,8 +31,9 @@ export function AdSlot({ slot, label = "Sponsored", className }: AdSlotProps) {
     if (!zoneId || !containerRef.current) return
 
     const script = document.createElement("script")
-    script.dataset.zone = zoneId
-    script.src = "https://n6wxm.com/vignette.min.js"
+    script.async = true
+    script.referrerPolicy = "no-referrer-when-downgrade"
+    script.src = zoneId // for HilltopAds, we're passing the full script src URL as the "zoneId" value directly
     containerRef.current.appendChild(script)
 
     return () => {
