@@ -7,6 +7,7 @@ import { SiteFooter } from '@/components/site-footer'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 import { EpisodeRow } from '@/components/episodes/episode-row'
 import { CreatorCredit } from '@/components/episodes/creator-credit'
+import { ExpandableMarkdownSynopsis } from '@/components/episodes/expandable-markdown-synopsis'
 import { Facebook } from 'lucide-react'
 
 interface Props {
@@ -116,7 +117,9 @@ export default async function SeriesPage({ params }: Props) {
       {/* Synopsis */}
       {series.synopsis && (
         <div className="mx-auto w-full max-w-7xl px-4 md:px-6 pt-8">
-          <p className="max-w-2xl text-sm text-foreground/90">{series.synopsis}</p>
+          <div className="max-w-2xl">
+            <ExpandableMarkdownSynopsis synopsis={series.synopsis} />
+          </div>
         </div>
       )}
 

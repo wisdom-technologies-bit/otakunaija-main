@@ -6,7 +6,6 @@ import { searchEpisodesAndSeries } from '@/lib/db/queries'
 import { SeriesCard } from '@/components/episodes/series-card'
 import { EpisodeRow } from '@/components/episodes/episode-row'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
-import { NewsletterSignup } from '@/components/newsletter-signup'
 import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 
 export const metadata: Metadata = {
@@ -103,7 +102,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       </main>
 
-      <NewsletterSignup />
       <SiteFooter />
     </div>
   )
