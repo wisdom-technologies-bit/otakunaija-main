@@ -113,10 +113,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable} bg-background`}>
-      <head>
-        <meta name="monetag" content="3ebb044040c6a2400146260166c743ea" />
-        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-      </head>
+       <head>
+  <meta name="monetag" content="3ebb044040c6a2400146260166c743ea" />
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+  <script
+    dangerouslySetInnerHTML={{
+      __html: `(function(s){s.dataset.zone='261489'; s.src='https://quge5.com/88/tag.min.js'; s.async=true; s.dataset.cfasync='false'; [document.documentElement, document.body].filter(Boolean).pop().appendChild(s)})(document.createElement('script'))`
+    }}
+  />
+</head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <HideV0Badge />
