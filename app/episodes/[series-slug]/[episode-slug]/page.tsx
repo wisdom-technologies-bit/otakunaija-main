@@ -8,12 +8,7 @@ import {
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { NewsletterSignup } from '@/components/newsletter-signup'
-import dynamic from 'next/dynamic'
-
-const VideoPlayer = dynamic(
-  () => import('@/components/episodes/video-player').then((mod) => mod.VideoPlayer),
-  { ssr: false }
-)
+import { VideoPlayer } from '@/components/episodes/video-player-client'
 import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { EpisodeNavigation } from '@/components/episodes/episode-navigation'
 import { EpisodeTracker } from '@/components/episodes/episode-tracker'
