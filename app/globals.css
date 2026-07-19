@@ -1,16 +1,6 @@
-import {
-  BlogViewTracker
-}
-
-from "@/components/blog-view-tracker"
-
-import {
-  ExpandableExcerpt
-}
-
-from "@/components/expandable-excerpt"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:is(.dark *));
 
