@@ -21,7 +21,7 @@ export function ExpandableMarkdownSynopsis({
 
   return (
     <div className={className}>
-      <div className="prose-anime prose prose-invert prose-sm max-w-none text-sm [&_*]:text-sm">
+      <div className="prose-anime prose prose-invert prose-sm max-w-none">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayText}</ReactMarkdown>
       </div>
       {isLong && (
