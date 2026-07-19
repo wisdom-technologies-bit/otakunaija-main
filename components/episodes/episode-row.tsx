@@ -42,25 +42,27 @@ export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 items-center gap-2 min-w-0">
-          <span className="flex-shrink-0 rounded bg-primary/90 px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
-            EP {episode.episodeNumber.toString().padStart(2, '0')}
-          </span>
-          <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="flex-shrink-0 rounded bg-primary/90 px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+              EP {episode.episodeNumber.toString().padStart(2, '0')}
+            </span>
             <h3 className="line-clamp-1 text-sm font-bold text-foreground group-hover:text-primary transition-colors">
               {episode.title}
             </h3>
-            {seriesTitle && (
-              <p className="line-clamp-1 text-xs text-foreground/60">{seriesTitle}</p>
-            )}
           </div>
-        </div>
 
-        {/* Metadata column */}
-        <div className="flex flex-shrink-0 flex-col items-end gap-0.5 text-xs text-foreground/60">
-          <span>{durationStr}</span>
-          <span>{formatViewCount(episode.viewCount)} views</span>
-          <span>{publishedDate}</span>
+          <p className="line-clamp-1 mt-0.5 text-xs text-foreground/70">
+            {episode.synopsis || 'No synopsis available'}
+          </p>
+
+          <div className="mt-1 flex items-center gap-2 text-xs text-foreground/60">
+            <span>{durationStr}</span>
+            <span>•</span>
+            <span>{formatViewCount(episode.viewCount)} views</span>
+            <span>•</span>
+            <span>{publishedDate}</span>
+          </div>
         </div>
 
         {/* Chevron */}
