@@ -32,7 +32,7 @@ export function AdSlot({ slot, label = "Sponsored", className }: AdSlotProps) {
 
     const script = document.createElement("script")
     script.dataset.zone = zoneId
-    script.src = "https://nap5k.com/tag.min.js"
+    script.src = "https://n6wxm.com/vignette.min.js"
     containerRef.current.appendChild(script)
 
     return () => {
