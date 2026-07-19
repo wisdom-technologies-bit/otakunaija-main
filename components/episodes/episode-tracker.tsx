@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { trackEpisodeView } from '@/lib/actions/track-view'
 
 interface EpisodeTrackerProps {
@@ -64,45 +64,44 @@ export function EpisodeTracker({ episodeId, videoPlayerSelector = 'video' }: Epi
     })
     observer.observe(document.body, { childList: true, subtree: true })
 
-    // Also check immediately in case it's already there
+    // Check immediately in case it's already there
     const existing = document.querySelector<HTMLVideoElement>(videoPlayerSelector)
     if (existing) {
       video = existing
       attachListeners(video)
     }
 
-    const handlePlay = () => {
-      // Track watch time every second
-      const trackWatchTime = () => {
-        if (isPlayingRef.current) {
-          watchTimeRef.current += 1
+    // Track watch time every second (this runs independently of the listener setup above)
+    const trackWatchTime = () => {
+      if (isPlayingRef.current) {
+        watchTimeRef.current += 1
 
-          // Send ping every 60 seconds of accumulated watch time
-          if (watchTimeRef.current % 60 === 0) {
-            const now = Date.now()
-            const timeSinceLastPing = now - lastPingRef.current
+        // Send ping every 60 seconds of accumulated watch time
+        if (watchTimeRef.current % 60 === 0) {
+          const now = Date.now()
+          const timeSinceLastPing = now - lastPingRef.current
 
-            // Only send if at least 50 seconds have passed since last ping
-            if (timeSinceLastPing >= 50000) {
-              lastPingRef.current = now
-              fetch(`/api/episodes/${episodeId}/watch-ping`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ minutesWatched: 1 }),
-              }).catch(err => console.error('Failed to send watch ping:', err))
-            }
+          // Only send if at least 50 seconds have passed since last ping
+          if (timeSinceLastPing >= 50000) {
+            lastPingRef.current = now
+            fetch(`/api/episodes/${episodeId}/watch-ping`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ minutesWatched: 1 }),
+            }).catch(err => console.error('Failed to send watch ping:', err))
           }
         }
       }
+    }
 
-      intervalRef.current = setInterval(trackWatchTime, 1000)
+    intervalRef.current = setInterval(trackWatchTime, 1000)
 
-          return () => {
-                if (intervalRef.current) clearInterval(intervalRef.current)
-                      observer.disconnect()
-                            if (cleanupListeners) cleanupListeners()
-                                }
-                                  }, [episodeId, videoPlayerSelector])
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      observer.disconnect()
+      if (cleanupListeners) cleanupListeners()
+    }
+  }, [episodeId, videoPlayerSelector])
 
   return null
 }
