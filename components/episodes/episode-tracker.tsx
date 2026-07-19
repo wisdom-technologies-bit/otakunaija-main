@@ -97,19 +97,12 @@ export function EpisodeTracker({ episodeId, videoPlayerSelector = 'video' }: Epi
 
       intervalRef.current = setInterval(trackWatchTime, 1000)
 
-      video.addEventListener('play', handlePlay)
-      video.addEventListener('pause', handlePause)
-      document.addEventListener('visibilitychange', handleVisibilityChange)
-      window.addEventListener('beforeunload', handleBeforeUnload)
-
-      return () => {
-        if (intervalRef.current) clearInterval(intervalRef.current)
-        video.removeEventListener('play', handlePlay)
-        video.removeEventListener('pause', handlePause)
-        document.removeEventListener('visibilitychange', handleVisibilityChange)
-        window.removeEventListener('beforeunload', handleBeforeUnload)
-      }
-    }, [episodeId])
+          return () => {
+                if (intervalRef.current) clearInterval(intervalRef.current)
+                      observer.disconnect()
+                            if (cleanupListeners) cleanupListeners()
+                                }
+                                  }, [episodeId, videoPlayerSelector])
 
   return null
 }
