@@ -21,65 +21,95 @@ export function EpisodeTracker({ episodeId, videoPlayerSelector = 'video' }: Epi
 
   // Setup watch-time tracking
   useEffect(() => {
-    const video = document.querySelector<HTMLVideoElement>(videoPlayerSelector)
-    if (!video) return
+    let video: HTMLVideoElement | null = null
+    let cleanupListeners: (() => void) | null = null
 
-    const handlePlay = () => {
-      isPlayingRef.current = true
-    }
-
-    const handlePause = () => {
-      isPlayingRef.current = false
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
+    const attachListeners = (videoEl: HTMLVideoElement) => {
+      const handlePlay = () => {
+        isPlayingRef.current = true
+      }
+      const handlePause = () => {
         isPlayingRef.current = false
+      }
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          isPlayingRef.current = false
+        }
+      }
+      const handleBeforeUnload = () => {
+        isPlayingRef.current = false
+      }
+
+      videoEl.addEventListener('play', handlePlay)
+      videoEl.addEventListener('pause', handlePause)
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+      window.addEventListener('beforeunload', handleBeforeUnload)
+
+      cleanupListeners = () => {
+        videoEl.removeEventListener('play', handlePlay)
+        videoEl.removeEventListener('pause', handlePause)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+        window.removeEventListener('beforeunload', handleBeforeUnload)
       }
     }
 
-    const handleBeforeUnload = () => {
-      isPlayingRef.current = false
+    // The <video> element doesn't exist until the user clicks play,
+    // so watch the DOM for it to appear instead of checking once on mount
+    const observer = new MutationObserver(() => {
+      const found = document.querySelector<HTMLVideoElement>(videoPlayerSelector)
+      if (found && found !== video) {
+        video = found
+        attachListeners(video)
+      }
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    // Also check immediately in case it's already there
+    const existing = document.querySelector<HTMLVideoElement>(videoPlayerSelector)
+    if (existing) {
+      video = existing
+      attachListeners(video)
     }
 
-    // Track watch time every second
-    const trackWatchTime = () => {
-      if (isPlayingRef.current) {
-        watchTimeRef.current += 1
+    const handlePlay = () => {
+      // Track watch time every second
+      const trackWatchTime = () => {
+        if (isPlayingRef.current) {
+          watchTimeRef.current += 1
 
-        // Send ping every 60 seconds of accumulated watch time
-        if (watchTimeRef.current % 60 === 0) {
-          const now = Date.now()
-          const timeSinceLastPing = now - lastPingRef.current
+          // Send ping every 60 seconds of accumulated watch time
+          if (watchTimeRef.current % 60 === 0) {
+            const now = Date.now()
+            const timeSinceLastPing = now - lastPingRef.current
 
-          // Only send if at least 50 seconds have passed since last ping
-          if (timeSinceLastPing >= 50000) {
-            lastPingRef.current = now
-            fetch(`/api/episodes/${episodeId}/watch-ping`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ minutesWatched: 1 }),
-            }).catch(err => console.error('Failed to send watch ping:', err))
+            // Only send if at least 50 seconds have passed since last ping
+            if (timeSinceLastPing >= 50000) {
+              lastPingRef.current = now
+              fetch(`/api/episodes/${episodeId}/watch-ping`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ minutesWatched: 1 }),
+              }).catch(err => console.error('Failed to send watch ping:', err))
+            }
           }
         }
       }
-    }
 
-    intervalRef.current = setInterval(trackWatchTime, 1000)
+      intervalRef.current = setInterval(trackWatchTime, 1000)
 
-    video.addEventListener('play', handlePlay)
-    video.addEventListener('pause', handlePause)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('beforeunload', handleBeforeUnload)
+      video.addEventListener('play', handlePlay)
+      video.addEventListener('pause', handlePause)
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+      window.addEventListener('beforeunload', handleBeforeUnload)
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      video.removeEventListener('play', handlePlay)
-      video.removeEventListener('pause', handlePause)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
-  }, [episodeId])
+      return () => {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        video.removeEventListener('play', handlePlay)
+        video.removeEventListener('pause', handlePause)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+        window.removeEventListener('beforeunload', handleBeforeUnload)
+      }
+    }, [episodeId])
 
   return null
 }
