@@ -114,13 +114,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable} bg-background`}>
       <head>
-        {ADSENSE_CLIENT ? (
-          <script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-            crossOrigin="anonymous"
-          />
-        ) : null}
+        <meta name="monetag" content="3ebb044040c6a2400146260166c743ea" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
       </head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
