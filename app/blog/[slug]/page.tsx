@@ -10,6 +10,9 @@ import { PostCard } from "@/components/post-card"
 import { AdSlot } from "@/components/ad-slot"
 import { NewsletterForm } from "@/components/newsletter-form"
 import { BlogViewTracker } from "@/components/blog-view-tracker"
+import { ExpandableExcerpt } from "@/components/expandable-excerpt"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import {
   formatDate,
   getAllSlugs,
@@ -84,10 +87,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     },
   }
 
-  const blocks = renderContent(post.content)
-  const midpoint = Math.floor(blocks.length / 2)
-  const firstHalf = blocks.slice(0, midpoint)
-  const secondHalf = blocks.slice(midpoint)
+  const midpoint = Math.floor(post.content.length / 2)
+  // Split at the nearest paragraph break so we don't cut a sentence in half
+  const splitIndex = post.content.indexOf("\n\n", midpoint)
+  const actualSplit = splitIndex === -1 ? post.content.length : splitIndex
+  const firstHalf = post.content.slice(0, actualSplit)
+  const secondHalf = post.content.slice(actualSplit)
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -123,11 +128,11 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 </Link>
               </div>
 
-              <h1 className="mt-3 font-display text-3xl md:text-5xl font-bold leading-tight tracking-tight text-balance">
+              <h1 className="mt-3 font-display text-2xl md:text-3xl font-bold leading-tight tracking-tight text-balance">
                 {post.title}
               </h1>
 
-              <p className="mt-4 text-lg text-muted-foreground text-pretty">{post.excerpt}</p>
+              <ExpandableExcerpt excerpt={post.excerpt} />
 
               <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">{post.author}</span>
@@ -154,14 +159,14 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 />
               </div>
 
-              <div className="mt-8 prose-anime">
-                {firstHalf}
+              <div className="mt-8 prose-anime prose prose-invert max-w-none prose-sm md:prose-base">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{firstHalf}</ReactMarkdown>
 
                 <div className="my-10 not-prose">
                   <AdSlot slot="in-article" />
                 </div>
 
-                {secondHalf}
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{secondHalf}</ReactMarkdown>
               </div>
 
               {post.tags && post.tags.length > 0 ? (
