@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Clock, Eye } from "lucide-react"
+import { ArrowLeft, Clock, Eye, User, Calendar } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Sidebar } from "@/components/sidebar"
@@ -134,18 +134,42 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <ExpandableExcerpt excerpt={post.excerpt} />
 
-              <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{post.author}</span>
-                <span aria-hidden>•</span>
-                <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
-                <span aria-hidden>•</span>
-                <span className="inline-flex items-center gap-1">
-                  <Clock className="h-4 w-4" /> {post.read_time} min read
-                </span>
-                <span aria-hidden>•</span>
-                <span className="inline-flex items-center gap-1">
-                  <Eye className="h-4 w-4" /> {post.views.toLocaleString()} views
-                </span>
+              <div className="mt-5 grid grid-cols-3 gap-2 sm:inline-flex sm:gap-3">
+                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-center sm:flex-row sm:gap-2 sm:text-left">
+                  <User className="h-4 w-4 text-primary" />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">{post.author}</p>
+                    <p className="hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
+                      Author
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-center sm:flex-row sm:gap-2 sm:text-left">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">
+                      {formatDate(post.published_at)}
+                    </p>
+                    <p className="hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
+                      Published
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-center sm:flex-row sm:gap-2 sm:text-left">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">{post.read_time} min</p>
+                    <p className="hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
+                      Read time
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <Eye className="h-3.5 w-3.5" /> {post.views.toLocaleString()} views
               </div>
 
               <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-border bg-muted">
