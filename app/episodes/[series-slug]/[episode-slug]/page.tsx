@@ -14,6 +14,7 @@ import { EpisodeNavigation } from '@/components/episodes/episode-navigation'
 import { EpisodeTracker } from '@/components/episodes/episode-tracker'
 import { MoreEpisodes } from '@/components/episodes/more-episodes'
 import { formatPublishedDate, formatViewCount } from '@/lib/episode-utils'
+import { ExpandableSynopsis } from '@/components/episodes/expandable-synopsis'
 
 interface Props {
   params: Promise<{ 'series-slug': string; 'episode-slug': string }>
@@ -173,12 +174,7 @@ export default async function WatchPage({ params }: Props) {
           {creator && <CreatorCredit creator={creator} />}
 
           {/* Synopsis */}
-          {episode.synopsis && (
-            <div>
-              <h2 className="mb-3 text-lg font-bold text-foreground">About this episode</h2>
-              <p className="leading-relaxed text-foreground/80">{episode.synopsis}</p>
-            </div>
-          )}
+          {episode.synopsis && <ExpandableSynopsis synopsis={episode.synopsis} />}
 
           {/* More Episodes */}
           {allEpisodes.length > 1 && (
