@@ -23,53 +23,55 @@ export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps
 
   return (
     <Link href={`/episodes/${seriesSlug}/${episode.slug}`}>
-      <div className="group flex gap-4 rounded-lg border border-border/40 p-3 transition-all hover:border-primary/40 hover:bg-card/60">
+      <div className="group flex items-center gap-3 rounded-lg border border-border/40 p-2.5 transition-all hover:border-primary/40 hover:bg-card/60">
         {/* Thumbnail */}
-        <div className="relative h-20 w-32 flex-shrink-0 overflow-hidden rounded bg-muted">
+        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded bg-muted">
           {episode.thumbnailUrl ? (
             <Image
               src={episode.thumbnailUrl}
               alt={`Episode ${episode.episodeNumber}`}
               fill
               className="object-cover transition-transform group-hover:scale-105"
-              sizes="128px"
+              sizes="56px"
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-              <span className="text-xs text-muted-foreground">No image</span>
+              <span className="text-[10px] text-muted-foreground">No image</span>
             </div>
           )}
-
-          {/* Episode Number Badge */}
-          <div className="absolute right-1 top-1 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-bold text-primary-foreground shadow-md">
-            EP {episode.episodeNumber.toString().padStart(2, '0')}
-          </div>
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 flex-col justify-center min-w-0">
-          {seriesTitle && (
-            <p className="text-xs text-foreground/60 mb-1">
-              {seriesTitle}
-            </p>
-          )}
-          <h3 className="line-clamp-1 font-bold text-foreground group-hover:text-primary transition-colors">
-            {episode.title}
-          </h3>
-
-          <p className="line-clamp-1 text-xs text-foreground/70">
-            {episode.synopsis || 'No synopsis available'}
-          </p>
-
-          {/* Metadata */}
-          <div className="mt-1 flex items-center gap-2 text-xs text-foreground/60">
-            <span>{durationStr}</span>
-            <span>•</span>
-            <span>{formatViewCount(episode.viewCount)} views</span>
-            <span>•</span>
-            <span>{publishedDate}</span>
+        <div className="flex flex-1 items-center gap-2 min-w-0">
+          <span className="flex-shrink-0 rounded bg-primary/90 px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+            EP {episode.episodeNumber.toString().padStart(2, '0')}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-1 text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+              {episode.title}
+            </h3>
+            {seriesTitle && (
+              <p className="line-clamp-1 text-xs text-foreground/60">{seriesTitle}</p>
+            )}
           </div>
         </div>
+
+        {/* Metadata column */}
+        <div className="flex flex-shrink-0 flex-col items-end gap-0.5 text-xs text-foreground/60">
+          <span>{durationStr}</span>
+          <span>{formatViewCount(episode.viewCount)} views</span>
+          <span>{publishedDate}</span>
+        </div>
+
+        {/* Chevron */}
+        <svg
+          className="h-4 w-4 flex-shrink-0 text-foreground/40"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
       </div>
     </Link>
   )
