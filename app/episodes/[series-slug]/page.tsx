@@ -123,7 +123,7 @@ export default async function SeriesPage({ params }: Props) {
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-12">
         {/* Episodes Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Episodes <span className="text-foreground/50 font-normal">({episodeCount})</span>
           </h2>
         </div>
