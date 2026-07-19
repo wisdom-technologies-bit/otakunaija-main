@@ -171,4 +171,9 @@
   .prose-anime a {
     @apply text-primary underline underline-offset-4 hover:text-primary/80;
   }
+
+  .prose-anime strong,
+  .prose-anime b {
+    @apply text-foreground font-bold;
+  }
 }

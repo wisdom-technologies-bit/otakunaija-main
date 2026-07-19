@@ -88,12 +88,14 @@ export function PostCard({ post, variant = "default", className, priority = fals
           {post.excerpt}
         </p>
 
-        <div className="mt-auto pt-4 flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground/80">{post.author}</span>
-          <span aria-hidden>•</span>
-          <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
-          <span aria-hidden>•</span>
-          <span className="inline-flex items-center gap-1">
+        <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground/80 truncate max-w-[40%]">{post.author}</span>
+          <span aria-hidden className="hidden sm:inline">•</span>
+          <time dateTime={post.published_at} className="whitespace-nowrap">
+            {formatDate(post.published_at)}
+          </time>
+          <span aria-hidden className="hidden sm:inline">•</span>
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
             <Clock className="h-3 w-3" /> {post.read_time} min
           </span>
           {isFeatured ? (
