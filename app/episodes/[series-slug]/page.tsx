@@ -92,14 +92,14 @@ export default async function SeriesPage({ params }: Props) {
         <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6">
           <div className="mx-auto w-full max-w-7xl space-y-4">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground">{series.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{series.title}</h1>
               {series.genre && (
-                <span className="rounded-full bg-primary/90 px-3 py-1 text-sm font-medium text-primary-foreground">
+                <span className="rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-primary-foreground">
                   {series.genre}
                 </span>
               )}
               <span
-                className={`rounded-full px-3 py-1 text-sm font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
+                className={`rounded-full px-3 py-1 text-xs font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
                   }`}
               >
                 {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
@@ -116,7 +116,7 @@ export default async function SeriesPage({ params }: Props) {
       {/* Synopsis */}
       {series.synopsis && (
         <div className="mx-auto w-full max-w-7xl px-4 md:px-6 pt-8">
-          <p className="max-w-2xl text-foreground/90">{series.synopsis}</p>
+          <p className="max-w-2xl text-sm text-foreground/90">{series.synopsis}</p>
         </div>
       )}
 
