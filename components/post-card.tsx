@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Clock, Eye } from "lucide-react"
+import { Clock, Eye, User, Calendar } from "lucide-react"
 import { type Post, formatDate, getCoverImage } from "@/lib/posts"
 import { cn } from "@/lib/utils"
 
@@ -89,10 +89,12 @@ export function PostCard({ post, variant = "default", className, priority = fals
         </p>
 
         <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground/80 truncate max-w-[40%]">{post.author}</span>
+          <span className="inline-flex items-center gap-1 font-medium text-foreground/80 truncate max-w-[40%]">
+            <User className="h-3 w-3 flex-shrink-0" /> {post.author}
+          </span>
           <span aria-hidden className="hidden sm:inline">•</span>
-          <time dateTime={post.published_at} className="whitespace-nowrap">
-            {formatDate(post.published_at)}
+          <time dateTime={post.published_at} className="inline-flex items-center gap-1 whitespace-nowrap">
+            <Calendar className="h-3 w-3" /> {formatDate(post.published_at)}
           </time>
           <span aria-hidden className="hidden sm:inline">•</span>
           <span className="inline-flex items-center gap-1 whitespace-nowrap">
