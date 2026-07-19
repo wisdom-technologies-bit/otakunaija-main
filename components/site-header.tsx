@@ -7,6 +7,7 @@ import { Menu, Search, X } from "lucide-react"
 import { CATEGORIES } from "@/lib/posts"
 import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/search-bar"
+import { EpisodesSearchBar } from "@/components/episodes/episodes-search-bar"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 const NAV_LINKS = [
@@ -59,13 +60,7 @@ export function SiteHeader() {
             variant="ghost"
             size="icon"
             aria-label="Toggle search"
-            onClick={() => {
-              if (isEpisodesSection) {
-                router.push("/episodes/search")
-                return
-              }
-              setSearchOpen((s) => !s)
-            }}
+            onClick={() => setSearchOpen((s) => !s)}
             className="text-foreground/80 hover:text-primary"
           >
             {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
@@ -86,7 +81,11 @@ export function SiteHeader() {
       {searchOpen ? (
         <div className="border-t border-border bg-background">
           <div className="mx-auto max-w-7xl px-4 py-3 md:px-6">
-            <SearchBar autoFocus onSubmitted={() => setSearchOpen(false)} />
+            {isEpisodesSection ? (
+              <EpisodesSearchBar autoFocus />
+            ) : (
+              <SearchBar autoFocus onSubmitted={() => setSearchOpen(false)} />
+            )}
           </div>
         </div>
       ) : null}

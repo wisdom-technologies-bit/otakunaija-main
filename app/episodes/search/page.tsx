@@ -7,6 +7,7 @@ import { SeriesCard } from '@/components/episodes/series-card'
 import { EpisodeRow } from '@/components/episodes/episode-row'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { NewsletterSignup } from '@/components/newsletter-signup'
+import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 
 export const metadata: Metadata = {
   title: 'Search Episodes — OtakuNaija',
@@ -49,6 +50,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               {query && !hasResults && 'No results found. Try a different search term.'}
               {hasResults && `Found ${seriesResults.length} series and ${episodesResults.length} episode${episodesResults.length === 1 ? '' : 's'}.`}
             </p>
+
+            <div className="mt-6">
+              <EpisodesSearchBar defaultValue={query} />
+            </div>
           </section>
 
           {!hasResults && query ? (
