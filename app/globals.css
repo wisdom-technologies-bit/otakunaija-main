@@ -176,4 +176,28 @@
   .prose-anime b {
     @apply text-foreground font-bold;
   }
+
+  .prose-anime h1,
+  .prose-anime h4,
+  .prose-anime h5,
+  .prose-anime h6 {
+    @apply font-display font-bold text-foreground;
+  }
+
+  .prose-anime blockquote {
+    @apply border-l-4 border-primary/60 pl-4 italic text-foreground/80;
+  }
+
+  .prose-anime code {
+    @apply rounded bg-card px-1.5 py-0.5 text-foreground;
+  }
+
+  .prose-anime table {
+    @apply text-foreground;
+  }
+
+  .prose-anime th,
+  .prose-anime td {
+    @apply border border-border px-3 py-2 text-foreground/90;
+  }
 }
