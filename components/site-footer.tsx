@@ -76,7 +76,7 @@ export function SiteFooter() {
 
         <div className="flex flex-col gap-3 border-t border-border py-6 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} OtakuNaija. All rights reserved.</p>
-          <div className="flex gap-5">
+          <div className="flex items-center gap-5">
             <Link href="/privacy" className="hover:text-primary">
               Privacy Policy
             </Link>
@@ -86,6 +86,27 @@ export function SiteFooter() {
             <Link href="/contact" className="hover:text-primary">
               Contact
             </Link>
+            <a
+              href="https://dashboard.simpleanalytics.com/otakunaija.name.ng?utm_source=otakunaija.name.ng&utm_content=badge&affiliate=kiwed"
+              referrerPolicy="origin"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <picture>
+                <source
+                  srcSet="https://simpleanalyticsbadges.com/otakunaija.name.ng?mode=dark"
+                  media="(prefers-color-scheme: dark)"
+                />
+                <img
+                  src="https://simpleanalyticsbadges.com/otakunaija.name.ng?mode=light"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  alt="Simple Analytics badge"
+                  className="h-6 w-auto"
+                />
+              </picture>
+            </a>
           </div>
         </div>
       </div>
