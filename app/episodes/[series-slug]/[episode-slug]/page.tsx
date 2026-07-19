@@ -134,9 +134,9 @@ export default async function WatchPage({ params }: Props) {
         <div className="space-y-6 mb-8">
           {/* Title and Metadata */}
           <div className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{episode.title}</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">{episode.title}</h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-foreground/70">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-foreground/70">
               <Link
                 href={`/episodes/${seriesSlug}`}
                 className="text-primary hover:underline font-medium"
