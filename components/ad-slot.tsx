@@ -31,10 +31,8 @@ export function AdSlot({ slot, label = "Sponsored", className }: AdSlotProps) {
     if (!zoneId || !containerRef.current) return
 
     const script = document.createElement("script")
-    script.src = "https://quge5.com/88/tag.min.js"
     script.dataset.zone = zoneId
-    script.async = true
-    script.dataset.cfasync = "false"
+    script.src = "https://nap5k.com/tag.min.js"
     containerRef.current.appendChild(script)
 
     return () => {
