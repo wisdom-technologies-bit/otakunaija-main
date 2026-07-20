@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next"
 import { CATEGORIES, getAllSlugs } from "@/lib/posts"
 import { getAllSeriesWithEpisodesForSitemap } from "@/lib/db/queries"
 
+export const dynamic = "force-dynamic";
+
 const BASE = "https://otakunaija.name.ng"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
