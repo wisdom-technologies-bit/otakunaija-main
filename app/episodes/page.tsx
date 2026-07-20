@@ -10,6 +10,7 @@ import { NewsletterSignup } from '@/components/newsletter-signup'
 export const metadata: Metadata = {
   title: 'OtakuNaija Originals | Episodes',
   description: 'Watch original anime series. Discover exclusive anime content.',
+  alternates: { canonical: '/episodes' },
   openGraph: {
     title: 'OtakuNaija Originals | Episodes',
     description: 'Watch original anime series and episodes.',
