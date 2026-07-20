@@ -11,6 +11,7 @@ import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 export const metadata: Metadata = {
   title: 'Search Episodes — OtakuNaija',
   description: 'Search anime episodes and series on OtakuNaija',
+  alternates: { canonical: '/episodes/search' },
 }
 
 export const revalidate = 60
