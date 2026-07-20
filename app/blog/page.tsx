@@ -9,16 +9,31 @@ import { AdSlot } from "@/components/ad-slot"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { CATEGORIES, getAllPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
 
-export const metadata: Metadata = {
-  title: "Anime Blog — Latest News, Reviews & Guides",
-  description:
-    "Browse all anime articles on OtakuNaija — Shonen, Romance, Action, and guides for Nigerian anime fans.",
-  alternates: { canonical: "/blog" },
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Search>
+}): Promise<Metadata> {
+  const sp = await searchParams
+  const category =
+    sp.category && CATEGORIES.includes(sp.category as (typeof CATEGORIES)[number])
+      ? sp.category
+      : undefined
+
+  return {
+    title: category ? `${category} Anime — Blog` : "Anime Blog — Latest News, Reviews & Guides",
+    description: category
+      ? `Browse all ${category} anime articles on OtakuNaija.`
+      : "Browse all anime articles on OtakuNaija — Shonen, Romance, Action, and guides for Nigerian anime fans.",
+    alternates: {
+      canonical: category ? `/blog?category=${encodeURIComponent(category)}` : "/blog",
+    },
+  }
 }
 
-export const revalidate = 300
-
 type Search = { category?: string; q?: string }
+
+export const revalidate = 300
 
 export default async function BlogPage({
   searchParams,
@@ -40,8 +55,8 @@ export default async function BlogPage({
   const headline = q
     ? `Search results for "${q}"`
     : category
-    ? `${category} anime`
-    : "All articles"
+      ? `${category} anime`
+      : "All articles"
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -69,11 +84,10 @@ export default async function BlogPage({
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <Link
                 href="/blog"
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                  !category && !q
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
-                }`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${!category && !q
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
+                  }`}
               >
                 All
               </Link>
@@ -81,11 +95,10 @@ export default async function BlogPage({
                 <Link
                   key={c}
                   href={`/blog?category=${encodeURIComponent(c)}`}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                    category === c
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
-                  }`}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium ${category === c
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
+                    }`}
                 >
                   {c}
                 </Link>
