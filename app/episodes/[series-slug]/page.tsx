@@ -28,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${data.series.title} | OtakuNaija Episodes`,
     description: data.series.synopsis || `Watch ${data.series.title} on OtakuNaija.`,
+    alternates: { canonical: `/episodes/${data.series.slug}` },
     openGraph: {
       title: data.series.title,
       description: data.series.synopsis || `Watch ${data.series.title} on OtakuNaija.`,

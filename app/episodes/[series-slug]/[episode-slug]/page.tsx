@@ -32,9 +32,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const { episode, series } = data
+  const seriesSlugValue = series?.slug ?? ''
 
   return {
     title: `${episode.title} — ${series?.title || 'Episode'} | OtakuNaija`,
+    alternates: { canonical: `/episodes/${seriesSlugValue}/${episode.slug}` },
     description:
       episode.synopsis ||
       `Watch ${episode.title} on OtakuNaija. Episode ${episode.episodeNumber} of ${series?.title || 'the series'}.`,
