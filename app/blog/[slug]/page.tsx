@@ -13,6 +13,7 @@ import { BlogViewTracker } from "@/components/blog-view-tracker"
 import { ExpandableExcerpt } from "@/components/expandable-excerpt"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import rehypeRaw from "rehype-raw"
 import {
   formatDate,
   getAllSlugs,
@@ -184,13 +185,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               </div>
 
               <div className="mt-8 prose-anime prose prose-invert max-w-none prose-sm md:prose-base">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{firstHalf}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{firstHalf}</ReactMarkdown>
 
                 <div className="my-10 not-prose">
                   <AdSlot slot="in-article" />
                 </div>
 
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{secondHalf}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{secondHalf}</ReactMarkdown>
               </div>
 
               {post.tags && post.tags.length > 0 ? (
