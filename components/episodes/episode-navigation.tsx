@@ -21,38 +21,43 @@ export function EpisodeNavigation({
   allEpisodes,
 }: EpisodeNavigationProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  
+
   // Calculate window of visible episodes in compact mode (show ±1 episodes from current)
   const windowSize = 4
   const halfWindow = Math.floor(windowSize / 2)
   const minEp = Math.max(1, currentEpisode.episodeNumber - halfWindow)
   const maxEp = Math.min(allEpisodes.length, minEp + windowSize - 1)
   const actualMin = Math.max(1, maxEp - windowSize + 1)
-  
+
   const visibleEpisodes = allEpisodes.filter(
     ep => ep.episodeNumber >= actualMin && ep.episodeNumber <= maxEp
   )
-  
+
   const hasMore = allEpisodes.length > windowSize
 
   if (isExpanded) {
-    // Expanded grid view
+    // Expanded grid view — 7 columns to match the compact row's box size
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-10 gap-2">
-          {allEpisodes.map((ep) => (
-            <Link
-              key={ep.id}
-              href={`/episodes/${seriesSlug}/${ep.slug}`}
-              className={`aspect-square flex items-center justify-center rounded-lg border-2 font-bold text-sm transition-all ${
-                ep.id === currentEpisode.id
-                  ? 'border-primary bg-primary/20 text-primary'
-                  : 'border-border/60 bg-card hover:border-primary/50 hover:bg-card/80 text-foreground/80 hover:text-foreground'
-              }`}
-            >
-              {ep.episodeNumber}
-            </Link>
-          ))}
+        <div className="grid grid-cols-7 gap-2">
+          {allEpisodes.map((ep) => {
+            const digitCount = ep.episodeNumber.toString().length
+            const fontSizeClass =
+              digitCount >= 4 ? 'text-[10px]' : digitCount === 3 ? 'text-xs' : 'text-sm'
+
+            return (
+              <Link
+                key={ep.id}
+                href={`/episodes/${seriesSlug}/${ep.slug}`}
+                className={`aspect-square flex items-center justify-center rounded-lg border-2 font-bold ${fontSizeClass} transition-all ${ep.id === currentEpisode.id
+                    ? 'border-primary bg-primary/20 text-primary'
+                    : 'border-border/60 bg-card hover:border-primary/50 hover:bg-card/80 text-foreground/80 hover:text-foreground'
+                  }`}
+              >
+                {ep.episodeNumber}
+              </Link>
+            )
+          })}
         </div>
         <button
           onClick={() => setIsExpanded(false)}
@@ -105,19 +110,25 @@ export function EpisodeNavigation({
       )}
 
       {/* Episode number buttons window */}
-      {visibleEpisodes.map((ep) => (
-        <Link
-          key={ep.id}
-          href={`/episodes/${seriesSlug}/${ep.slug}`}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg border font-bold text-sm transition-all ${
-            ep.id === currentEpisode.id
-              ? 'border-primary bg-primary/20 text-primary'
-              : 'border-border/60 bg-card hover:border-primary/50 hover:bg-card/80 text-foreground/80 hover:text-foreground'
-          }`}
-        >
-          {ep.episodeNumber}
-        </Link>
-      ))}
+      {visibleEpisodes.map((ep) => {
+        const digitCount = ep.episodeNumber.toString().length
+        const fontSizeClass =
+          digitCount >= 4 ? 'text-[10px]' : digitCount === 3 ? 'text-xs' : 'text-sm'
+
+        return (
+          <Link
+            key={ep.id}
+            href={`/episodes/${seriesSlug}/${ep.slug}`}
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border font-bold ${fontSizeClass} transition-all ${
+              ep.id === currentEpisode.id
+                ? 'border-primary bg-primary/20 text-primary'
+                : 'border-border/60 bg-card hover:border-primary/50 hover:bg-card/80 text-foreground/80 hover:text-foreground'
+            }`}
+          >
+            {ep.episodeNumber}
+          </Link>
+        )
+      })}
 
       {/* Expand button if there are more episodes */}
       {hasMore && (

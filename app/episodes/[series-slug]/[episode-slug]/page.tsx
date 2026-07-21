@@ -15,6 +15,7 @@ import { EpisodeTracker } from '@/components/episodes/episode-tracker'
 import { MoreEpisodes } from '@/components/episodes/more-episodes'
 import { formatPublishedDate, formatViewCount } from '@/lib/episode-utils'
 import { ExpandableSynopsis } from '@/components/episodes/expandable-synopsis'
+import { LiveViewerWidget } from '@/components/episodes/live-viewer-widget'
 
 interface Props {
   params: Promise<{ 'series-slug': string; 'episode-slug': string }>
@@ -161,6 +162,9 @@ export default async function WatchPage({ params }: Props) {
               <span>·</span>
               <span>{formatPublishedDate(episode.publishedAt || new Date())}</span>
             </div>
+            <LiveViewerWidget
+              episodeUrl={`https://otakunaija.name.ng/episodes/${seriesSlug}/${episode.slug}`}
+            />
           </div>
 
           {/* Navigation Buttons */}
