@@ -26,7 +26,7 @@ const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "OtakuNaija — Anime News, Reviews & Guides",
+    default: "OtakuNaija — Anime News, Reviews & Guides for Naija Otakus",
     template: "%s | OtakuNaija",
   },
   description:
