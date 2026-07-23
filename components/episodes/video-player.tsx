@@ -21,30 +21,37 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title }: VideoPlayerProps)
     // Only initialize Plyr when user clicks play
     if (isPlaying && videoRef.current && !playerRef.current) {
       playerRef.current = new Plyr(videoRef.current, {
-        controls: [
-          'play-large',
-          'play',
-          'progress',
-          'current-time',
-          'mute',
-          'volume',
-          'speed',
-          'pip',
-          'fullscreen',
-        ],
-        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-        // Apply dark theme styling
-        css: false,
-      })
+  controls: [
+    'play-large',
+    'play',
+    'progress',
+    'current-time',
+    'mute',
+    'volume',
+    'settings',
+    'pip',
+    'fullscreen',
+  ],
+
+  settings: ['speed'],
+
+  speed: {
+    selected: 1,
+    options: [0.5, 0.75, 1, 1.25, 1.5, 2],
+  },
+
+  // Apply dark theme styling
+  css: false,
+})
 
       // Add custom CSS variables for theming to match dark theme
       const style = document.createElement('style')
       style.textContent = `
         :root {
-          --plyr-color-main: #da70d6;
-          --plyr-control-radius: 0.25rem;
-          --plyr-range-track-height: 0.25rem;
-        }
+  --plyr-color-main: var(--color-primary);
+  --plyr-control-radius: 0.25rem;
+  --plyr-range-track-height: 0.25rem;
+}
         .plyr {
           background-color: #1a0d1a;
         }
