@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
+  title: "Privacy | OtakuNaija",
   description: "How OtakuNaija collects, uses, and protects your information.",
   alternates: { canonical: "/privacy" },
 }
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
 
             <h2>Third-party services</h2>
             <p>
-              We use Google AdSense to serve ads. Google and its partners may use cookies to deliver advertisements
+              We use Ads pateners to serve ads. Our ads partners may use cookies to deliver advertisements
               based on your prior visits to this and other websites. You can opt out of personalized advertising by
               visiting <a href="https://adssettings.google.com" target="_blank" rel="noreferrer">Google Ads
               Settings</a>.

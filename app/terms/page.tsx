@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions",
+  title: "Terms | OtakuNaija",
   description: "The terms governing your use of OtakuNaija.",
   alternates: { canonical: "/terms" },
 }

@@ -6,7 +6,7 @@ import { ContactForm } from "@/components/contact-form"
 import { AdSlot } from "@/components/ad-slot"
 
 export const metadata: Metadata = {
-  title: "Contact OtakuNaija",
+  title: "Contact | OtakuNaija",
   description:
     "Get in touch with the OtakuNaija team. Send tips, pitch articles, or share feedback about Nigeria's leading anime publication.",
   alternates: { canonical: "/contact" },

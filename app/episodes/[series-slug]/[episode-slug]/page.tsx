@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!data) {
     return {
-      title: 'Episode Not Found | OtakuNaija Episodes',
+      title: 'Episode Not Found | OtakuNaija',
       description: 'The episode you are looking for could not be found.',
     }
   }

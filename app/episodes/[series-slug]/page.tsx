@@ -20,13 +20,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!data) {
     return {
-      title: 'Series Not Found | OtakuNaija Episodes',
+      title: 'Series Not Found',
       description: 'The series you are looking for could not be found.',
     }
   }
 
   return {
-    title: `${data.series.title} | OtakuNaija Episodes`,
+    title: `${data.series.title}`,
     description: data.series.synopsis || `Watch ${data.series.title} on OtakuNaija.`,
     alternates: { canonical: `/episodes/${data.series.slug}` },
     openGraph: {

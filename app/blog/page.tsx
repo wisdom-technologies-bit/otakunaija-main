@@ -21,7 +21,7 @@ export async function generateMetadata({
       : undefined
 
   return {
-    title: category ? `${category} Anime — Blog` : "Anime Blog — Latest News, Reviews & Guides",
+    title: category ? `${category} | OtakuNaija` : "Anime Blog | OtakuNaija",
     description: category
       ? `Browse all ${category} anime articles on OtakuNaija.`
       : "Browse all anime articles on OtakuNaija — Shonen, Romance, Action, and guides for Nigerian anime fans.",
