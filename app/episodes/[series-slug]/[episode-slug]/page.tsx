@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!data) {
     return {
-      title: 'Episode Not Found | OtakuNaija',
+      title: 'Episode Not Found',
       description: 'The episode you are looking for could not be found.',
     }
   }
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const seriesSlugValue = series?.slug ?? ''
 
   return {
-    title: `${episode.title} — ${series?.title || 'Episode'} | OtakuNaija`,
+    title: `${episode.title} — ${series?.title || 'Episode'}`,
     alternates: { canonical: `/episodes/${seriesSlugValue}/${episode.slug}` },
     description:
       episode.synopsis ||

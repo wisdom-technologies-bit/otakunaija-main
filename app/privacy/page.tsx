@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 
 export const metadata: Metadata = {
-  title: "Privacy | OtakuNaija",
+  title: "Privacy",
   description: "How OtakuNaija collects, uses, and protects your information.",
   alternates: { canonical: "/privacy" },
 }

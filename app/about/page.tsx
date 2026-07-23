@@ -7,7 +7,7 @@ import { AdSlot } from "@/components/ad-slot"
 import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
-  title: "About | OtakuNaija",
+  title: "About",
   description:
     "Learn about OtakuNaija — Nigeria's home for anime news, reviews, and culture. Our story, mission, and the team behind every article.",
   alternates: { canonical: "/about" },

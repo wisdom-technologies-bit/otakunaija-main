@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: 'Watch original anime series. Discover exclusive anime content.',
   alternates: { canonical: '/episodes' },
   openGraph: {
-    title: 'Episodes | OtakuNaija',
+    title: 'Episodes',
     description: 'Watch original anime series and episodes.',
   },
 }
