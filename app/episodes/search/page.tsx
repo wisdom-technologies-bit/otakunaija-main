@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
-import { searchEpisodesAndSeries } from '@/lib/db/queries'
+import { searchEpisodesAndSeriesSmart } from '@/lib/db/queries'
 import { SeriesCard } from '@/components/episodes/series-card'
 import { EpisodeRow } from '@/components/episodes/episode-row'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
@@ -29,7 +29,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   let hasResults = false
 
   if (query) {
-    const results = await searchEpisodesAndSeries(query)
+    const results = await searchEpisodesAndSeriesSmart(query)
     seriesResults = results.seriesResults
     episodesResults = results.episodesResults
     hasResults = seriesResults.length > 0 || episodesResults.length > 0

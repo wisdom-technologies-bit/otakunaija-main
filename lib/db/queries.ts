@@ -150,6 +150,69 @@ export async function searchEpisodesAndSeries(query: string) {
   return { seriesResults, episodesResults }
 }
 
+// Smarter search: splits the query into words and matches series title,
+// episode title, and episode number independently, so a query like
+// "One Piece Episode 1170" correctly finds series "One Piece" episode 1170
+// even though no single field contains that literal phrase
+export async function searchEpisodesAndSeriesSmart(query: string) {
+  const words = query
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  // Pull out any word that's purely numeric — treat it as a possible episode number
+  const numericWords = words.filter((w) => /^\d+$/.test(w))
+  // Remaining words (ignoring generic words like "episode"/"ep") form the text query
+  const textWords = words.filter(
+    (w) => !/^\d+$/.test(w) && !/^ep(isode)?s?$/i.test(w)
+  )
+  const textQuery = textWords.join(' ')
+  const textLike = `%${textQuery}%`
+
+  // Series matching: title or synopsis contains the text portion of the query
+  const seriesResults = textQuery
+    ? await db
+        .select()
+        .from(series)
+        .where(sql`${series.title} ILIKE ${textLike} OR ${series.synopsis} ILIKE ${textLike}`)
+        .orderBy(desc(series.createdAt))
+    : []
+
+  // Episode matching: title/synopsis matches the text portion,
+  // OR the episode number matches any numeric word in the query,
+  // OR the episode's parent series title matches the text portion
+  // (this last part is what makes "One Piece Episode 1170" work)
+  const episodesResults = await db
+    .select({
+      episode: episodes,
+      series: series,
+    })
+    .from(episodes)
+    .leftJoin(series, eq(episodes.seriesId, series.id))
+    .where(
+      sql`
+        (${textQuery ? sql`${episodes.title} ILIKE ${textLike} OR ${episodes.synopsis} ILIKE ${textLike} OR ${series.title} ILIKE ${textLike}` : sql`FALSE`})
+        ${numericWords.length > 0 ? sql`OR ${episodes.episodeNumber} IN (${sql.join(numericWords.map((n) => sql`${parseInt(n, 10)}`), sql`, `)})` : sql``}
+      `
+    )
+    .orderBy(desc(episodes.publishedAt))
+
+  // If both a series-name match AND a specific episode number were given,
+  // prioritize episodes whose series actually matches that text too —
+  // this filters out coincidental episode-number matches from unrelated series
+  const refinedEpisodesResults =
+    textQuery && numericWords.length > 0
+      ? episodesResults.filter(
+          (r) =>
+            r.series &&
+            (r.series.title.toLowerCase().includes(textQuery.toLowerCase()) ||
+              numericWords.includes(r.episode.episodeNumber.toString()))
+        )
+      : episodesResults
+
+  return { seriesResults, episodesResults: refinedEpisodesResults }
+}
+
 // Get episode count for a series
 export async function getSeriesEpisodeCount(seriesId: number) {
   const result = await db
