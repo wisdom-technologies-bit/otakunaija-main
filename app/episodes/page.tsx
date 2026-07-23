@@ -8,7 +8,7 @@ import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 
 export const metadata: Metadata = {
-  title: 'Episodes | OtakuNaija',
+  title: 'Episodes',
   description: 'Watch original anime series. Discover exclusive anime content.',
   alternates: { canonical: '/episodes' },
   openGraph: {
