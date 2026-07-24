@@ -54,7 +54,7 @@ export function PostCard({ post, variant = "default", className, priority = fals
       <Link
         href={`/blog/${post.slug}`}
         className={cn(
-          "relative block aspect-[16/13] sm:aspect-[16/10] w-full overflow-hidden bg-muted",
+          "relative block aspect-[16/10] w-full overflow-hidden bg-muted",
           isFeatured && "md:aspect-auto md:w-1/2",
         )}
       >
@@ -68,27 +68,27 @@ export function PostCard({ post, variant = "default", className, priority = fals
           sizes={isFeatured ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"}
         />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background/70 to-transparent" />
-        <span className="absolute left-3 top-3 rounded-full bg-primary px-2 py-[3px] text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+        <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground">
           {post.category}
         </span>
       </Link>
 
-      <div className={cn("flex flex-1 flex-col p-2 sm:p-5", isFeatured && "md:p-7")}>
+      <div className={cn("flex flex-1 flex-col p-5", isFeatured && "md:p-7")}>
         <Link href={`/blog/${post.slug}`} className="block">
           <h3
             className={cn(
               "font-display font-bold leading-tight text-foreground transition-colors group-hover:text-primary text-balance",
-              isFeatured ? "text-2xl md:text-3xl" : "text-[1rem] sm:text-lg leading-snug",
+              isFeatured ? "text-2xl md:text-3xl" : "text-lg",
             )}
           >
             {post.title}
           </h3>
         </Link>
-        <p className={cn("mt-2 line-clamp-2 text-[11px] sm:text-sm leading-relaxed text-muted-foreground", isFeatured && "md:text-base")}>
+        <p className={cn("mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground", isFeatured && "md:text-base")}>
           {post.excerpt}
         </p>
 
-        <div className="mt-auto pt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs text-muted-foreground">
+        <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1 font-medium text-foreground/80 truncate max-w-[40%]">
             <User className="h-3 w-3 flex-shrink-0" /> {post.author}
           </span>
