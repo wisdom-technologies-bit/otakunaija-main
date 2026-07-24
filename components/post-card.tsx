@@ -161,6 +161,3 @@ export function PostCard({ post, variant = "default", className, priority = fals
     </>
   )
 }
-
-return (
-  <article
