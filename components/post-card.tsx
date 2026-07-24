@@ -54,7 +54,7 @@ export function PostCard({ post, variant = "default", className, priority = fals
       <Link
         href={`/blog/${post.slug}`}
         className={cn(
-          "relative block aspect-[16/11] sm:aspect-[16/10] w-full overflow-hidden bg-muted",
+          "relative block aspect-[16/13] sm:aspect-[16/10] w-full overflow-hidden bg-muted",
           isFeatured && "md:aspect-auto md:w-1/2",
         )}
       >
