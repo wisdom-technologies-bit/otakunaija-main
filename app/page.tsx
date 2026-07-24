@@ -107,7 +107,7 @@ export default async function HomePage() {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {recent.slice(0, 4).map((p) => (
                     <PostCard key={p.id} post={p} />
                   ))}
