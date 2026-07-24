@@ -54,9 +54,9 @@ export function PostCard({ post, variant = "default", className, priority = fals
       <Link
         href={`/blog/${post.slug}`}
         className={cn(
-          "relative block aspect-[16/10] w-full overflow-hidden bg-muted",
-          isFeatured && "md:aspect-auto md:w-1/2",
-        )}
+  "relative block aspect-[16/11] sm:aspect-[16/10] w-full overflow-hidden bg-muted",
+  isFeatured && "md:aspect-auto md:w-1/2",
+)}
       >
         <Image
           src={getCoverImage(post, isFeatured ? 1200 : 800, isFeatured ? 750 : 500)}
