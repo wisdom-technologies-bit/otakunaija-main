@@ -8,17 +8,21 @@ import { AdSlot } from "@/components/ad-slot"
 import { NewsletterForm } from "@/components/newsletter-form"
 import { Button } from "@/components/ui/button"
 import { getFeaturedPosts, getRecentPosts, getTrendingPosts, CATEGORIES } from "@/lib/posts"
+import { InfinitePostList } from "@/components/infinite-post-list"
+import { HeroCarousel } from "@/components/hero-carousel"
+import { HomepageLatestSection } from "@/components/homepage-latest-section"
 
 export const revalidate = 300
 
 export default async function HomePage() {
   const [featured, recent, trending] = await Promise.all([
-    getFeaturedPosts(3),
+    getFeaturedPosts(4),
     getRecentPosts(6),
     getTrendingPosts(5),
   ])
 
-  const [hero, ...secondaryFeatured] = featured
+  const heroSlides = featured.slice(0, 4)
+  const secondaryFeatured = featured.slice(4)
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -38,7 +42,7 @@ export default async function HomePage() {
                   <Sparkles className="h-4 w-4" />
                   <span className="text-xs font-semibold uppercase tracking-wider">Featured Story</span>
                 </div>
-                {hero ? <PostCard post={hero} variant="featured" priority /> : null}
+                <HeroCarousel posts={heroSlides} />
               </div>
 
               <div className="rounded-xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-6 md:p-8 flex flex-col justify-between">
@@ -113,11 +117,11 @@ export default async function HomePage() {
                   <AdSlot slot="in-article" />
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
-                  {recent.slice(4).map((p) => (
-                    <PostCard key={p.id} post={p} />
-                  ))}
-                </div>
+                <HomepageLatestSection
+                  categories={CATEGORIES}
+                  initialPosts={recent.slice(4)}
+                  initialOffset={recent.length}
+                />
               </div>
 
               <Sidebar recent={recent.slice(0, 4)} trending={trending} />

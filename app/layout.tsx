@@ -6,6 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { HideV0Badge } from "@/components/HideV0Badge"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import "./globals.css"
 
 const inter = Inter({
@@ -114,36 +115,37 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable} bg-background`}>
-       <head>
-  <meta name="monetag" content="3ebb044040c6a2400146260166c743ea" />
-  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+      <head>
+        <meta name="monetag" content="3ebb044040c6a2400146260166c743ea" />
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 
-  {/* Google Analytics */}
-  <Script
-    async
-    src="https://www.googletagmanager.com/gtag/js?id=G-GYQ1098DHR"
-    strategy="afterInteractive"
-  />
-  <Script id="google-analytics" strategy="afterInteractive">
-    {`
+        {/* Google Analytics */}
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-GYQ1098DHR"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-GYQ1098DHR');
     `}
-  </Script>
+        </Script>
 
-  {/* Monetag */}
-  <script
-    dangerouslySetInnerHTML={{
-      __html: `(function(s){s.dataset.zone='11348618'; s.src='https://al5sm.com/tag.min.js'; [document.documentElement, document.body].filter(Boolean).pop().appendChild(s)})(document.createElement('script'))`
-    }}
-  />
-</head>
+        {/* Monetag */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(s){s.dataset.zone='11348618'; s.src='https://al5sm.com/tag.min.js'; [document.documentElement, document.body].filter(Boolean).pop().appendChild(s)})(document.createElement('script'))`
+          }}
+        />
+      </head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <HideV0Badge />
           {children}
+          <MobileBottomNav />
           <Toaster richColors position="top-center" />
         </ThemeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}

@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Clock, Eye, User, Calendar } from "lucide-react"
-import { type Post, formatDate, getCoverImage } from "@/lib/posts"
+import { type Post, formatDate, formatRelativeTime, getCoverImage } from "@/lib/posts"
 import { cn } from "@/lib/utils"
 
 type PostCardProps = {
@@ -94,7 +94,7 @@ export function PostCard({ post, variant = "default", className, priority = fals
           </span>
           <span aria-hidden className="hidden sm:inline">•</span>
           <time dateTime={post.published_at} className="inline-flex items-center gap-1 whitespace-nowrap">
-            <Calendar className="h-3 w-3" /> {formatDate(post.published_at)}
+            <Calendar className="h-3 w-3" /> {formatRelativeTime(post.published_at)}
           </time>
           <span aria-hidden className="hidden sm:inline">•</span>
           <span className="inline-flex items-center gap-1 whitespace-nowrap">

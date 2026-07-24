@@ -47,11 +47,12 @@ export async function getTrendingPosts(limit = 5): Promise<Post[]> {
   return rows as Post[]
 }
 
-export async function getRecentPosts(limit = 6): Promise<Post[]> {
+export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
   const rows = await sql`
     SELECT * FROM posts
     ORDER BY published_at DESC
     LIMIT ${limit}
+    OFFSET ${offset}
   `
   return rows as Post[]
 }
@@ -120,4 +121,20 @@ export async function getAllSlugs(): Promise<{ slug: string; published_at: strin
 export function formatDate(date: string | Date) {
   const d = typeof date === "string" ? new Date(date) : date
   return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+}
+
+export function formatRelativeTime(dateString: string): string {
+  const now = new Date()
+  const then = new Date(dateString)
+  const diffMs = now.getTime() - then.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHour = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHour / 24)
+
+  if (diffSec < 60) return `${diffSec}s ago`
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHour < 24) return `${diffHour}h ago`
+  if (diffDay < 7) return `${diffDay}d ago`
+  return formatDate(dateString)
 }

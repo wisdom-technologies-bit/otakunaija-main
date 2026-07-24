@@ -13,7 +13,9 @@ type SidebarProps = {
 export function Sidebar({ recent, trending }: SidebarProps) {
   return (
     <aside className="space-y-8 lg:sticky lg:top-20">
-      <NewsletterForm variant="card" />
+      <div id="newsletter" className="scroll-mt-24">
+        <NewsletterForm variant="card" />
+      </div>
 
       <AdSlot slot="sidebar" />
 

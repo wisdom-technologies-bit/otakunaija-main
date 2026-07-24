@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { Menu, Search, X } from "lucide-react"
+import { Mail, Menu, Search, X } from "lucide-react"
 import { CATEGORIES } from "@/lib/posts"
 import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/search-bar"
@@ -23,6 +23,23 @@ export function SiteHeader() {
   const router = useRouter()
   const isEpisodesSection = pathname?.startsWith("/episodes")
   const isHome = pathname === "/"
+
+  const handleNewsletterClick = () => {
+    const target = document.getElementById("newsletter")
+    if (!target) {
+      // Newsletter section isn't on this page (e.g. an admin page) — go to homepage first
+      router.push("/#newsletter")
+      return
+    }
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches
+    if (isDesktop) {
+      // Already visible on desktop — pulse-highlight instead of scrolling
+      target.classList.add("newsletter-highlight")
+      setTimeout(() => target.classList.remove("newsletter-highlight"), 1200)
+    } else {
+      target.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }
   const visibleNavLinks = NAV_LINKS.filter((l) => {
     if (l.href === "/" && isHome) return false
     if (l.href === "/episodes" && isEpisodesSection) return false
@@ -66,6 +83,22 @@ export function SiteHeader() {
             {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
           </Button>
           <ThemeToggle />
+          <Button
+            variant="default"
+            onClick={handleNewsletterClick}
+            className="hidden md:inline-flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Mail className="h-4 w-4" /> Newsletter
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNewsletterClick}
+            aria-label="Newsletter"
+            className="md:hidden text-primary hover:text-primary/80"
+          >
+            <Mail className="h-5 w-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

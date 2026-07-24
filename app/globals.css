@@ -134,6 +134,22 @@
 }
 
 @layer utilities {
+  .newsletter-highlight {
+    animation: newsletter-pulse 1.2s ease-in-out;
+  }
+
+  @keyframes newsletter-pulse {
+
+    0%,
+    100% {
+      transform: scale(1);
+    }
+
+    30% {
+      transform: scale(1.03);
+      box-shadow: 0 0 0 4px rgba(var(--primary-rgb, 255, 0, 0), 0.25);
+    }
+  }
 
   [class*="v0"],
   [id*="v0"],
@@ -200,4 +216,9 @@
   .prose-anime td {
     @apply border border-border px-3 py-2 text-foreground/90;
   }
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 3.75rem;
+  }
+}
 }
