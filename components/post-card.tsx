@@ -73,22 +73,22 @@ export function PostCard({ post, variant = "default", className, priority = fals
         </span>
       </Link>
 
-      <div className={cn("flex flex-1 flex-col p-5", isFeatured && "md:p-7")}>
+      <div className={cn("flex flex-1 flex-col p-3 sm:p-5", isFeatured && "md:p-7")}>
         <Link href={`/blog/${post.slug}`} className="block">
           <h3
             className={cn(
               "font-display font-bold leading-tight text-foreground transition-colors group-hover:text-primary text-balance",
-              isFeatured ? "text-2xl md:text-3xl" : "text-lg",
+              isFeatured ? "text-2xl md:text-3xl" : "text-base sm:text-lg",
             )}
           >
             {post.title}
           </h3>
         </Link>
-        <p className={cn("mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground", isFeatured && "md:text-base")}>
+        <p className={cn("mt-2 line-clamp-2 text-xs sm:text-sm leading-relaxed text-muted-foreground", isFeatured && "md:text-base")}>
           {post.excerpt}
         </p>
 
-        <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <div className="mt-auto pt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1 font-medium text-foreground/80 truncate max-w-[40%]">
             <User className="h-3 w-3 flex-shrink-0" /> {post.author}
           </span>
