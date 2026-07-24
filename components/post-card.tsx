@@ -94,13 +94,13 @@ export function PostCard({ post, variant = "default", className, priority = fals
       </article>
 
       {/* Desktop Layout */}
-      <div className="hidden md:block"></div>
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
-        isFeatured && "md:flex-row",
-        className,
-      )}
-    >
+<article
+  className={cn(
+    "hidden md:flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
+    isFeatured && "md:flex-row",
+    className,
+  )}
+>
       <Link
         href={`/blog/${post.slug}`}
         className={cn(
@@ -158,7 +158,6 @@ export function PostCard({ post, variant = "default", className, priority = fals
         </div>
       </div>
         </article>
-      </div>
     </>
   )
 }
