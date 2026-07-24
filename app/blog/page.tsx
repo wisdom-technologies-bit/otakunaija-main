@@ -120,7 +120,7 @@ export default async function BlogPage({
                   </Empty>
                 ) : (
                   <>
-                    <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-4">
                       {posts.slice(0, 4).map((p) => (
                         <PostCard key={p.id} post={p} />
                       ))}
@@ -133,7 +133,7 @@ export default async function BlogPage({
                     ) : null}
 
                     {posts.length > 4 ? (
-                      <div className="grid gap-6 sm:grid-cols-2">
+                      <div className="grid grid-cols-2 gap-4">
                         {posts.slice(4).map((p) => (
                           <PostCard key={p.id} post={p} />
                         ))}
