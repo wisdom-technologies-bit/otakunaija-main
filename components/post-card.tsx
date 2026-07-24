@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 type PostCardProps = {
   post: Post
-  variant?: "default" | "featured" | "compact"
+  variant?: "default" | "featured" | "compact" | "feed"
   className?: string
   priority?: boolean
 }
@@ -14,6 +14,7 @@ type PostCardProps = {
 export function PostCard({ post, variant = "default", className, priority = false }: PostCardProps) {
   const isFeatured = variant === "featured"
   const isCompact = variant === "compact"
+  const isFeed = variant === "feed"
 
   if (isCompact) {
     return (
@@ -43,8 +44,57 @@ export function PostCard({ post, variant = "default", className, priority = fals
     )
   }
 
+  if (isFeed) {
   return (
-    <article
+    <>
+      {/* Mobile Layout */}
+      <article className="group rounded-xl border border-border bg-card p-3 md:hidden">
+        <Link
+          href={`/blog/${post.slug}`}
+          className={cn(
+            getCoverImage(post)
+              ? "flex gap-3"
+              : "block"
+          )}
+        >
+          {getCoverImage(post) && (
+            <div className="relative h-28 w-32 flex-shrink-0 overflow-hidden rounded-lg">
+              <Image
+                src={getCoverImage(post, 400, 300)}
+                alt={post.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-3">
+              {post.title}
+            </h3>
+
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <User className="h-3 w-3" />
+                {post.author}
+              </span>
+
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formatRelativeTime(post.published_at)}
+              </span>
+
+              <span className="inline-flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                {post.views.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </Link>
+      </article>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:block"></div>
       className={cn(
         "group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
         isFeatured && "md:flex-row",
@@ -107,6 +157,11 @@ export function PostCard({ post, variant = "default", className, priority = fals
           ) : null}
         </div>
       </div>
-    </article>
+        </article>
+      </div>
+    </>
   )
 }
+
+return (
+  <article

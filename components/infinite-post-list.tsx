@@ -59,7 +59,11 @@ export function InfinitePostList({ initialPosts, initialOffset, category }: Infi
     <div>
       <div className="grid gap-6 sm:grid-cols-2">
         {posts.map((p) => (
-          <PostCard key={p.id} post={p} />
+          <PostCard
+            key={p.id}
+            post={p}
+            variant="feed"
+          />
         ))}
       </div>
 
