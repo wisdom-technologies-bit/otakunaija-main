@@ -6,6 +6,7 @@ import { PostCard } from "@/components/post-card"
 import { Sidebar } from "@/components/sidebar"
 import { SearchBar } from "@/components/search-bar"
 import { AdSlot } from "@/components/ad-slot"
+import { InfinitePostList } from "@/components/infinite-post-list"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { CATEGORIES, getAllPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
 
@@ -133,11 +134,11 @@ export default async function BlogPage({
                     ) : null}
 
                     {posts.length > 4 ? (
-                      <div className="grid gap-6 sm:grid-cols-2">
-                        {posts.slice(4).map((p) => (
-                          <PostCard key={p.id} post={p} />
-                        ))}
-                      </div>
+                      <InfinitePostList
+                        initialPosts={posts.slice(4)}
+                        initialOffset={posts.length}
+                        category={category}
+                      />
                     ) : null}
                   </>
                 )}
