@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { PostCard } from '@/components/post-card'
+import { MobileTrendingRow } from '@/components/mobile-trending-row'
 import { loadMorePosts } from '@/app/actions/load-more-posts'
 import type { Post } from '@/lib/posts'
 import { Loader2 } from 'lucide-react'
@@ -11,6 +12,8 @@ interface InfinitePostListProps {
   initialOffset: number
   category?: string | null
 }
+
+const CARD_STYLE_COUNT = 5 // first 5 posts always use the full PostCard, even on mobile
 
 export function InfinitePostList({ initialPosts, initialOffset, category }: InfinitePostListProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts)
@@ -48,20 +51,40 @@ export function InfinitePostList({ initialPosts, initialOffset, category }: Infi
           loadMore()
         }
       },
-      { rootMargin: '400px' } // start loading a bit before the sentinel is actually visible
+      { rootMargin: '400px' }
     )
 
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [loadMore])
 
+  const cardPosts = posts.slice(0, CARD_STYLE_COUNT)
+  const rowPosts = posts.slice(CARD_STYLE_COUNT)
+
   return (
     <div>
+      {/* First 5 posts: always the full card style, on every breakpoint */}
       <div className="grid gap-6 sm:grid-cols-2">
-        {posts.map((p) => (
+        {cardPosts.map((p) => (
           <PostCard key={p.id} post={p} />
         ))}
       </div>
+
+      {/* Remaining posts: compact rows on mobile, full cards on desktop */}
+      {rowPosts.length > 0 && (
+        <>
+          <div className="mt-6 sm:hidden">
+            {rowPosts.map((p) => (
+              <MobileTrendingRow key={p.id} post={p} />
+            ))}
+          </div>
+          <div className="mt-6 hidden gap-6 sm:grid sm:grid-cols-2">
+            {rowPosts.map((p) => (
+              <PostCard key={p.id} post={p} />
+            ))}
+          </div>
+        </>
+      )}
 
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-8">
