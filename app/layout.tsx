@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | OtakuNaija",
   },
   description:
-    "OtakuNaija is Nigeria's home for anime fans. Get the latest anime news, in-depth reviews, episode breakdowns, and recommendations across Shonen, Romance, Action, and more.",
+  "OtakuNaija – Nigeria's anime hub. Get the latest news, in-depth reviews, episode breakdowns, and recommendations for Shonen, Romance, Action, and more.",
   keywords: [
     "anime",
     "anime Nigeria",

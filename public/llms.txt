@@ -1,0 +1,34 @@
+# OtakuNaija
+
+OtakuNaija is Nigeria's premier anime community. We publish daily news, in-depth reviews, episode breakdowns, and curated recommendations for anime fans across Africa and the world. We also help you find and watch anime episodes through our episode search and streaming links.
+
+## What we cover
+- Anime News (new seasons, announcements, trailers)
+- Anime Reviews (in-depth analysis of series and movies)
+- Episode Guides (recaps and breakdowns)
+- Watch Anime (episode listings, streaming sources, and direct watch links)
+- Recommendations (personalised watchlists)
+
+## Watch Anime
+- Browse episodes by series
+- Search for specific episodes
+- Find legal streaming options (where available)
+- Episode guides and summaries
+
+## Key Categories
+- Shonen (e.g., One Piece, Naruto, Jujutsu Kaisen)
+- Romance (e.g., Horimiya, Kaguya-sama)
+- Action (e.g., Attack on Titan, Demon Slayer)
+- Isekai (e.g., Re:Zero, Mushoku Tensei)
+- Slice of Life (e.g., Bocchi the Rock!)
+- Manga & Light Novels
+
+## Contact & Social
+- Website: https://otakunajia.name.ng
+- Twitter/X: https://x.com/otakunaija
+- Email: info@otakunajia.name.ng
+
+## Search
+- Article search: /blog?q=One%20Piece
+- Episode search: /episodes/search?q=Naruto
+- Browse episodes by series: /episodes/[series-slug]
