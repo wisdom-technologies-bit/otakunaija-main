@@ -129,7 +129,7 @@ export default async function BlogPage({
 
                     {posts.length > 4 ? (
                       <div className="my-10">
-                        <AdSlot slot="in-article" />
+                        <AdSlot slot="footer" />
                       </div>
                     ) : null}
 
