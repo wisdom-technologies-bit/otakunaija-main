@@ -114,7 +114,7 @@ export default async function HomePage() {
                 </div>
 
                 <div className="my-10">
-                  <AdSlot slot="in-article" />
+                  <AdSlot slot="footer" />
                 </div>
 
                 <HomepageLatestSection
