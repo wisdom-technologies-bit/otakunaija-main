@@ -11,16 +11,22 @@ interface InfinitePostListProps {
   initialPosts: Post[]
   initialOffset: number
   category?: string | null
+  trendingIds: number[]
 }
 
-const CARD_STYLE_COUNT = 5 // first 5 posts always use the full PostCard, even on mobile
-
-export function InfinitePostList({ initialPosts, initialOffset, category }: InfinitePostListProps) {
+export function InfinitePostList({
+  initialPosts,
+  initialOffset,
+  category,
+  trendingIds,
+}: InfinitePostListProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts)
   const [offset, setOffset] = useState(initialOffset)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialPosts.length > 0)
   const sentinelRef = useRef<HTMLDivElement>(null)
+
+  const trendingSet = new Set(trendingIds)
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return
@@ -58,33 +64,28 @@ export function InfinitePostList({ initialPosts, initialOffset, category }: Infi
     return () => observer.disconnect()
   }, [loadMore])
 
-  const cardPosts = posts.slice(0, CARD_STYLE_COUNT)
-  const rowPosts = posts.slice(CARD_STYLE_COUNT)
-
   return (
     <div>
-      {/* First 5 posts: always the full card style, on every breakpoint */}
-      <div className="grid gap-6 sm:grid-cols-2">
-        {cardPosts.map((p) => (
+      {/* Desktop: always the full card grid, regardless of trending status */}
+      <div className="hidden gap-6 sm:grid sm:grid-cols-2">
+        {posts.map((p) => (
           <PostCard key={p.id} post={p} />
         ))}
       </div>
 
-      {/* Remaining posts: compact rows on mobile, full cards on desktop */}
-      {rowPosts.length > 0 && (
-        <>
-          <div className="mt-6 sm:hidden">
-            {rowPosts.map((p) => (
-              <MobileTrendingRow key={p.id} post={p} />
-            ))}
-          </div>
-          <div className="mt-6 hidden gap-6 sm:grid sm:grid-cols-2">
-            {rowPosts.map((p) => (
-              <PostCard key={p.id} post={p} />
-            ))}
-          </div>
-        </>
-      )}
+      {/* Mobile: trending posts render as cards wherever they fall in the list;
+          everything else renders as a compact row */}
+      <div className="sm:hidden">
+        {posts.map((p) =>
+          trendingSet.has(p.id) ? (
+            <div key={p.id} className="mb-6">
+              <PostCard post={p} />
+            </div>
+          ) : (
+            <MobileTrendingRow key={p.id} post={p} />
+          )
+        )}
+      </div>
 
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-8">

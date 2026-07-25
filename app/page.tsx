@@ -121,6 +121,7 @@ export default async function HomePage() {
                   categories={CATEGORIES}
                   initialPosts={recent.slice(4)}
                   initialOffset={recent.length}
+                  trendingIds={trending.map((p) => p.id)}
                 />
               </div>
 

@@ -138,6 +138,7 @@ export default async function BlogPage({
                         initialPosts={posts.slice(4)}
                         initialOffset={posts.length}
                         category={category}
+                        trendingIds={trending.map((p) => p.id)}
                       />
                     ) : null}
                   </>

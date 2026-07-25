@@ -9,12 +9,14 @@ interface HomepageLatestSectionProps {
   categories: readonly string[]
   initialPosts: Post[]
   initialOffset: number
+  trendingIds: number[]
 }
 
 export function HomepageLatestSection({
   categories,
   initialPosts,
   initialOffset,
+  trendingIds,
 }: HomepageLatestSectionProps) {
   const [category, setCategory] = useState<string | null>(null)
 
@@ -28,6 +30,7 @@ export function HomepageLatestSection({
         initialPosts={category ? [] : initialPosts}
         initialOffset={category ? 0 : initialOffset}
         category={category}
+        trendingIds={trendingIds}
       />
     </div>
   )
