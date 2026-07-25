@@ -188,7 +188,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{firstHalf}</ReactMarkdown>
 
                 <div className="my-10 not-prose">
-                  <AdSlot slot="in-article" />
+                  <AdSlot slot="footer" />
                 </div>
 
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{secondHalf}</ReactMarkdown>
