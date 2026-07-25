@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Home, Newspaper, Clapperboard, Search, Menu } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const TABS = [
   { href: '/', label: 'Home', icon: Home },
@@ -15,12 +15,31 @@ export function MobileBottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const [moreOpen, setMoreOpen] = useState(false)
+  const [footerVisible, setFooterVisible] = useState(false)
 
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname?.startsWith(href))
 
+  useEffect(() => {
+    const footer = document.querySelector('footer')
+    if (!footer) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setFooterVisible(entry.isIntersecting)
+      },
+      { threshold: 0.05 } // trigger as soon as a sliver of the footer appears
+    )
+
+    observer.observe(footer)
+    return () => observer.disconnect()
+  }, [pathname])
+
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-background/95 backdrop-blur md:hidden">
+      <nav
+        className={`fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-background/95 backdrop-blur transition-opacity duration-500 md:hidden ${footerVisible ? 'pointer-events-none opacity-0' : 'opacity-100'
+          }`}
+      >
         {TABS.map((tab) => {
           const Icon = tab.icon
           const active = isActive(tab.href)
@@ -28,9 +47,8 @@ export function MobileBottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${
-                active ? 'text-primary' : 'text-foreground/60'
-              }`}
+              className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${active ? 'text-primary' : 'text-foreground/60'
+                }`}
             >
               <Icon className="h-5 w-5" />
               {tab.label}
