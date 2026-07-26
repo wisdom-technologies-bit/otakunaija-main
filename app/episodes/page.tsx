@@ -54,14 +54,14 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
       getAllUsedGenres(),
       genre ? getSeriesByGenre(genre) : Promise.resolve(null),
     ])
-    ;[
-      allSeriesWithCreators,
-      recentEpisodes,
-      ongoingSeries,
-      trendingSeries,
-      genres,
-      genreFiltered,
-    ] = results
+      ;[
+        allSeriesWithCreators,
+        recentEpisodes,
+        ongoingSeries,
+        trendingSeries,
+        genres,
+        genreFiltered,
+      ] = results
   } catch (err) {
     console.error('Error fetching episodes data:', err)
     error = 'Failed to load episodes. Please try again later.'
@@ -160,8 +160,8 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
         )}
 
         {/* New two‑column layout */}
-        <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-10">
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-10 min-w-0">
             <SeriesHeroCarousel seriesList={heroSeries} />
 
             <EpisodesFilterPills genres={genres} activeGenre={genre} />
