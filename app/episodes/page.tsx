@@ -125,43 +125,43 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
 
       <SiteHeader />
 
-      {/* Page Header – kept from original */}
-      <section className="border-b border-border/40 py-12 md:py-16">
+      {/* Page Header */}
+      <section className="border-b border-border/40 py-8 md:py-12">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
-          <div className="space-y-6">
-            <div className="space-y-3">
+          <div className="space-y-4">
+            <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-widest text-primary">
                 OtakuNaija Originals
               </p>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
                 Watch Original Anime Episodes
               </h1>
-              <p className="max-w-2xl text-lg text-foreground/70">
+              <p className="max-w-2xl text-sm md:text-base text-foreground/70">
                 Discover exclusive anime series and episodes. Explore original content.
               </p>
             </div>
-            <div className="max-w-2xl">
+            <div className="max-w-xl pt-2">
               <EpisodesSearchBar />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Sponsored Ad Slot (horizontal) – kept from original */}
-      <div className="mx-auto max-w-7xl w-full px-4 md:px-6 py-8">
+      {/* Sponsored Ad Slot (horizontal) */}
+      <div className="mx-auto max-w-7xl w-full px-4 md:px-6 py-6">
         <AdSlot variant="horizontal" label="Sponsored" />
       </div>
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-12">
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
         {error && (
           <div className="mb-8 rounded-lg border border-red-400/30 bg-red-900/10 p-4 text-red-400">
             {error}
           </div>
         )}
 
-        {/* New two‑column layout */}
+        {/* Two‑column layout with safety constraints */}
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-10 min-w-0">
+          <div className="space-y-10 min-w-0 overflow-hidden">
             <SeriesHeroCarousel seriesList={heroSeries} />
 
             <EpisodesFilterPills genres={genres} activeGenre={genre} />
