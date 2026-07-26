@@ -61,6 +61,29 @@ export default async function BlogPage({
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://otakunaija.name.ng/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Blog",
+                "item": "https://otakunaija.name.ng/blog"
+              }
+            ]
+          })
+        }}
+      />
       <SiteHeader />
 
       <main className="flex-1">

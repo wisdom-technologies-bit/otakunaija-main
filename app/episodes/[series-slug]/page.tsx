@@ -65,16 +65,55 @@ export default async function SeriesPage({ params }: Props) {
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
-      {/* Breadcrumb */}
-      <div className="border-b border-border/40 px-4 md:px-6 py-3">
-        <div className="mx-auto max-w-7xl text-sm text-foreground/70">
-          <Link href="/episodes" className="hover:text-primary transition-colors">
-            Episodes
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground">{series.title}</span>
-        </div>
-      </div>
+      {/* JSON-LD for BreadcrumbList and TVSeries */}
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://otakunaija.name.ng/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Episodes",
+              "item": "https://otakunaija.name.ng/episodes"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": series.title,
+              "item": `https://otakunaija.name.ng/episodes/${series.slug}`
+            }
+          ]
+        },
+        {
+          "@type": "TVSeries",
+          "name": series.title,
+          "description": series.synopsis || "",
+          "image": series.coverImageUrl || "",
+          "genre": series.genre ? [series.genre] : [],
+          "numberOfEpisodes": episodeCount,
+          "containsSeason": [
+            {
+              "@type": "TVSeason",
+              "name": "Season 1",
+              "numberOfEpisodes": episodeCount
+            }
+          ]
+        }
+      ]
+    })
+  }}
+/>
 
       {/* Hero Section */}
       <section className="relative h-96 w-full overflow-hidden bg-muted">

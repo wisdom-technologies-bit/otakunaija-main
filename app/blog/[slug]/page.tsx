@@ -74,20 +74,6 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     getTrendingPosts(5),
   ])
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: post.title,
-    description: post.excerpt,
-    author: { "@type": "Person", name: post.author },
-    datePublished: post.published_at,
-    image: [getCoverImage(post, 1200, 630)],
-    publisher: {
-      "@type": "Organization",
-      name: "OtakuNaija",
-    },
-  }
-
   const midpoint = Math.floor(post.content.length / 2)
   // Split at the nearest paragraph break so we don't cut a sentence in half
   const splitIndex = post.content.indexOf("\n\n", midpoint)
@@ -101,9 +87,59 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       <BlogViewTracker postId={post.id} />
 
       <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://otakunaija.name.ng/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Blog",
+              "item": "https://otakunaija.name.ng/blog"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": post.title,
+              "item": `https://otakunaija.name.ng/blog/${post.slug}`
+            }
+          ]
+        },
+        {
+          "@type": "BlogPosting",
+          "headline": post.title,
+          "description": post.excerpt,
+          "image": getCoverImage(post, 1200, 630),
+          "datePublished": post.published_at,
+          "dateModified": post.published_at, // use post.updated_at if available
+          "author": {
+            "@type": "Person",
+            "name": post.author,
+            "url": "https://otakunaija.name.ng"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "OtakuNaija",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://otakunaija.name.ng/android-chrome-512x512.png"
+            }
+          }
+        }
+      ]
+    })
+  }}
+/>
 
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 md:px-6">

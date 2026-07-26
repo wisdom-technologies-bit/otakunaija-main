@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | OtakuNaija",
   },
   description:
-  "OtakuNaija – Nigeria's anime hub. Get the latest news, in-depth reviews, episode breakdowns, and recommendations for Shonen, Romance, Action, and more.",
+    "OtakuNaija – Nigeria's anime hub. Get the latest news, in-depth reviews, episode breakdowns, and recommendations for Shonen, Romance, Action, and more.",
   keywords: [
     "anime",
     "anime Nigeria",
@@ -141,47 +141,46 @@ export default function RootLayout({
           }}
         />
         {/* Structured Data for SEO & AI Visibility (Supports Articles & Episodes) */}
-<script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "Organization",
-          "name": "OtakuNaija",
-          "url": "https://otakunajia.name.ng",
-          "logo": "https://otakunajia.name.ng/android-chrome-512x512.png",
-          "description": "Anime news, reviews, episode breakdowns, and guides for Nigerian otakus.",
-          "sameAs": [
-            "https://x.com/otakunaija"
-            // Add other social links here if needed
-          ]
-        },
-        {
-          "@type": "WebSite",
-          "name": "OtakuNaija",
-          "url": "https://otakunajia.name.ng",
-          "description": "Anime news, reviews, episode breakdowns, and guides for Nigerian otakus.",
-          "potentialAction": [
-            {
-              "@type": "SearchAction",
-              "target": "https://otakunajia.name.ng/blog?q={search_term_string}",
-              "query-input": "required name=search_term_string",
-              "name": "Search Articles"
-            },
-            {
-              "@type": "SearchAction",
-              "target": "https://otakunajia.name.ng/episodes/search?q={search_term_string}",
-              "query-input": "required name=search_term_string",
-              "name": "Search Episodes"
-            }
-          ]
-        }
-      ]
-    })
-  }}
-/>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "name": "OtakuNaija",
+                  "url": "https://otakunaija.name.ng",
+                  "logo": "https://otakunaija.name.ng/android-chrome-512x512.png",
+                  "description": "Anime news, reviews, episode breakdowns, and guides for Nigerian otakus.",
+                  "sameAs": [
+                    "https://x.com/otakunaija"
+                  ]
+                },
+                {
+                  "@type": "WebSite",
+                  "name": "OtakuNaija",
+                  "url": "https://otakunaija.name.ng",
+                  "description": "Anime news, reviews, episode breakdowns, and guides for Nigerian otakus.",
+                  "potentialAction": [
+                    {
+                      "@type": "SearchAction",
+                      "target": "https://otakunaija.name.ng/blog?q={search_term_string}",
+                      "query-input": "required name=search_term_string",
+                      "name": "Search Articles"
+                    },
+                    {
+                      "@type": "SearchAction",
+                      "target": "https://otakunaija.name.ng/episodes/search?q={search_term_string}",
+                      "query-input": "required name=search_term_string",
+                      "name": "Search Episodes"
+                    }
+                  ]
+                }
+              ]
+            })
+          }}
+        />
       </head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>

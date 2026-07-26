@@ -23,12 +23,14 @@ OtakuNaija is Nigeria's premier anime community. We publish daily news, in-depth
 - Slice of Life (e.g., Bocchi the Rock!)
 - Manga & Light Novels
 
-## Contact & Social
-- Website: https://otakunajia.name.ng
-- Twitter/X: https://x.com/otakunaija
-- Email: info@otakunajia.name.ng
-
-## Search
-- Article search: /blog?q=One%20Piece
-- Episode search: /episodes/search?q=Naruto
+## Site Structure & Technical Architecture
+- Built on Next.js with rich JSON-LD structured data for Articles, TVSeries, and Breadcrumbs.
+- Article search: /blog?q=[search_term]
+- Episode search: /episodes/search?q=[search_term]
 - Browse episodes by series: /episodes/[series-slug]
+- Single Article / Blog Post: /blog/[blog-slug]
+
+## Contact & Social
+- Website: https://otakunaija.name.ng
+- Twitter/X: https://x.com/otakunaija
+- Email: info@otakunaija.name.ng

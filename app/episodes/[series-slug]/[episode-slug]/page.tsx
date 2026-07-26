@@ -104,15 +104,60 @@ export default async function WatchPage({ params }: Props) {
   // Get all episodes for the "More Episodes" section
   const allEpisodes = await getEpisodesBySeries(series.id)
 
-  // 1. Generate the VideoObject Schema specifically for Google Search
+  // 1. Generate Schema for TVEpisode, VideoObject, and Breadcrumbs via @graph
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'VideoObject',
-    name: episode.title,
-    description: episode.synopsis || `Watch ${episode.title} on OtakuNaija.`,
-    thumbnailUrl: [episode.thumbnailUrl],
-    uploadDate: episode.publishedAt ? new Date(episode.publishedAt).toISOString() : new Date().toISOString(),
-    contentUrl: episode.videoUrl,
+    '@graph': [
+      {
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          {
+            '@type': 'ListItem',
+            'position': 1,
+            'name': 'Home',
+            'item': 'https://otakunaija.name.ng/'
+          },
+          {
+            '@type': 'ListItem',
+            'position': 2,
+            'name': 'Episodes',
+            'item': 'https://otakunaija.name.ng/episodes'
+          },
+          {
+            '@type': 'ListItem',
+            'position': 3,
+            'name': series.title,
+            'item': `https://otakunaija.name.ng/episodes/${seriesSlug}`
+          },
+          {
+            '@type': 'ListItem',
+            'position': 4,
+            'name': `Episode ${episode.episodeNumber}`,
+            'item': `https://otakunaija.name.ng/episodes/${seriesSlug}/${episode.slug}`
+          }
+        ]
+      },
+      {
+        '@type': 'TVEpisode',
+        'name': episode.title,
+        'episodeNumber': episode.episodeNumber,
+        'description': episode.synopsis || `Watch ${episode.title} on OtakuNaija.`,
+        'image': episode.thumbnailUrl,
+        'partOfSeries': {
+          '@type': 'TVSeries',
+          'name': series.title,
+          'url': `https://otakunaija.name.ng/episodes/${seriesSlug}`
+        }
+      },
+      {
+        '@type': 'VideoObject',
+        'name': episode.title,
+        'description': episode.synopsis || `Watch ${episode.title} on OtakuNaija.`,
+        'thumbnailUrl': [episode.thumbnailUrl],
+        'uploadDate': episode.publishedAt ? new Date(episode.publishedAt).toISOString() : new Date().toISOString(),
+        'contentUrl': episode.videoUrl,
+      }
+    ]
   }
 
   return (
