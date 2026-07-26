@@ -178,12 +178,9 @@ export function SeriesEditor({ mode, series, creators, justCreated }: Props) {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div>
           <div className="rounded-xl border border-border bg-card p-4">
-            <ImageUploader name="cover_image_url" defaultValue={series?.coverImageUrl ?? ""} label="Cover Image (wide banner)" />
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <ImageUploader name="poster_image_url" defaultValue={series?.posterImageUrl ?? ""} label="Poster Image (portrait, shown beside title)" />
+            <ImageUploader name="cover_image_url" defaultValue={series?.cover_image_url ?? ""} label="Cover Image" />
           </div>
         </div>
       </div>
