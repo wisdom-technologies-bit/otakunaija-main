@@ -26,7 +26,7 @@ export function OngoingSeriesScroll({ items }: OngoingSeriesScrollProps) {
             <Link
               key={`${s.id}-${i}`}
               href={`/episodes/${s.slug}`}
-              className="group/card w-44 flex-shrink-0"
+              className="group/card w-[75vw] max-w-[280px] sm:w-52 md:w-44 flex-shrink-0 snap-start"
             >
               <div className="relative aspect-video w-44 overflow-hidden rounded-lg bg-muted">
                 {s.coverImageUrl ? (

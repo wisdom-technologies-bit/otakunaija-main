@@ -66,54 +66,54 @@ export default async function SeriesPage({ params }: Props) {
       <SiteHeader />
 
       {/* JSON-LD for BreadcrumbList and TVSeries */}
-<script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://otakunaija.name.ng/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Episodes",
-              "item": "https://otakunaija.name.ng/episodes"
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "name": series.title,
-              "item": `https://otakunaija.name.ng/episodes/${series.slug}`
-            }
-          ]
-        },
-        {
-          "@type": "TVSeries",
-          "name": series.title,
-          "description": series.synopsis || "",
-          "image": series.coverImageUrl || "",
-          "genre": series.genre ? [series.genre] : [],
-          "numberOfEpisodes": episodeCount,
-          "containsSeason": [
-            {
-              "@type": "TVSeason",
-              "name": "Season 1",
-              "numberOfEpisodes": episodeCount
-            }
-          ]
-        }
-      ]
-    })
-  }}
-/>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://otakunaija.name.ng/"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Episodes",
+                    "item": "https://otakunaija.name.ng/episodes"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": series.title,
+                    "item": `https://otakunaija.name.ng/episodes/${series.slug}`
+                  }
+                ]
+              },
+              {
+                "@type": "TVSeries",
+                "name": series.title,
+                "description": series.synopsis || "",
+                "image": series.coverImageUrl || "",
+                "genre": series.genre ? [series.genre] : [],
+                "numberOfEpisodes": episodeCount,
+                "containsSeason": [
+                  {
+                    "@type": "TVSeason",
+                    "name": "Season 1",
+                    "numberOfEpisodes": episodeCount
+                  }
+                ]
+              }
+            ]
+          })
+        }}
+      />
 
       {/* Hero Section */}
       <section className="relative h-96 w-full overflow-hidden bg-muted">
@@ -131,22 +131,33 @@ export default async function SeriesPage({ params }: Props) {
 
         {/* Content */}
         <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6">
-          <div className="mx-auto w-full max-w-7xl space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{series.title}</h1>
-              {series.genre && (
-                <span className="rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-primary-foreground">
-                  {series.genre}
+          <div className="mx-auto flex w-full max-w-7xl items-end gap-4">
+            {series.posterImageUrl && (
+              <div className="relative hidden h-40 w-28 flex-shrink-0 overflow-hidden rounded-lg border-2 border-border shadow-lg sm:block md:h-52 md:w-36">
+                <Image
+                  src={series.posterImageUrl}
+                  alt={`${series.title} poster`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">{series.title}</h1>
+                {series.genre && (
+                  <span className="rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-primary-foreground">
+                    {series.genre}
+                  </span>
+                )}
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
+                    }`}
+                >
+                  {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
                 </span>
-              )}
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
-                  }`}
-              >
-                {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
-              </span>
+              </div>
             </div>
-
           </div>
         </div>
       </section>

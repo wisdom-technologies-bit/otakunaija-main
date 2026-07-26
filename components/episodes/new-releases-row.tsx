@@ -16,22 +16,22 @@ export function NewReleasesRow({ items }: NewReleasesRowProps) {
           View All
         </Link>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
         {items.map(({ episode, series: ser }) =>
           ser ? (
             <Link
               key={episode.id}
               href={`/episodes/${ser.slug}/${episode.slug}`}
-              className="group w-40 flex-shrink-0"
+              className="group w-[75vw] max-w-[280px] sm:w-52 md:w-44 flex-shrink-0 snap-start"
             >
-              <div className="relative aspect-video w-40 overflow-hidden rounded-lg bg-muted">
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
                 {episode.thumbnailUrl ? (
                   <Image
                     src={episode.thumbnailUrl}
                     alt={episode.title}
                     fill
                     className="object-cover transition-transform group-hover:scale-105"
-                    sizes="160px"
+                    sizes="(max-width: 640px) 75vw, (max-width: 768px) 208px, 176px"
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
