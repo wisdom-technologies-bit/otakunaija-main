@@ -104,8 +104,25 @@ export default async function WatchPage({ params }: Props) {
   // Get all episodes for the "More Episodes" section
   const allEpisodes = await getEpisodesBySeries(series.id)
 
+  // 1. Generate the VideoObject Schema specifically for Google Search
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: episode.title,
+    description: episode.synopsis || `Watch ${episode.title} on OtakuNaija.`,
+    thumbnailUrl: [episode.thumbnailUrl],
+    uploadDate: episode.publishedAt ? new Date(episode.publishedAt).toISOString() : new Date().toISOString(),
+    contentUrl: episode.videoUrl,
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* 2. Inject the JSON-LD script silently into the HTML */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <SiteHeader />
       <EpisodeTracker episodeId={episode.id} />
 
