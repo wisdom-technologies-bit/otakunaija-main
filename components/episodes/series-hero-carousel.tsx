@@ -45,7 +45,7 @@ export function SeriesHeroCarousel({ seriesList }: SeriesHeroCarouselProps) {
             Watch Original Anime Episodes
           </h1>
           <p className="mt-2 max-w-xl text-xs text-foreground/70 sm:text-sm md:mt-3 md:max-w-2xl md:text-base">
-            Discover exclusive anime series and episodes. Explore original content you won&apos;t find anywhere else.
+            Discover exclusive anime series and episodes.
           </p>
           <div className="mt-4 flex flex-wrap gap-2 md:mt-6 md:gap-3">
             <Link
