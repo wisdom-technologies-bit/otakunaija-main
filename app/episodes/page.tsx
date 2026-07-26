@@ -129,28 +129,13 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
       <section className="border-b border-border/40 py-8 md:py-12">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                OtakuNaija Originals
-              </p>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-                Watch Original Anime Episodes
-              </h1>
-              <p className="max-w-2xl text-sm md:text-base text-foreground/70">
-                Discover exclusive anime series and episodes. Explore original content.
-              </p>
-            </div>
+            <SeriesHeroCarousel seriesList={heroSeries} />
             <div className="max-w-xl pt-2">
               <EpisodesSearchBar />
             </div>
           </div>
         </div>
       </section>
-
-      {/* Sponsored Ad Slot (horizontal) */}
-      <div className="mx-auto max-w-7xl w-full px-4 md:px-6 py-6">
-        <AdSlot variant="horizontal" label="footer" />
-      </div>
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
         {error && (
@@ -162,15 +147,13 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
         {/* Two‑column layout with safety constraints */}
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_320px]">
           <div className="space-y-10 min-w-0 overflow-hidden">
-            <SeriesHeroCarousel seriesList={heroSeries} />
-
             <EpisodesFilterPills genres={genres} activeGenre={genre} />
 
             <NewReleasesRow items={recentEpisodes} />
 
             <OngoingSeriesScroll items={ongoingSeries} />
 
-            <AdSlot slot="in-article" label="footer" />
+            <AdSlot slot="footer" label="footer" />
           </div>
 
           <EpisodesSidebar trendingSeries={trendingSeries} />
