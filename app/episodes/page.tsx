@@ -44,6 +44,39 @@ export default async function EpisodesPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://otakunaija.name.ng/"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Episodes",
+                    "item": "https://otakunaija.name.ng/episodes"
+                  }
+                ]
+              },
+              {
+                "@type": "CollectionPage",
+                "name": "Anime Episodes & Series — OtakuNaija",
+                "description": "Browse and stream the latest anime episodes, series guides, and recaps on OtakuNaija.",
+                "url": "https://otakunaija.name.ng/episodes"
+              }
+            ]
+          })
+        }}
+      />
       <SiteHeader />
 
       {/* Page Header */}
