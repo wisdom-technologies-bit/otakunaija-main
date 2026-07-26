@@ -125,6 +125,80 @@ export async function getEpisodesBySeries(seriesId: number) {
     .orderBy(asc(episodes.episodeNumber))
 }
 
+// Get the N most recently published episodes across ALL series, with series+creator context
+// Used for the "New Releases" section on /episodes and its "View All" page
+export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
+  return db
+    .select({
+      episode: episodes,
+      series: series,
+      creator: creators,
+    })
+    .from(episodes)
+    .leftJoin(series, eq(episodes.seriesId, series.id))
+    .leftJoin(creators, eq(series.creatorId, creators.id))
+    .orderBy(desc(episodes.publishedAt))
+    .limit(limit)
+    .offset(offset)
+}
+
+// Get all series with a given status ("ongoing" or "completed"), with creator context —
+// used for the continuously-scrolling "Ongoing Series" row
+export async function getSeriesByStatus(status: 'ongoing' | 'completed') {
+  return db
+    .select({
+      series: series,
+      creator: creators,
+    })
+    .from(series)
+    .leftJoin(creators, eq(series.creatorId, creators.id))
+    .where(eq(series.status, status))
+    .orderBy(desc(series.createdAt))
+}
+
+// Get all series filtered by genre, with creator context — used for the genre filter pills
+export async function getSeriesByGenre(genre: string) {
+  return db
+    .select({
+      series: series,
+      creator: creators,
+    })
+    .from(series)
+    .leftJoin(creators, eq(series.creatorId, creators.id))
+    .where(eq(series.genre, genre))
+    .orderBy(desc(series.createdAt))
+}
+
+// Get the top N series by total views across their episodes — used for "Trending Now" on /episodes.
+// Since series itself has no view_count column, this sums each series' episodes' view counts.
+export async function getTrendingSeries(limit = 5) {
+  const result = await db
+    .select({
+      series: series,
+      creator: creators,
+      totalViews: sql<number>`COALESCE(SUM(${episodes.viewCount}), 0)`.as('total_views'),
+    })
+    .from(series)
+    .leftJoin(creators, eq(series.creatorId, creators.id))
+    .leftJoin(episodes, eq(series.id, episodes.seriesId))
+    .groupBy(series.id, creators.id)
+    .orderBy(desc(sql`total_views`))
+    .limit(limit)
+
+  return result
+}
+
+// Get every distinct genre currently in use across all series — used to build the filter pills
+// dynamically instead of hardcoding a genre list that may not match what's actually in the database
+export async function getAllUsedGenres() {
+  const result = await db
+    .selectDistinct({ genre: series.genre })
+    .from(series)
+    .where(sql`${series.genre} IS NOT NULL`)
+
+  return result.map((r) => r.genre).filter((g): g is string => g !== null)
+}
+
 // Search episodes and series by query
 export async function searchEpisodesAndSeries(query: string) {
   const searchLike = `%${query}%`
