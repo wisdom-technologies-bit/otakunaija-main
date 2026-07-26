@@ -149,7 +149,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
 
       {/* Sponsored Ad Slot (horizontal) */}
       <div className="mx-auto max-w-7xl w-full px-4 md:px-6 py-6">
-        <AdSlot variant="horizontal" label="Sponsored" />
+        <AdSlot variant="horizontal" label="footer" />
       </div>
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
@@ -170,7 +170,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
 
             <OngoingSeriesScroll items={ongoingSeries} />
 
-            <AdSlot slot="in-article" label="In‑Article Ad" />
+            <AdSlot slot="in-article" label="footer" />
           </div>
 
           <EpisodesSidebar trendingSeries={trendingSeries} />
