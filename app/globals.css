@@ -134,6 +134,18 @@
 }
 
 @layer utilities {
+  @keyframes scroll-x {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-scroll-x {
+    animation: scroll-x 40s linear infinite;
+  }
   .newsletter-highlight {
     animation: newsletter-pulse 1.2s ease-in-out;
   }

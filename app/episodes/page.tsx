@@ -1,11 +1,24 @@
 import { Metadata } from 'next'
-import { getAllSeriesWithCreators, getEpisodesBySeries } from '@/lib/db/queries'
+import {
+  getAllSeriesWithCreators,
+  getEpisodesBySeries,
+  getRecentEpisodesAcrossAllSeries,
+  getSeriesByStatus,
+  getTrendingSeries,
+  getAllUsedGenres,
+  getSeriesByGenre,
+} from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { AdSlot } from '@/components/ad-slot'
 import { SeriesCard } from '@/components/episodes/series-card'
 import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 import { NewsletterSignup } from '@/components/newsletter-signup'
+import { SeriesHeroCarousel } from '@/components/episodes/series-hero-carousel'
+import { EpisodesFilterPills } from '@/components/episodes/episodes-filter-pills'
+import { NewReleasesRow } from '@/components/episodes/new-releases-row'
+import { OngoingSeriesScroll } from '@/components/episodes/ongoing-series-scroll'
+import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 
 export const metadata: Metadata = {
   title: 'Episodes',
@@ -17,21 +30,46 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function EpisodesPage() {
-  let seriesData: any[] = []
+interface EpisodesPageProps {
+  searchParams: Promise<{ genre?: string }>
+}
+
+export default async function EpisodesPage({ searchParams }: EpisodesPageProps) {
+  const { genre } = await searchParams
+
   let error = null
+  let allSeriesWithCreators: any[] = []
+  let recentEpisodes: any[] = []
+  let ongoingSeries: any[] = []
+  let trendingSeries: any[] = []
+  let genres: string[] = []
+  let genreFiltered: any[] | null = null
 
   try {
-    const data = await getAllSeriesWithCreators()
-    seriesData = data
+    const results = await Promise.all([
+      getAllSeriesWithCreators(),
+      getRecentEpisodesAcrossAllSeries(10),
+      getSeriesByStatus('ongoing'),
+      getTrendingSeries(5),
+      getAllUsedGenres(),
+      genre ? getSeriesByGenre(genre) : Promise.resolve(null),
+    ])
+    ;[
+      allSeriesWithCreators,
+      recentEpisodes,
+      ongoingSeries,
+      trendingSeries,
+      genres,
+      genreFiltered,
+    ] = results
   } catch (err) {
-    console.error('Error fetching series:', err)
-    error = 'Failed to load series. Please try again later.'
+    console.error('Error fetching episodes data:', err)
+    error = 'Failed to load episodes. Please try again later.'
   }
 
-  // Count episodes for each series
+  // Compute episode counts for the full series grid
   const seriesWithCounts = await Promise.all(
-    seriesData.map(async (item) => {
+    allSeriesWithCreators.map(async (item) => {
       const episodeCount = await getEpisodesBySeries(item.series.id).then(
         (eps) => eps.length
       )
@@ -42,44 +80,52 @@ export default async function EpisodesPage() {
     })
   )
 
+  // Hero series: use genre-filtered if active, otherwise all series (first 4)
+  const heroSeries = (genreFiltered ?? allSeriesWithCreators)
+    .slice(0, 4)
+    .map((item) => item.series)
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* JSON-LD structured data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@graph": [
+            '@context': 'https://schema.org',
+            '@graph': [
               {
-                "@type": "BreadcrumbList",
-                "itemListElement": [
+                '@type': 'BreadcrumbList',
+                itemListElement: [
                   {
-                    "@type": "ListItem",
-                    "position": 1,
-                    "name": "Home",
-                    "item": "https://otakunaija.name.ng/"
+                    '@type': 'ListItem',
+                    position: 1,
+                    name: 'Home',
+                    item: 'https://otakunaija.name.ng/',
                   },
                   {
-                    "@type": "ListItem",
-                    "position": 2,
-                    "name": "Episodes",
-                    "item": "https://otakunaija.name.ng/episodes"
-                  }
-                ]
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: 'Episodes',
+                    item: 'https://otakunaija.name.ng/episodes',
+                  },
+                ],
               },
               {
-                "@type": "CollectionPage",
-                "name": "Anime Episodes & Series — OtakuNaija",
-                "description": "Browse and stream the latest anime episodes, series guides, and recaps on OtakuNaija.",
-                "url": "https://otakunaija.name.ng/episodes"
-              }
-            ]
-          })
+                '@type': 'CollectionPage',
+                name: 'Anime Episodes & Series — OtakuNaija',
+                description:
+                  'Browse and stream the latest anime episodes, series guides, and recaps on OtakuNaija.',
+                url: 'https://otakunaija.name.ng/episodes',
+              },
+            ],
+          }),
         }}
       />
+
       <SiteHeader />
 
-      {/* Page Header */}
+      {/* Page Header – kept from original */}
       <section className="border-b border-border/40 py-12 md:py-16">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="space-y-6">
@@ -101,7 +147,7 @@ export default async function EpisodesPage() {
         </div>
       </section>
 
-      {/* Sponsored Ad Slot */}
+      {/* Sponsored Ad Slot (horizontal) – kept from original */}
       <div className="mx-auto max-w-7xl w-full px-4 md:px-6 py-8">
         <AdSlot variant="horizontal" label="Sponsored" />
       </div>
@@ -113,10 +159,30 @@ export default async function EpisodesPage() {
           </div>
         )}
 
+        {/* New two‑column layout */}
+        <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-10">
+            <SeriesHeroCarousel seriesList={heroSeries} />
+
+            <EpisodesFilterPills genres={genres} activeGenre={genre} />
+
+            <NewReleasesRow items={recentEpisodes} />
+
+            <OngoingSeriesScroll items={ongoingSeries} />
+
+            <AdSlot slot="in-article" label="In‑Article Ad" />
+          </div>
+
+          <EpisodesSidebar trendingSeries={trendingSeries} />
+        </div>
+
+        {/* Original full series grid – kept below the new layout */}
         {seriesWithCounts.length > 0 ? (
           <>
-            {/* Series Grid */}
-            <div className="mb-12">
+            <div className="mt-16">
+              <h2 className="mb-6 text-2xl font-bold text-foreground">
+                All Series
+              </h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {seriesWithCounts.map((item) => (
                   <SeriesCard
@@ -131,8 +197,8 @@ export default async function EpisodesPage() {
               </div>
             </div>
 
-            {/* Newsletter Section */}
-            <div className="rounded-lg border border-border/60 bg-card/40 p-8 md:p-12">
+            {/* Newsletter – kept from original */}
+            <div className="mt-16 rounded-lg border border-border/60 bg-card/40 p-8 md:p-12">
               <div className="max-w-2xl">
                 <h2 className="mb-2 text-2xl font-bold text-foreground">
                   Get weekly anime drops, straight to your inbox.
@@ -145,7 +211,7 @@ export default async function EpisodesPage() {
             </div>
           </>
         ) : (
-          <div className="rounded-lg border border-border/40 bg-card/40 p-12 text-center">
+          <div className="mt-16 rounded-lg border border-border/40 bg-card/40 p-12 text-center">
             <p className="text-foreground/70">
               {error ? 'Unable to load series.' : 'No series available yet. Check back soon!'}
             </p>
