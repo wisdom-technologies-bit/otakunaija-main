@@ -16,7 +16,7 @@ export function NewReleasesRow({ items }: NewReleasesRowProps) {
           View All
         </Link>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="flex w-full gap-4 overflow-x-auto overflow-y-hidden pb-2">
         {items.map(({ episode, series: ser }) =>
           ser ? (
             <Link

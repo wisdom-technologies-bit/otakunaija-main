@@ -20,8 +20,8 @@ export function OngoingSeriesScroll({ items }: OngoingSeriesScrollProps) {
           View All
         </Link>
       </div>
-      <div className="group relative overflow-hidden">
-        <div className="flex w-max animate-scroll-x gap-4 group-hover:[animation-play-state:paused]">
+      <div className="group relative w-full overflow-x-hidden">
+        <div className="flex min-w-max animate-scroll-x gap-4 will-change-transform group-hover:[animation-play-state:paused]">
           {looped.map(({ series: s }, i) => (
             <Link
               key={`${s.id}-${i}`}

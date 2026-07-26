@@ -25,8 +25,8 @@ export function SeriesHeroCarousel({ seriesList }: SeriesHeroCarouselProps) {
   const active = seriesList[activeIndex]
 
   return (
-    <div>
-      <div className="relative h-64 w-full overflow-hidden rounded-xl bg-muted sm:h-72 md:h-96">
+    <div className="w-full max-w-full overflow-hidden">
+      <div className="relative h-64 w-full max-w-full overflow-hidden rounded-xl bg-muted sm:h-72 md:h-96">
         {active.coverImageUrl && (
           <Image
             src={active.coverImageUrl}
