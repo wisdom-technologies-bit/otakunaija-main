@@ -28,7 +28,7 @@ export function SeriesHeroCarousel({ seriesList }: SeriesHeroCarouselProps) {
 
   return (
     <div className="w-full max-w-full overflow-hidden">
-      <div className="relative h-60 w-full max-w-full overflow-hidden bg-transparent sm:h-72 md:h-96">
+      <div className="relative h-60 w-full max-w-full overflow-hidden rounded-xl bg-muted sm:h-72 md:h-96">
         {active.coverImageUrl && (
           <Image
             src={active.coverImageUrl}
