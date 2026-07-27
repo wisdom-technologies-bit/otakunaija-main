@@ -126,11 +126,11 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
       <SiteHeader />
 
       {/* Page Header */}
-      <section className="border-b border-border/40 py-8 md:py-12">
+      <section className="border-b border-border/40 py-6 md:py-12">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="space-y-4">
             <SeriesHeroCarousel seriesList={heroSeries} />
-            <div className="max-w-xl pt-2">
+            <div className="w-full pt-2">
               <EpisodesSearchBar />
             </div>
           </div>
