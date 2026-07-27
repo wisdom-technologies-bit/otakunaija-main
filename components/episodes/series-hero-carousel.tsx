@@ -14,19 +14,21 @@ export function SeriesHeroCarousel({ seriesList }: SeriesHeroCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
-    if (seriesList.length <= 1) return
+    if (!seriesList || seriesList.length <= 1) return
+
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % seriesList.length)
     }, 6000)
+
     return () => clearInterval(timer)
-  }, [seriesList.length])
+  }, [seriesList])
 
   if (seriesList.length === 0) return null
   const active = seriesList[activeIndex]
 
   return (
     <div className="w-full max-w-full overflow-hidden">
-      <div className="relative h-60 w-full max-w-full overflow-hidden rounded-xl bg-muted sm:h-72 md:h-96">
+      <div className="relative h-60 w-full max-w-full overflow-hidden bg-transparent sm:h-72 md:h-96">
         {active.coverImageUrl && (
           <Image
             src={active.coverImageUrl}
@@ -71,9 +73,8 @@ export function SeriesHeroCarousel({ seriesList }: SeriesHeroCarouselProps) {
               key={i}
               onClick={() => setActiveIndex(i)}
               aria-label={`Show series ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all ${
-                i === activeIndex ? 'w-5 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'
-              }`}
+              className={`h-1.5 rounded-full transition-all ${i === activeIndex ? 'w-5 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'
+                }`}
             />
           ))}
         </div>
