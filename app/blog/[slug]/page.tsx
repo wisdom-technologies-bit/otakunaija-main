@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Clock, Eye, User, Calendar } from "lucide-react"
+import { ArrowLeft, Clock, Eye, User, Calendar, TrendingUp } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Sidebar } from "@/components/sidebar"
@@ -87,59 +87,59 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       <BlogViewTracker postId={post.id} />
 
       <script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://otakunaija.name.ng/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Blog",
-              "item": "https://otakunaija.name.ng/blog"
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "name": post.title,
-              "item": `https://otakunaija.name.ng/blog/${post.slug}`
-            }
-          ]
-        },
-        {
-          "@type": "BlogPosting",
-          "headline": post.title,
-          "description": post.excerpt,
-          "image": getCoverImage(post, 1200, 630),
-          "datePublished": post.published_at,
-          "dateModified": post.published_at, // use post.updated_at if available
-          "author": {
-            "@type": "Person",
-            "name": post.author,
-            "url": "https://otakunaija.name.ng"
-          },
-          "publisher": {
-            "@type": "Organization",
-            "name": "OtakuNaija",
-            "logo": {
-              "@type": "ImageObject",
-              "url": "https://otakunaija.name.ng/android-chrome-512x512.png"
-            }
-          }
-        }
-      ]
-    })
-  }}
-/>
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://otakunaija.name.ng/"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Blog",
+                    "item": "https://otakunaija.name.ng/blog"
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": post.title,
+                    "item": `https://otakunaija.name.ng/blog/${post.slug}`
+                  }
+                ]
+              },
+              {
+                "@type": "BlogPosting",
+                "headline": post.title,
+                "description": post.excerpt,
+                "image": getCoverImage(post, 1200, 630),
+                "datePublished": post.published_at,
+                "dateModified": post.published_at, // use post.updated_at if available
+                "author": {
+                  "@type": "Person",
+                  "name": post.author,
+                  "url": "https://otakunaija.name.ng"
+                },
+                "publisher": {
+                  "@type": "Organization",
+                  "name": "OtakuNaija",
+                  "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://otakunaija.name.ng/android-chrome-512x512.png"
+                  }
+                }
+              }
+            ]
+          })
+        }}
+      />
 
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
@@ -171,42 +171,104 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <ExpandableExcerpt excerpt={post.excerpt} />
 
-              <div className="mt-5 grid grid-cols-3 gap-2 sm:inline-flex sm:gap-3">
-                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-center sm:flex-row sm:gap-2 sm:text-left">
-                  <User className="h-4 w-4 text-primary" />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-foreground">{post.author}</p>
-                    <p className="hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
-                      Author
-                    </p>
-                  </div>
-                </div>
+              <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card/70 backdrop-blur-sm">
 
-                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-center sm:flex-row sm:gap-2 sm:text-left">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-foreground">
-                      {formatDate(post.published_at)}
-                    </p>
-                    <p className="hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
+                {/* Top Row */}
+                <div className="grid grid-cols-3 divide-x divide-border">
+
+                  {/* Author */}
+                  <div className="flex flex-col items-center justify-center px-3 py-5 text-center">
+                    <Image
+                      src="/logo.png"
+                      alt="OtakuNaija"
+                      width={56}
+                      height={56}
+                      className="mb-3 rounded-full border-2 border-primary object-cover"
+                    />
+
+                    <span className="text-[11px] text-muted-foreground">
+                      Written by
+                    </span>
+
+                    <span className="mt-1 text-sm font-bold">
+                      {post.author}
+                    </span>
+                  </div>
+
+                  {/* Date */}
+                  <div className="flex flex-col items-center justify-center px-3 py-5 text-center">
+                    <div className="mb-3 rounded-xl bg-primary/10 p-3">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
+
+                    <span className="text-[11px] text-muted-foreground">
                       Published
-                    </p>
+                    </span>
+
+                    <span className="mt-1 text-sm font-bold">
+                      {formatDate(post.published_at)}
+                    </span>
                   </div>
+
+                  {/* Reading Time */}
+                  <div className="flex flex-col items-center justify-center px-3 py-5 text-center">
+                    <div className="mb-3 rounded-xl bg-primary/10 p-3">
+                      <Clock className="h-5 w-5 text-primary" />
+                    </div>
+
+                    <span className="text-[11px] text-muted-foreground">
+                      Reading Time
+                    </span>
+
+                    <span className="mt-1 text-sm font-bold">
+                      {post.read_time} min read
+                    </span>
+                  </div>
+
                 </div>
 
-                <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-center sm:flex-row sm:gap-2 sm:text-left">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-foreground">{post.read_time} min</p>
-                    <p className="hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
-                      Read time
-                    </p>
-                  </div>
-                </div>
-              </div>
+                {/* Divider */}
+                <div className="border-t border-border" />
 
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                <Eye className="h-3.5 w-3.5" /> {post.views.toLocaleString()} views
+                {/* Bottom Row */}
+                <div className="grid grid-cols-2 divide-x divide-border">
+
+                  {/* Views */}
+                  <div className="flex items-center gap-3 px-4 py-4">
+                    <div className="rounded-xl bg-primary/10 p-3">
+                      <Eye className="h-5 w-5 text-primary" />
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Total Views
+                      </p>
+
+                      <p className="text-sm font-bold">
+                        {post.views.toLocaleString()} views
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Support Message */}
+                  <div className="flex items-center gap-3 px-4 py-4">
+                    <div className="rounded-xl bg-primary/10 p-3">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-semibold">
+                        Thanks for reading!
+                      </p>
+
+                      <p className="text-xs text-muted-foreground">
+                        Your support means a lot.
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
               </div>
 
               <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-border bg-muted">
