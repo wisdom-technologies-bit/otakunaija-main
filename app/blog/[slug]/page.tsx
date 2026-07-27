@@ -171,18 +171,18 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <ExpandableExcerpt excerpt={post.excerpt} />
 
-              <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card/70 backdrop-blur-sm">
+              <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card/70 backdrop-blur-sm">
 
                 {/* Top Row */}
                 <div className="grid grid-cols-3 divide-x divide-border">
 
                   {/* Author */}
-                  <div className="flex flex-col items-center justify-center px-3 py-5 text-center">
+                  <div className="flex flex-col items-center justify-center px-3 py-3.5 text-center">
                     <Image
                       src="/logo.png"
                       alt="OtakuNaija"
-                      width={56}
-                      height={56}
+                      width={46}
+                      height={46}
                       className="mb-3 rounded-full border-2 border-primary object-cover"
                     />
 
@@ -196,8 +196,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   </div>
 
                   {/* Date */}
-                  <div className="flex flex-col items-center justify-center px-3 py-5 text-center">
-                    <div className="mb-3 rounded-xl bg-primary/10 p-3">
+                  <div className="flex flex-col items-center justify-center px-3 py-3.5 text-center">
+                    <div className="mb-2 rounded-lg bg-primary/10 p-2.5">
                       <Calendar className="h-5 w-5 text-primary" />
                     </div>
 
@@ -211,8 +211,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   </div>
 
                   {/* Reading Time */}
-                  <div className="flex flex-col items-center justify-center px-3 py-5 text-center">
-                    <div className="mb-3 rounded-xl bg-primary/10 p-3">
+                  <div className="flex flex-col items-center justify-center px-3 py-3.5 text-center">
+                    <div className="mb-3 rounded-xl bg-primary/10 px-3">
                       <Clock className="h-5 w-5 text-primary" />
                     </div>
 
@@ -234,7 +234,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 <div className="grid grid-cols-2 divide-x divide-border">
 
                   {/* Views */}
-                  <div className="flex items-center gap-3 px-4 py-4">
+                  <div className="flex items-center gap-3 px-4 py-3">
                     <div className="rounded-xl bg-primary/10 p-3">
                       <Eye className="h-5 w-5 text-primary" />
                     </div>
@@ -251,7 +251,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   </div>
 
                   {/* Support Message */}
-                  <div className="flex items-center gap-3 px-4 py-4">
+                  <div className="flex items-center gap-3 px-4 py-3">
                     <div className="rounded-xl bg-primary/10 p-3">
                       <TrendingUp className="h-5 w-5 text-primary" />
                     </div>
