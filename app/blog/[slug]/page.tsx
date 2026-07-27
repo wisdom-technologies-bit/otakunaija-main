@@ -177,16 +177,16 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 <div className="grid grid-cols-3 divide-x divide-border">
 
                   {/* Author */}
-                  <div className="flex flex-col items-center justify-center px-3 py-3.5 text-center">
+                  <div className="flex flex-col items-center justify-center px-2 py-2 text-center">
                     <Image
                       src="/logo.png"
                       alt="OtakuNaija"
-                      width={46}
-                      height={46}
+                      width={38}
+                      height={38}
                       className="mb-3 rounded-full border-2 border-primary object-cover"
                     />
 
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       Written by
                     </span>
 
@@ -196,12 +196,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   </div>
 
                   {/* Date */}
-                  <div className="flex flex-col items-center justify-center px-3 py-3.5 text-center">
-                    <div className="mb-2 rounded-lg bg-primary/10 p-2.5">
-                      <Calendar className="h-5 w-5 text-primary" />
+                  <div className="flex flex-col items-center justify-center px-2 py-2 text-center">
+                    <div className="mb-1.5 rounded-lg bg-primary/10 p-2">
+                      <Calendar className="h-4 w-4 text-primary" />
                     </div>
 
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       Published
                     </span>
 
@@ -211,12 +211,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   </div>
 
                   {/* Reading Time */}
-                  <div className="flex flex-col items-center justify-center px-3 py-3.5 text-center">
+                  <div className="flex flex-col items-center justify-center px-2 py-2 text-center">
                     <div className="mb-3 rounded-xl bg-primary/10 px-3">
-                      <Clock className="h-5 w-5 text-primary" />
+                      <Clock className="h-4 w-4 text-primary" />
                     </div>
 
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       Reading Time
                     </span>
 
@@ -234,26 +234,26 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 <div className="grid grid-cols-2 divide-x divide-border">
 
                   {/* Views */}
-                  <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex items-center gap-2 px-3 py-2.5">
                     <div className="rounded-xl bg-primary/10 p-3">
-                      <Eye className="h-5 w-5 text-primary" />
+                      <Eye className="h-4 w-4 text-primary" />
                     </div>
 
                     <div>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground">
                         Total Views
                       </p>
 
-                      <p className="text-sm font-bold">
+                      <p className="text-[15px] font-bold leading-tight">
                         {post.views.toLocaleString()} views
                       </p>
                     </div>
                   </div>
 
                   {/* Support Message */}
-                  <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex items-center gap-2 px-3 py-2.5">
                     <div className="rounded-xl bg-primary/10 p-3">
-                      <TrendingUp className="h-5 w-5 text-primary" />
+                      <TrendingUp className="h-4 w-4 text-primary" />
                     </div>
 
                     <div>
