@@ -45,7 +45,7 @@ export function SeriesHeroCarousel({ seriesList }: SeriesHeroCarouselProps) {
             {active.title}
           </h2>
           <p className="mt-1 max-w-xl text-[11px] sm:text-sm text-foreground/80 md:mt-2 md:max-w-2xl md:text-base line-clamp-2">
-            {active.description || 'Discover exclusive anime series and episodes. Explore original content.'}
+            {active.description || 'Discover exclusive anime series and episodes.'}
           </p>
           <div className="mt-3 flex flex-wrap gap-2 md:mt-4 md:gap-3">
             <Link
