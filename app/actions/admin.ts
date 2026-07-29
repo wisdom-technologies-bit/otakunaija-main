@@ -259,6 +259,7 @@ export async function createEpisodeAction(_prev: unknown, formData: FormData) {
     video_url: String(formData.get("video_url") || "").trim(),
     thumbnail_url: String(formData.get("thumbnail_url") || "").trim(),
     duration_seconds: Number(formData.get("duration_seconds") || 0) || null,
+    subtitles_url: String(formData.get("subtitles_url") || "").trim() || null,
   }
 
   // Validate all required fields
@@ -309,6 +310,7 @@ export async function updateEpisodeAction(_prev: unknown, formData: FormData) {
     video_url: String(formData.get("video_url") || "").trim(),
     thumbnail_url: String(formData.get("thumbnail_url") || "").trim(),
     duration_seconds: Number(formData.get("duration_seconds") || 0) || null,
+    subtitles_url: String(formData.get("subtitles_url") || "").trim() || null,
   }
 
   // Validate all required fields

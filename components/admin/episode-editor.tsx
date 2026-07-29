@@ -5,6 +5,7 @@ import { useActionState, useEffect, useState } from "react"
 import { Save, AlertCircle, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 import { VideoUploader } from "@/components/admin/video-uploader"
+import { SubtitleUploader } from "@/components/admin/subtitle-uploader"
 import { createEpisodeAction, updateEpisodeAction } from "@/app/actions/admin"
 import type { episodes as Episode, series as Series } from "@/lib/db/schema"
 
@@ -174,9 +175,17 @@ export function EpisodeEditor({ mode, episode, series, justCreated }: Props) {
             thumbnailName="thumbnail_url"
             durationName="duration_seconds"
             videoPublicIdName="video_public_id"
-            defaultVideoUrl={episode?.video_url}
-            defaultThumbnailUrl={episode?.thumbnail_url}
+            defaultVideoUrl={episode?.videoUrl}
+            defaultThumbnailUrl={episode?.thumbnailUrl}
             onUploadComplete={setVideoData}
+          />
+        </div>
+
+        {/* Subtitle uploader */}
+        <div className="rounded-xl border border-border bg-card p-4">
+          <SubtitleUploader
+            name="subtitles_url"
+            defaultSubtitlesUrl={episode?.subtitlesUrl}
           />
         </div>
       </div>

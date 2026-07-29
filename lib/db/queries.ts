@@ -541,6 +541,7 @@ export type CreateEpisodeInput = {
   video_url: string
   thumbnail_url: string
   duration_seconds?: number | null
+  subtitles_url?: string | null
 }
 
 export type UpdateEpisodeInput = CreateEpisodeInput & { id: number }
@@ -576,6 +577,7 @@ export async function createEpisode(input: CreateEpisodeInput) {
       videoUrl: input.video_url,
       thumbnailUrl: input.thumbnail_url,
       durationSeconds: input.duration_seconds || null,
+      subtitlesUrl: input.subtitles_url || null,
     })
     .returning()
   return result[0]
@@ -595,6 +597,7 @@ export async function updateEpisode(input: UpdateEpisodeInput) {
       videoUrl: input.video_url,
       thumbnailUrl: input.thumbnail_url,
       durationSeconds: input.duration_seconds,
+      subtitlesUrl: input.subtitles_url,
     })
     .where(eq(episodes.id, input.id))
     .returning()

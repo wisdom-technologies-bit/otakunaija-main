@@ -71,9 +71,9 @@ export default async function EpisodesPage() {
                 <div key={ep.id} className="flex flex-col md:flex-row items-start md:items-center gap-3 px-4 py-3 hover:bg-background/50">
                   {/* Thumbnail + Episode number */}
                   <div className="relative h-12 w-20 flex-shrink-0 overflow-hidden rounded bg-muted">
-                    {ep.thumbnail_url && (
+                    {ep.thumbnailUrl && (
                       <Image
-                        src={ep.thumbnail_url}
+                        src={ep.thumbnailUrl}
                         alt={ep.title}
                         fill
                         className="object-cover"
@@ -95,13 +95,13 @@ export default async function EpisodesPage() {
                       {ep.title}
                     </Link>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {s?.title || "Unknown"} · {formatDuration(ep.duration_seconds)} · {ep.view_count?.toLocaleString()} views
+                      {s?.title || "Unknown"} · {formatDuration(ep.durationSeconds)} · {ep.viewCount?.toLocaleString()} views
                     </p>
                   </div>
 
                   {/* Published date */}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(ep.published_at).toLocaleDateString()}
+                    {new Date(ep.publishedAt).toLocaleDateString()}
                   </span>
 
                   {/* Actions */}

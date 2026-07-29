@@ -10,9 +10,10 @@ interface VideoPlayerProps {
   videoUrl: string
   thumbnailUrl: string
   title: string
+  subtitlesUrl?: string | null
 }
 
-export function VideoPlayer({ videoUrl, thumbnailUrl, title }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: VideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const playerRef = useRef<Plyr | null>(null)
@@ -28,21 +29,24 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title }: VideoPlayerProps)
     'current-time',
     'mute',
     'volume',
+    'captions',
     'settings',
     'pip',
     'fullscreen',
   ],
 
-  settings: ['speed'],
+  settings: ['speed', 'captions'],
 
   speed: {
     selected: 1,
     options: [0.5, 0.75, 1, 1.25, 1.5, 2],
   },
 
-  // Apply dark theme styling
-  css: false,
-})
+  captions: {
+    active: false,
+    language: 'en',
+  },
+} as any)
 
       // Add custom CSS variables for theming to match dark theme
       const style = document.createElement('style')
@@ -87,6 +91,15 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title }: VideoPlayerProps)
           title={title}
         >
           <source src={videoUrl} type="video/mp4" />
+          {subtitlesUrl && (
+            <track
+              kind="captions"
+              src={subtitlesUrl}
+              srcLang="en"
+              label="English"
+              default
+            />
+          )}
           Your browser does not support the video tag.
         </video>
       </div>
