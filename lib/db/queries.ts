@@ -297,6 +297,16 @@ export async function getSeriesEpisodeCount(seriesId: number) {
   return result.length
 }
 
+// Get the latest (max) episode number for a series
+export async function getLatestEpisodeNumber(seriesId: number) {
+  const result = await db
+    .select({ maxEpisode: sql<number>`MAX(${episodes.episodeNumber})` })
+    .from(episodes)
+    .where(eq(episodes.seriesId, seriesId))
+
+  return result[0]?.maxEpisode ?? 0
+}
+
 // ============ ADMIN QUERY FUNCTIONS ============
 
 // Creators

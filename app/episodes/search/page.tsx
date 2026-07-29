@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
-import { searchEpisodesAndSeriesSmart } from '@/lib/db/queries'
+import { searchEpisodesAndSeriesSmart, getLatestEpisodeNumber } from '@/lib/db/queries'
 import { SeriesCard } from '@/components/episodes/series-card'
 import { EpisodeRow } from '@/components/episodes/episode-row'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
@@ -33,6 +33,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     seriesResults = results.seriesResults
     episodesResults = results.episodesResults
     hasResults = seriesResults.length > 0 || episodesResults.length > 0
+
+    // Add episode counts to series results
+    seriesResults = await Promise.all(
+      seriesResults.map(async (s) => ({
+        ...s,
+        episodeCount: await getLatestEpisodeNumber(s.id),
+      }))
+    )
   }
 
   return (

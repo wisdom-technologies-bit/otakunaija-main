@@ -7,6 +7,7 @@ import {
   getTrendingSeries,
   getAllUsedGenres,
   getSeriesByGenre,
+  getLatestEpisodeNumber,
 } from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -67,12 +68,10 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
     error = 'Failed to load episodes. Please try again later.'
   }
 
-  // Compute episode counts for the full series grid
+  // Compute latest episode numbers for the full series grid
   const seriesWithCounts = await Promise.all(
     allSeriesWithCreators.map(async (item) => {
-      const episodeCount = await getEpisodesBySeries(item.series.id).then(
-        (eps) => eps.length
-      )
+      const episodeCount = await getLatestEpisodeNumber(item.series.id)
       return {
         ...item,
         episodeCount,
