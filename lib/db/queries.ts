@@ -202,14 +202,14 @@ export async function getAllUsedGenres() {
 // Search episodes and series by query
 export async function searchEpisodesAndSeries(query: string) {
   const searchLike = `%${query}%`
-  
+
   // Search series
   const seriesResults = await db
     .select()
     .from(series)
     .where(sql`${series.title} ILIKE ${searchLike} OR ${series.synopsis} ILIKE ${searchLike}`)
     .orderBy(desc(series.createdAt))
-  
+
   // Search episodes
   const episodesResults = await db
     .select({
@@ -220,7 +220,7 @@ export async function searchEpisodesAndSeries(query: string) {
     .leftJoin(series, eq(episodes.seriesId, series.id))
     .where(sql`${episodes.title} ILIKE ${searchLike} OR ${episodes.synopsis} ILIKE ${searchLike}`)
     .orderBy(desc(episodes.publishedAt))
-  
+
   return { seriesResults, episodesResults }
 }
 
@@ -246,10 +246,10 @@ export async function searchEpisodesAndSeriesSmart(query: string) {
   // Series matching: title or synopsis contains the text portion of the query
   const seriesResults = textQuery
     ? await db
-        .select()
-        .from(series)
-        .where(sql`${series.title} ILIKE ${textLike} OR ${series.synopsis} ILIKE ${textLike}`)
-        .orderBy(desc(series.createdAt))
+      .select()
+      .from(series)
+      .where(sql`${series.title} ILIKE ${textLike} OR ${series.synopsis} ILIKE ${textLike}`)
+      .orderBy(desc(series.createdAt))
     : []
 
   // Episode matching: title/synopsis matches the text portion,
@@ -277,11 +277,11 @@ export async function searchEpisodesAndSeriesSmart(query: string) {
   const refinedEpisodesResults =
     textQuery && numericWords.length > 0
       ? episodesResults.filter(
-          (r) =>
-            r.series &&
-            (r.series.title.toLowerCase().includes(textQuery.toLowerCase()) ||
-              numericWords.includes(r.episode.episodeNumber.toString()))
-        )
+        (r) =>
+          r.series &&
+          (r.series.title.toLowerCase().includes(textQuery.toLowerCase()) ||
+            numericWords.includes(r.episode.episodeNumber.toString()))
+      )
       : episodesResults
 
   return { seriesResults, episodesResults: refinedEpisodesResults }
@@ -348,10 +348,10 @@ export async function ensureUniqueCreatorSlug(base: string, excludeId?: number):
   while (true) {
     const result = excludeId
       ? await db
-          .select()
-          .from(creators)
-          .where(and(eq(creators.slug, slug), eq(creators.id, excludeId)))
-          .limit(1)
+        .select()
+        .from(creators)
+        .where(and(eq(creators.slug, slug), eq(creators.id, excludeId)))
+        .limit(1)
       : await db.select().from(creators).where(eq(creators.slug, slug)).limit(1)
     if (result.length === 0) return slug
     n += 1
@@ -432,6 +432,7 @@ export type CreateSeriesInput = {
   slug?: string
   synopsis?: string | null
   cover_image_url?: string | null
+  poster_image_url?: string | null
   status?: 'ongoing' | 'completed'
   genre?: string | null
 }
@@ -444,10 +445,10 @@ export async function ensureUniqueSeriesSlug(base: string, excludeId?: number): 
   while (true) {
     const result = excludeId
       ? await db
-          .select()
-          .from(series)
-          .where(and(eq(series.slug, slug), eq(series.id, excludeId)))
-          .limit(1)
+        .select()
+        .from(series)
+        .where(and(eq(series.slug, slug), eq(series.id, excludeId)))
+        .limit(1)
       : await db.select().from(series).where(eq(series.slug, slug)).limit(1)
     if (result.length === 0) return slug
     n += 1
@@ -465,6 +466,7 @@ export async function createSeries(input: CreateSeriesInput) {
       slug,
       synopsis: input.synopsis || null,
       coverImageUrl: input.cover_image_url || null,
+      posterImageUrl: input.poster_image_url || null,
       status: input.status || 'ongoing',
       genre: input.genre || null,
     })
@@ -482,6 +484,7 @@ export async function updateSeries(input: UpdateSeriesInput) {
       slug: slug || input.slug,
       synopsis: input.synopsis,
       coverImageUrl: input.cover_image_url,
+      posterImageUrl: input.poster_image_url,
       status: input.status,
       genre: input.genre,
     })
@@ -538,10 +541,10 @@ export async function ensureUniqueEpisodeSlug(base: string, excludeId?: number):
   while (true) {
     const result = excludeId
       ? await db
-          .select()
-          .from(episodes)
-          .where(and(eq(episodes.slug, slug), eq(episodes.id, excludeId)))
-          .limit(1)
+        .select()
+        .from(episodes)
+        .where(and(eq(episodes.slug, slug), eq(episodes.id, excludeId)))
+        .limit(1)
       : await db.select().from(episodes).where(eq(episodes.slug, slug)).limit(1)
     if (result.length === 0) return slug
     n += 1
@@ -604,7 +607,7 @@ export async function recordPostView(postId: number, deviceId: string) {
         deviceId,
       })
       .onConflictDoNothing()
-    
+
     // Increment post view count
     // This is a simplified approach - in production with actual posts table this would be more complex
   } catch (err) {
@@ -623,7 +626,7 @@ export async function recordEpisodeView(episodeId: number, deviceId: string) {
       })
       .onConflictDoNothing()
       .returning()
-    
+
     // If this is the first view from this device, increment episode view count
     if (result.length > 0) {
       await db
@@ -644,7 +647,7 @@ export async function recordEpisodeView(episodeId: number, deviceId: string) {
 export async function recordEpisodeWatchPing(episodeId: number, deviceId: string, minutesWatched: number = 1) {
   try {
     const now = new Date()
-    
+
     // Check if there's an existing ping for this episode+device
     const existing = await db
       .select()
@@ -656,17 +659,17 @@ export async function recordEpisodeWatchPing(episodeId: number, deviceId: string
         )
       )
       .limit(1)
-    
+
     if (existing.length > 0) {
       // Update last ping time and accumulated minutes
       const lastPing = existing[0]
       const timeSinceLastPing = (now.getTime() - new Date(lastPing.lastPingAt!).getTime()) / 1000
-      
+
       // Only accept if at least 50 seconds have passed (allowing some tolerance for network delay)
       if (timeSinceLastPing < 50) {
         return { accepted: false, reason: 'ping_too_soon' }
       }
-      
+
       await db
         .update(episodeWatchPings)
         .set({
@@ -691,7 +694,7 @@ export async function recordEpisodeWatchPing(episodeId: number, deviceId: string
         })
         .onConflictDoNothing()
     }
-    
+
     // Increment total_watch_minutes on the episode
     await db
       .update(episodes)
@@ -699,7 +702,7 @@ export async function recordEpisodeWatchPing(episodeId: number, deviceId: string
         totalWatchMinutes: sql`${episodes.totalWatchMinutes} + ${minutesWatched}`,
       })
       .where(eq(episodes.id, episodeId))
-    
+
     return { accepted: true }
   } catch (err) {
     console.error('Error recording watch ping:', err)

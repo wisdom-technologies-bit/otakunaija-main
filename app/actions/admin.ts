@@ -187,6 +187,7 @@ export async function createSeriesAction(_prev: unknown, formData: FormData) {
     slug: String(formData.get("slug") || "").trim() || undefined,
     synopsis: String(formData.get("synopsis") || "").trim() || null,
     cover_image_url: String(formData.get("cover_image_url") || "").trim() || null,
+    poster_image_url: String(formData.get("poster_image_url") || "").trim() || null,
     status: (String(formData.get("status") || "ongoing").trim() as "ongoing" | "completed") || "ongoing",
     genre: String(formData.get("genre") || "").trim() || null,
   }
@@ -214,6 +215,7 @@ export async function updateSeriesAction(_prev: unknown, formData: FormData) {
     slug: String(formData.get("slug") || "").trim() || undefined,
     synopsis: String(formData.get("synopsis") || "").trim() || null,
     cover_image_url: String(formData.get("cover_image_url") || "").trim() || null,
+    poster_image_url: String(formData.get("poster_image_url") || "").trim() || null,
     status: (String(formData.get("status") || "ongoing").trim() as "ongoing" | "completed") || "ongoing",
     genre: String(formData.get("genre") || "").trim() || null,
   }

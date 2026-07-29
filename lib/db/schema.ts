@@ -20,6 +20,7 @@ export const series = pgTable('series', {
   slug: text('slug').notNull().unique(),
   synopsis: text('synopsis'),
   coverImageUrl: text('cover_image_url'),
+  posterImageUrl: text('poster_image_url'),
   status: text('status').default('ongoing'),
   genre: text('genre'),
   createdAt: timestamp('created_at').defaultNow(),
