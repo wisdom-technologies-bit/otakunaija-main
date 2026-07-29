@@ -18,9 +18,9 @@ export function SeriesCard({ series, creatorName, variant = 'poster' }: SeriesCa
   if (variant === 'poster') {
     return (
       <Link href={`/episodes/${series.slug}`}>
-        <div className="group relative overflow-hidden rounded-lg border border-border/60 bg-muted transition-all hover:border-primary/40 hover:shadow-lg">
-          {/* Poster Image - 9:16 aspect ratio */}
-          <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: '9/16' }}>
+        <div className="group flex flex-col gap-2">
+          {/* Poster Image Container - 9:16 aspect ratio */}
+          <div className="relative w-full overflow-hidden rounded-lg border border-border/60 bg-muted transition-all hover:border-primary/40 hover:shadow-lg" style={{ aspectRatio: '9/16' }}>
             {series.posterImageUrl ? (
               <Image
                 src={series.posterImageUrl}
@@ -38,20 +38,24 @@ export function SeriesCard({ series, creatorName, variant = 'poster' }: SeriesCa
             {/* Overlay with gradient */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-            {/* Content Overlay - Bottom */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-              <h3 className="line-clamp-2 font-bold text-sm leading-tight mb-2">
-                {series.title}
-              </h3>
+            {/* Episode Count and Status - Bottom Left and Right corners inside poster */}
+            <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-3 text-white">
               {series.episodeCount !== undefined && (
-                <p className="text-xs mb-1">
+                <p className="text-xs font-medium">
                   Ep {series.episodeCount}
                 </p>
               )}
-              <div className={`inline-block rounded-full ${statusColor} px-2 py-1 text-xs font-medium`}>
+              <div className={`rounded-full ${statusColor} px-2 py-1 text-xs font-medium`}>
                 {statusLabel}
               </div>
             </div>
+          </div>
+
+          {/* Series Name - Below Poster */}
+          <div className="flex flex-col gap-1">
+            <h3 className="line-clamp-2 font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+              {series.title}
+            </h3>
           </div>
         </div>
       </Link>
