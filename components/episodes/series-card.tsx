@@ -7,13 +7,58 @@ import { type Series } from '@/lib/db/schema'
 interface SeriesCardProps {
   series: Series & { episodeCount?: number }
   creatorName?: string
+  variant?: 'poster' | 'default'
 }
 
-export function SeriesCard({ series, creatorName }: SeriesCardProps) {
+export function SeriesCard({ series, creatorName, variant = 'poster' }: SeriesCardProps) {
   const genreTag = series.genre || 'Anime'
   const statusColor = series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
   const statusLabel = series.status === 'ongoing' ? 'Ongoing' : 'Completed'
 
+  if (variant === 'poster') {
+    return (
+      <Link href={`/episodes/${series.slug}`}>
+        <div className="group relative overflow-hidden rounded-lg border border-border/60 bg-muted transition-all hover:border-primary/40 hover:shadow-lg">
+          {/* Poster Image - 9:16 aspect ratio */}
+          <div className="relative w-full overflow-hidden bg-muted" style={{ aspectRatio: '9/16' }}>
+            {series.posterImageUrl ? (
+              <Image
+                src={series.posterImageUrl}
+                alt={series.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                <span className="text-xs text-muted-foreground">No image</span>
+              </div>
+            )}
+
+            {/* Overlay with gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            {/* Content Overlay - Bottom */}
+            <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+              <h3 className="line-clamp-2 font-bold text-sm leading-tight mb-2">
+                {series.title}
+              </h3>
+              {series.episodeCount !== undefined && (
+                <p className="text-xs mb-1">
+                  Ep {series.episodeCount}
+                </p>
+              )}
+              <div className={`inline-block rounded-full ${statusColor} px-2 py-1 text-xs font-medium`}>
+                {statusLabel}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    )
+  }
+
+  // Default variant - kept for backward compatibility
   return (
     <Link href={`/episodes/${series.slug}`}>
       <div className="group h-full overflow-hidden rounded-lg border border-border/60 bg-card transition-all hover:border-primary/40 hover:shadow-lg">

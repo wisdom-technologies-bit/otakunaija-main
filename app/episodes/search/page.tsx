@@ -72,9 +72,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               {seriesResults.length > 0 && (
                 <section className="mb-12">
                   <h2 className="mb-6 text-lg font-semibold">Series</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
                     {seriesResults.map((s) => (
-                      <SeriesCard key={s.id} series={s} />
+                      <SeriesCard key={s.id} series={s} variant="poster" />
                     ))}
                   </div>
                 </section>

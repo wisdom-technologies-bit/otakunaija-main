@@ -166,7 +166,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
               <h2 className="mb-6 text-2xl font-bold text-foreground">
                 All Series
               </h2>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 xl:grid-cols-5">
                 {seriesWithCounts.map((item) => (
                   <SeriesCard
                     key={item.series.id}
@@ -175,6 +175,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
                       episodeCount: item.episodeCount,
                     }}
                     creatorName={item.creator?.name}
+                    variant="poster"
                   />
                 ))}
               </div>
