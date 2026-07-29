@@ -17,6 +17,7 @@ type Props = {
   }) => void
   defaultVideoUrl?: string
   defaultThumbnailUrl?: string
+  defaultPublicId?: string
 }
 
 export function VideoUploader({
@@ -27,6 +28,7 @@ export function VideoUploader({
   onUploadComplete,
   defaultVideoUrl,
   defaultThumbnailUrl,
+  defaultPublicId,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [videoUrl, setVideoUrl] = useState<string>(defaultVideoUrl || "")
@@ -35,7 +37,7 @@ export function VideoUploader({
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
-  const [publicId, setPublicId] = useState<string>("")
+  const [publicId, setPublicId] = useState<string>(defaultPublicId || "")
 
   const onPick = () => inputRef.current?.click()
 

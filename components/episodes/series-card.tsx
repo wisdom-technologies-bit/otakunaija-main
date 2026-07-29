@@ -41,7 +41,7 @@ export function SeriesCard({ series, creatorName, variant = 'poster' }: SeriesCa
             {/* Episode Count and Status - Bottom Left and Right corners inside poster */}
             <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-3 text-white">
               {series.episodeCount !== undefined && (
-                <p className="text-xs font-medium border border-white rounded px-2 py-1">
+                <p className="text-xs font-medium border border-red-500 bg-red-500 rounded px-2 py-1">
                   Ep {series.episodeCount}
                 </p>
               )}
