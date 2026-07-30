@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/episodes/search' },
 }
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>

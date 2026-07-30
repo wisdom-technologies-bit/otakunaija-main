@@ -90,9 +90,6 @@ export async function createPostAction(_prev: unknown, formData: FormData) {
     return { ok: false as const, error: "Title, excerpt, content, and category are required" }
   }
   const post = await createPost(input)
-  revalidatePath("/")
-  revalidatePath("/blog")
-  revalidatePath("/admin")
   revalidatePath("/admin/posts")
   redirect(`/admin/posts/${post.id}/edit?created=1`)
 }
@@ -107,10 +104,6 @@ export async function updatePostAction(_prev: unknown, formData: FormData) {
     return { ok: false as const, error: "Title, excerpt, content, and category are required" }
   }
   await updatePost(input)
-  revalidatePath("/")
-  revalidatePath("/blog")
-  revalidatePath(`/blog/${input.slug || ""}`)
-  revalidatePath("/admin")
   revalidatePath("/admin/posts")
   return { ok: true as const, error: null, savedAt: Date.now() }
 }
@@ -132,9 +125,7 @@ export async function createCreatorAction(_prev: unknown, formData: FormData) {
   }
 
   const creator = await createCreator(input)
-  revalidatePath("/admin")
   revalidatePath("/admin/creators")
-  revalidatePath("/admin/series")
   redirect(`/admin/creators/${creator.id}/edit?created=1`)
 }
 
@@ -157,9 +148,7 @@ export async function updateCreatorAction(_prev: unknown, formData: FormData) {
   }
 
   await updateCreator(input)
-  revalidatePath("/admin")
   revalidatePath("/admin/creators")
-  revalidatePath("/admin/series")
   return { ok: true as const, error: null, savedAt: Date.now() }
 }
 
@@ -171,7 +160,6 @@ export async function deleteCreatorAction(formData: FormData) {
   try {
     await deleteCreator(id)
     revalidatePath("/admin/creators")
-    revalidatePath("/admin/series")
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Failed to delete" }
   }
@@ -359,8 +347,6 @@ export async function deletePostAction(formData: FormData) {
   const id = Number(formData.get("id") || 0)
   if (!id) return
   await deletePost(id)
-  revalidatePath("/")
-  revalidatePath("/blog")
   revalidatePath("/admin/posts")
   redirect("/admin/posts")
 }

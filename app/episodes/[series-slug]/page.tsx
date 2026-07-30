@@ -11,6 +11,8 @@ import { SeriesEpisodesPanel } from '@/components/episodes/series-episodes-panel
 import { AdSlot } from '@/components/ad-slot'
 import { Calendar, Play, Tag } from 'lucide-react'
 
+export const revalidate = 1800
+
 interface Props {
   params: Promise<{ 'series-slug': string }>
 }

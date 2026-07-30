@@ -12,7 +12,7 @@ import { InfinitePostList } from "@/components/infinite-post-list"
 import { HeroCarousel } from "@/components/hero-carousel"
 import { HomepageLatestSection } from "@/components/homepage-latest-section"
 
-export const revalidate = 300
+export const revalidate = 900
 
 export default async function HomePage() {
   const [featured, recent, trending] = await Promise.all([

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next"
 import { CATEGORIES, getAllSlugs } from "@/lib/posts"
 import { getAllSeriesWithEpisodesForSitemap } from "@/lib/db/queries"
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 const BASE = "https://otakunaija.name.ng"
 

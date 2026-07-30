@@ -34,7 +34,7 @@ export async function generateMetadata({
 
 type Search = { category?: string; q?: string }
 
-export const revalidate = 300
+export const revalidate = 600
 
 export default async function BlogPage({
   searchParams,
