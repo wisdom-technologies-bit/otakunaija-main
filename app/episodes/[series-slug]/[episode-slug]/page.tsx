@@ -4,6 +4,8 @@ import {
   getEpisodeBySlugWithContext,
   getPreviousAndNextEpisode,
   getEpisodesBySeries,
+  getTrendingSeries,
+  getLatestEpisodeNumber,
 } from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -12,10 +14,11 @@ import { VideoPlayer } from '@/components/episodes/video-player-client'
 import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { EpisodeNavigation } from '@/components/episodes/episode-navigation'
 import { EpisodeTracker } from '@/components/episodes/episode-tracker'
-import { MoreEpisodes } from '@/components/episodes/more-episodes'
 import { formatPublishedDate, formatViewCount } from '@/lib/episode-utils'
 import { ExpandableSynopsis } from '@/components/episodes/expandable-synopsis'
 import { LiveViewerWidget } from '@/components/episodes/live-viewer-widget'
+import { AboutSeriesSidebar } from '@/components/episodes/about-series-sidebar'
+import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
 
 interface Props {
   params: Promise<{ 'series-slug': string; 'episode-slug': string }>
@@ -101,8 +104,14 @@ export default async function WatchPage({ params }: Props) {
   // Get navigation episodes
   const navData = await getPreviousAndNextEpisode(series.id, episode.episodeNumber)
 
-  // Get all episodes for the "More Episodes" section
+  // Get all episodes for the series
   const allEpisodes = await getEpisodesBySeries(series.id)
+
+  // Get episode count for sidebar
+  const episodeCount = await getLatestEpisodeNumber(series.id)
+
+  // Get trending series for the main content area
+  const trendingSeriesData = await getTrendingSeries(12)
 
   // 1. Generate Schema for TVEpisode, VideoObject, and Breadcrumbs via @graph
   const jsonLd = {
@@ -186,84 +195,97 @@ export default async function WatchPage({ params }: Props) {
         </div>
       </div>
 
-      <main className="flex-1 mx-auto w-full max-w-4xl px-4 md:px-6 py-8">
-        {/* Video Player */}
-        <div className="mb-8 overflow-hidden rounded-lg bg-black">
-          <VideoPlayer
-            videoUrl={episode.videoUrl}
-            thumbnailUrl={episode.thumbnailUrl}
-            title={episode.title}
-            subtitlesUrl={episode.subtitlesUrl}
-          />
-        </div>
-
-        {/* Episode Info */}
-        <div className="space-y-6 mb-8">
-          {/* Title and Metadata */}
-          <div className="space-y-4">
-            <h1 className="text-xl md:text-2xl font-bold text-foreground">{episode.title}</h1>
-
-            <div className="flex flex-wrap items-center gap-4 text-xs text-foreground/70">
-              <Link
-                href={`/episodes/${seriesSlug}`}
-                className="text-primary hover:underline font-medium"
-              >
-                {series.title}
-              </Link>
-              <span>·</span>
-              <span>Episode {episode.episodeNumber}</span>
-              <span>·</span>
-              <span>{formatViewCount(episode.viewCount)} views</span>
-              <span>·</span>
-              <span>
-                {episode.totalWatchMinutes && episode.totalWatchMinutes > 0
-                  ? episode.totalWatchMinutes > 59
-                    ? `${Math.floor(episode.totalWatchMinutes / 60)}h ${episode.totalWatchMinutes % 60}m watched`
-                    : `${episode.totalWatchMinutes}m watched`
-                  : 'Just started'}
-              </span>
-              <span>·</span>
-              <span>{formatPublishedDate(episode.publishedAt || new Date())}</span>
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_340px]">
+          {/* Main Content */}
+          <div className="space-y-8 min-w-0">
+            {/* Video Player */}
+            <div className="overflow-hidden rounded-lg bg-black">
+              <VideoPlayer
+                videoUrl={episode.videoUrl}
+                thumbnailUrl={episode.thumbnailUrl}
+                title={episode.title}
+                subtitlesUrl={episode.subtitlesUrl}
+              />
             </div>
-            <LiveViewerWidget
-              episodeUrl={`https://otakunaija.name.ng/episodes/${seriesSlug}/${episode.slug}`}
-            />
+
+            {/* Episode Info */}
+            <div className="space-y-6">
+              {/* Title and Metadata */}
+              <div className="space-y-4">
+                <h1 className="text-xl md:text-2xl font-bold text-foreground">{episode.title}</h1>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs text-foreground/70">
+                  <Link
+                    href={`/episodes/${seriesSlug}`}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {series.title}
+                  </Link>
+                  <span>·</span>
+                  <span>Episode {episode.episodeNumber}</span>
+                  <span>·</span>
+                  <span>{formatViewCount(episode.viewCount)} views</span>
+                  <span>·</span>
+                  <span>
+                    {episode.totalWatchMinutes && episode.totalWatchMinutes > 0
+                      ? episode.totalWatchMinutes > 59
+                        ? `${Math.floor(episode.totalWatchMinutes / 60)}h ${episode.totalWatchMinutes % 60}m watched`
+                        : `${episode.totalWatchMinutes}m watched`
+                      : 'Just started'}
+                  </span>
+                  <span>·</span>
+                  <span>{formatPublishedDate(episode.publishedAt || new Date())}</span>
+                </div>
+                <LiveViewerWidget
+                  episodeUrl={`https://otakunaija.name.ng/episodes/${seriesSlug}/${episode.slug}`}
+                />
+              </div>
+
+              {/* Navigation Buttons */}
+              <EpisodeNavigation
+                seriesSlug={seriesSlug}
+                currentEpisode={episode}
+                previousEpisode={navData.previous}
+                nextEpisode={navData.next}
+                allEpisodes={allEpisodes}
+              />
+
+              {/* Creator Credit */}
+              {creator && <CreatorCredit creator={creator} />}
+
+              {/* Synopsis */}
+              {episode.synopsis && <ExpandableSynopsis synopsis={episode.synopsis} />}
+
+              {/* Mobile About Series Section */}
+              <div className="lg:hidden">
+                <AboutSeriesSidebar series={series} episodeCount={episodeCount} />
+              </div>
+            </div>
+
+            {/* Newsletter */}
+            <div className="rounded-lg border border-border/60 bg-card/40 p-8">
+              <div className="max-w-2xl">
+                <h3 className="mb-2 text-xl font-bold text-foreground">
+                  Get weekly anime drops, straight to your inbox.
+                </h3>
+                <p className="mb-6 text-foreground/70">
+                  Subscribe to stay updated on new episodes and exclusive creator content.
+                </p>
+                <NewsletterSignup />
+              </div>
+            </div>
+
+            {/* Trending Series Section */}
+            <div className="pt-4">
+              <TrendingSeriesSection trendingSeries={trendingSeriesData} />
+            </div>
           </div>
 
-          {/* Navigation Buttons */}
-          <EpisodeNavigation
-            seriesSlug={seriesSlug}
-            currentEpisode={episode}
-            previousEpisode={navData.previous}
-            nextEpisode={navData.next}
-            allEpisodes={allEpisodes}
-          />
-
-          {/* Creator Credit */}
-          {creator && <CreatorCredit creator={creator} />}
-
-          {/* Synopsis */}
-          {episode.synopsis && <ExpandableSynopsis synopsis={episode.synopsis} />}
-
-          {/* More Episodes */}
-          {allEpisodes.length > 1 && (
-            <MoreEpisodes
-              episodes={allEpisodes}
-              currentEpisodeId={episode.id}
-              seriesSlug={seriesSlug}
-            />
-          )}
-
-          {/* Newsletter */}
-          <div className="rounded-lg border border-border/60 bg-card/40 p-8">
-            <div className="max-w-2xl">
-              <h3 className="mb-2 text-xl font-bold text-foreground">
-                Get weekly anime drops, straight to your inbox.
-              </h3>
-              <p className="mb-6 text-foreground/70">
-                Subscribe to stay updated on new episodes and exclusive creator content.
-              </p>
-              <NewsletterSignup />
+          {/* Sidebar - Desktop Only */}
+          <div className="hidden lg:block">
+            <div className="sticky top-24 space-y-6">
+              <AboutSeriesSidebar series={series} episodeCount={episodeCount} />
             </div>
           </div>
         </div>
