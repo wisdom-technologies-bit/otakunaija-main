@@ -168,6 +168,45 @@ export default async function SeriesPage({ params }: Props) {
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
           <div className="space-y-8">
+            {/* Mobile Series Header with Poster */}
+            <div className="sm:hidden space-y-4">
+              <div className="flex gap-4">
+                {series.posterImageUrl && (
+                  <div className="relative h-32 w-24 flex-shrink-0 overflow-hidden rounded border border-border/60 bg-muted" style={{ aspectRatio: '9/16' }}>
+                    <Image src={series.posterImageUrl} alt={`${series.title} poster`} fill className="object-cover" sizes="96px" />
+                  </div>
+                )}
+                
+                <div className="flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-xl font-bold text-foreground">{series.title}</h1>
+                  </div>
+                  
+                  {/* Genre badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {series.genre && (
+                      <span className="rounded-full bg-primary/90 px-2.5 py-1 text-xs font-medium text-primary-foreground">
+                        {series.genre}
+                      </span>
+                    )}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium text-white ${
+                        series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
+                      }`}
+                    >
+                      {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
+                    </span>
+                  </div>
+                  
+                  {/* Quick stats */}
+                  <div className="text-xs text-foreground/70 space-y-1">
+                    {year && <div><span className="font-medium">{year}</span> • Year</div>}
+                    <div><span className="font-medium">{episodeCount}</span> Episodes</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Synopsis */}
             {series.synopsis && (
               <div>

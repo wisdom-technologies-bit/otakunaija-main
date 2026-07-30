@@ -259,7 +259,7 @@ export default async function WatchPage({ params }: Props) {
 
               {/* Mobile About Series Section */}
               <div className="lg:hidden">
-                <AboutSeriesSidebar series={series} episodeCount={episodeCount} />
+                <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={episode.id} />
               </div>
             </div>
 
@@ -285,7 +285,7 @@ export default async function WatchPage({ params }: Props) {
           {/* Sidebar - Desktop Only */}
           <div className="hidden lg:block">
             <div className="sticky top-24 space-y-6">
-              <AboutSeriesSidebar series={series} episodeCount={episodeCount} />
+              <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={episode.id} />
             </div>
           </div>
         </div>
