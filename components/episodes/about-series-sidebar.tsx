@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { type Series } from '@/lib/db/schema'
+import { AdSlot } from '@/components/ad-slot'
 
 interface AboutSeriesSidebarProps {
   series: Series
@@ -70,6 +71,9 @@ export function AboutSeriesSidebar({ series, episodeCount }: AboutSeriesSidebarP
           View All Episodes →
         </Link>
       </div>
+
+      {/* Ad Slot - Sidebar */}
+      <AdSlot slot="sidebar" label="Advertisement" />
 
       {/* Add Placement Section */}
       <div className="rounded-lg border border-border/60 bg-card/40 p-4 space-y-3">
