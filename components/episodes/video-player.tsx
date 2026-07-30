@@ -21,49 +21,54 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: Vid
   useEffect(() => {
     // Only initialize Plyr when user clicks play
     if (isPlaying && videoRef.current && !playerRef.current) {
-      playerRef.current = new Plyr(videoRef.current, {
-  controls: [
-    'play-large',
-    'play',
-    'progress',
-    'current-time',
-    'mute',
-    'volume',
-    'captions',
-    'settings',
-    'pip',
-    'fullscreen',
-  ],
+      // Wait a tick to ensure the video element is fully ready with tracks
+      setTimeout(() => {
+        if (videoRef.current && !playerRef.current) {
+          playerRef.current = new Plyr(videoRef.current, {
+    controls: [
+      'play-large',
+      'play',
+      'progress',
+      'current-time',
+      'mute',
+      'volume',
+      'captions',
+      'settings',
+      'pip',
+      'fullscreen',
+    ],
 
-  settings: ['speed', 'captions'],
+    settings: ['speed', 'captions'],
 
-  speed: {
-    selected: 1,
-    options: [0.5, 0.75, 1, 1.25, 1.5, 2],
-  },
+    speed: {
+      selected: 1,
+      options: [0.5, 0.75, 1, 1.25, 1.5, 2],
+    },
 
-  captions: {
-    active: false,
-    language: 'en',
-  },
-} as any)
+    captions: {
+      active: false,
+      language: 'en',
+    },
+  } as any)
 
-      // Add custom CSS variables for theming to match dark theme
-      const style = document.createElement('style')
-      style.textContent = `
-        :root {
-  --plyr-color-main: var(--color-primary);
-  --plyr-control-radius: 0.25rem;
-  --plyr-range-track-height: 0.25rem;
-}
-        .plyr {
-          background-color: #1a0d1a;
+          // Add custom CSS variables for theming to match dark theme
+          const style = document.createElement('style')
+          style.textContent = `
+            :root {
+      --plyr-color-main: var(--color-primary);
+      --plyr-control-radius: 0.25rem;
+      --plyr-range-track-height: 0.25rem;
+    }
+            .plyr {
+              background-color: #1a0d1a;
+            }
+            .plyr__controls {
+              background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
+            }
+          `
+          document.head.appendChild(style)
         }
-        .plyr__controls {
-          background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
-        }
-      `
-      document.head.appendChild(style)
+      }, 0)
     }
 
     return () => {
@@ -84,11 +89,12 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: Vid
       <div className="w-full bg-black">
         <video
           ref={videoRef}
-          preload="none"
+          preload="metadata"
           poster={thumbnailUrl}
           playsInline
           className="h-auto w-full plyr-react"
           title={title}
+          crossOrigin="anonymous"
         >
           <source src={videoUrl} type="video/mp4" />
           {subtitlesUrl && (
@@ -98,6 +104,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: Vid
               srcLang="en"
               label="English"
               default
+              crossOrigin="anonymous"
             />
           )}
           Your browser does not support the video tag.
