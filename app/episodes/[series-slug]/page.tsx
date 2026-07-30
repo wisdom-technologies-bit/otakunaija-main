@@ -5,10 +5,10 @@ import { getSeriesBySlugWithEpisodes } from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { NewsletterSignup } from '@/components/newsletter-signup'
-import { EpisodeRow } from '@/components/episodes/episode-row'
-import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { ExpandableMarkdownSynopsis } from '@/components/episodes/expandable-markdown-synopsis'
+import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { SeriesEpisodesPanel } from '@/components/episodes/series-episodes-panel'
+import { AdSlot } from '@/components/ad-slot'
 import { Calendar, Play, Tag } from 'lucide-react'
 
 interface Props {
@@ -261,6 +261,9 @@ export default async function SeriesPage({ params }: Props) {
                 </div>
               </dl>
             </section>
+
+            {/* Ad Slot - Sidebar */}
+            <AdSlot slot="sidebar" label="Advertisement" />
 
             <section id="newsletter" className="scroll-mt-24 rounded-xl border border-border bg-card p-5">
               <h3 className="mb-2 text-base font-bold text-foreground">

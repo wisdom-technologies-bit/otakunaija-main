@@ -284,7 +284,7 @@ export default async function WatchPage({ params }: Props) {
 
           {/* Sidebar - Desktop Only */}
           <div className="hidden lg:block">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-0 space-y-6">
               <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={episode.id} />
             </div>
           </div>

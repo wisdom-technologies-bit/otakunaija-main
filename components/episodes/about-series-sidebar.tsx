@@ -155,7 +155,7 @@ export function AboutSeriesSidebar({ series, episodes, currentEpisodeId }: About
 
       {/* Ad Slot - Sidebar */}
       <AdSlot slot="sidebar" label="Advertisement" />
-
+      
       {/* Add Placement Section */}
       <div className="rounded-lg border border-border/60 bg-card/40 p-4 space-y-3">
         <h3 className="text-sm font-bold text-foreground">Add Placement</h3>
