@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import {
   checkCredentials,
@@ -90,6 +90,8 @@ export async function createPostAction(_prev: unknown, formData: FormData) {
     return { ok: false as const, error: "Title, excerpt, content, and category are required" }
   }
   const post = await createPost(input)
+  revalidateTag("blog-all")
+  revalidateTag("blog-recent")
   revalidatePath("/admin/posts")
   redirect(`/admin/posts/${post.id}/edit?created=1`)
 }
@@ -104,6 +106,11 @@ export async function updatePostAction(_prev: unknown, formData: FormData) {
     return { ok: false as const, error: "Title, excerpt, content, and category are required" }
   }
   await updatePost(input)
+  revalidateTag("blog-all")
+  revalidateTag("blog-recent")
+  revalidateTag(`blog-post-${input.slug}`)
+  if (input.featured) revalidateTag("blog-featured")
+  if (input.trending) revalidateTag("blog-trending")
   revalidatePath("/admin/posts")
   return { ok: true as const, error: null, savedAt: Date.now() }
 }
@@ -125,6 +132,8 @@ export async function createCreatorAction(_prev: unknown, formData: FormData) {
   }
 
   const creator = await createCreator(input)
+  revalidateTag("creators-all")
+  revalidateTag("series-all")
   revalidatePath("/admin/creators")
   redirect(`/admin/creators/${creator.id}/edit?created=1`)
 }
@@ -148,6 +157,9 @@ export async function updateCreatorAction(_prev: unknown, formData: FormData) {
   }
 
   await updateCreator(input)
+  revalidateTag("creators-all")
+  revalidateTag(`creator-${id}`)
+  revalidateTag("series-all")
   revalidatePath("/admin/creators")
   return { ok: true as const, error: null, savedAt: Date.now() }
 }
@@ -159,6 +171,9 @@ export async function deleteCreatorAction(formData: FormData) {
 
   try {
     await deleteCreator(id)
+    revalidateTag("creators-all")
+    revalidateTag(`creator-${id}`)
+    revalidateTag("series-all")
     revalidatePath("/admin/creators")
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Failed to delete" }
@@ -185,9 +200,12 @@ export async function createSeriesAction(_prev: unknown, formData: FormData) {
   }
 
   const series = await createSeries(input)
-  revalidatePath("/admin")
+  revalidateTag("series-all")
+  revalidateTag(`series-status-${input.status}`)
+  if (input.genre) revalidateTag(`series-genre-${input.genre}`)
+  revalidateTag("episodes-trending")
+  revalidateTag("sitemap")
   revalidatePath("/admin/series")
-  revalidatePath("/episodes")
   redirect(`/admin/series/${series.id}/edit?created=1`)
 }
 
@@ -213,9 +231,13 @@ export async function updateSeriesAction(_prev: unknown, formData: FormData) {
   }
 
   await updateSeries(input)
-  revalidatePath("/admin")
+  revalidateTag("series-all")
+  revalidateTag(`series-${id}`)
+  revalidateTag(`series-status-${input.status}`)
+  if (input.genre) revalidateTag(`series-genre-${input.genre}`)
+  revalidateTag("episodes-trending")
+  revalidateTag("sitemap")
   revalidatePath("/admin/series")
-  revalidatePath("/episodes")
   return { ok: true as const, error: null, savedAt: Date.now() }
 }
 
@@ -226,8 +248,12 @@ export async function deleteSeriesAction(formData: FormData) {
 
   try {
     await deleteSeries(id)
+    revalidateTag("series-all")
+    revalidateTag(`series-${id}`)
+    revalidateTag("episodes-recent")
+    revalidateTag("episodes-trending")
+    revalidateTag("sitemap")
     revalidatePath("/admin/series")
-    revalidatePath("/episodes")
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Failed to delete" }
   }
@@ -272,9 +298,11 @@ export async function createEpisodeAction(_prev: unknown, formData: FormData) {
 
   try {
     const episode = await createEpisode(input)
-    revalidatePath("/admin")
+    revalidateTag(`series-${input.series_id}`)
+    revalidateTag("episodes-recent")
+    revalidateTag("episodes-trending")
+    revalidateTag("sitemap")
     revalidatePath("/admin/episodes")
-    revalidatePath("/episodes")
     redirect(`/admin/episodes/${episode.id}/edit?created=1`)
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create episode"
@@ -323,8 +351,12 @@ export async function updateEpisodeAction(_prev: unknown, formData: FormData) {
 
   try {
     await updateEpisode(input)
+    revalidateTag(`series-${input.series_id}`)
+    revalidateTag(`episode-${id}`)
+    revalidateTag("episodes-recent")
+    revalidateTag("episodes-trending")
+    revalidateTag("sitemap")
     revalidatePath("/admin/episodes")
-    revalidatePath("/episodes")
     return { ok: true as const, error: null, savedAt: Date.now() }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update episode"
@@ -338,8 +370,10 @@ export async function deleteEpisodeAction(formData: FormData) {
   if (!id) throw new Error("Missing episode id")
 
   await deleteEpisode(id)
+  revalidateTag("episodes-recent")
+  revalidateTag("episodes-trending")
+  revalidateTag("sitemap")
   revalidatePath("/admin/episodes")
-  revalidatePath("/episodes")
 }
 
 export async function deletePostAction(formData: FormData) {
@@ -347,6 +381,10 @@ export async function deletePostAction(formData: FormData) {
   const id = Number(formData.get("id") || 0)
   if (!id) return
   await deletePost(id)
+  revalidateTag("blog-all")
+  revalidateTag("blog-recent")
+  revalidateTag("blog-featured")
+  revalidateTag("blog-trending")
   revalidatePath("/admin/posts")
   redirect("/admin/posts")
 }
