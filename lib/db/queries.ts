@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import { db } from './index'
 import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
 import { eq, asc, desc, and, lt, gt, sql } from 'drizzle-orm'
@@ -211,22 +212,28 @@ export async function getSeriesByGenre(genre: string) {
 
 // Get the top N series by total views across their episodes — used for "Trending Now" on /episodes.
 // Since series itself has no view_count column, this sums each series' episodes' view counts.
-const _getTrendingSeries = cache(async (limit = 5) => {
-  const result = await db
-    .select({
-      series: series,
-      creator: creators,
-      totalViews: sql<number>`COALESCE(SUM(${episodes.viewCount}), 0)`.as('total_views'),
-    })
-    .from(series)
-    .leftJoin(creators, eq(series.creatorId, creators.id))
-    .leftJoin(episodes, eq(series.id, episodes.seriesId))
-    .groupBy(series.id, creators.id)
-    .orderBy(desc(sql`total_views`))
-    .limit(limit)
+const _getTrendingSeries = cache(
+  unstable_cache(
+    async (limit: number) => {
+      const result = await db
+        .select({
+          series: series,
+          creator: creators,
+          totalViews: sql<number>`COALESCE(SUM(${episodes.viewCount}), 0)`.as('total_views'),
+        })
+        .from(series)
+        .leftJoin(creators, eq(series.creatorId, creators.id))
+        .leftJoin(episodes, eq(series.id, episodes.seriesId))
+        .groupBy(series.id, creators.id)
+        .orderBy(desc(sql`total_views`))
+        .limit(limit)
 
-  return result
-})
+      return result
+    },
+    ['trending-series'],
+    { revalidate: 3600, tags: ['episodes-trending'] }
+  )
+)
 
 export async function getTrendingSeries(limit = 5) {
   return _getTrendingSeries(limit)

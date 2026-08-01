@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import { sql } from "./db"
 
 export type Post = {
@@ -28,107 +29,142 @@ export function getCoverImage(post: Pick<Post, "cover_image" | "title" | "catego
   return `/placeholder.svg?height=${h}&width=${w}&query=${encodeURIComponent(`anime ${post.category} ${post.title}`)}`
 }
 
-const _getFeaturedPosts = cache(async (limit = 4): Promise<Post[]> => {
-  const rows = await sql`
-    SELECT * FROM posts
-    WHERE featured = true
-    ORDER BY published_at DESC
-    LIMIT ${limit}
-  `
-  return rows as Post[]
-})
+const _getFeaturedPosts = cache(
+  unstable_cache(
+    async (limit: number): Promise<Post[]> => {
+      const rows = await sql`
+        SELECT * FROM posts
+        WHERE featured = true
+        ORDER BY published_at DESC
+        LIMIT ${limit}
+      `
+      return rows as Post[]
+    },
+    ['featured-posts'],
+    { revalidate: 3600, tags: ['blog-featured'] }
+  )
+)
 
 export async function getFeaturedPosts(limit = 4): Promise<Post[]> {
   return _getFeaturedPosts(limit)
 }
 
-const _getTrendingPosts = cache(async (limit = 5): Promise<Post[]> => {
-  const rows = await sql`
-    SELECT * FROM posts
-    WHERE trending = true
-    ORDER BY views DESC
-    LIMIT ${limit}
-  `
-  return rows as Post[]
-})
+const _getTrendingPosts = cache(
+  unstable_cache(
+    async (limit: number): Promise<Post[]> => {
+      const rows = await sql`
+        SELECT * FROM posts
+        WHERE trending = true
+        ORDER BY views DESC
+        LIMIT ${limit}
+      `
+      return rows as Post[]
+    },
+    ['trending-posts'],
+    { revalidate: 3600, tags: ['blog-trending'] }
+  )
+)
 
 export async function getTrendingPosts(limit = 5): Promise<Post[]> {
   return _getTrendingPosts(limit)
 }
 
-const _getRecentPosts = cache(async (limit = 6, offset = 0): Promise<Post[]> => {
-  const rows = await sql`
-    SELECT * FROM posts
-    ORDER BY published_at DESC
-    LIMIT ${limit}
-    OFFSET ${offset}
-  `
-  return rows as Post[]
-})
+const _getRecentPosts = cache(
+  unstable_cache(
+    async (limit: number, offset: number): Promise<Post[]> => {
+      const rows = await sql`
+        SELECT * FROM posts
+        ORDER BY published_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `
+      return rows as Post[]
+    },
+    ['recent-posts'],
+    { revalidate: 1800, tags: ['blog-recent'] }
+  )
+)
 
 export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
   return _getRecentPosts(limit, offset)
 }
 
-const _getAllPosts = cache(async (options?: { category?: string; search?: string }): Promise<Post[]> => {
-  const { category, search } = options ?? {}
+const _getAllPosts = cache(
+  unstable_cache(
+    async (category?: string, search?: string): Promise<Post[]> => {
+      if (category && search) {
+        const like = `%${search}%`
+        const rows = await sql`
+          SELECT * FROM posts
+          WHERE category = ${category}
+            AND (title ILIKE ${like} OR excerpt ILIKE ${like})
+          ORDER BY published_at DESC
+        `
+        return rows as Post[]
+      }
 
-  if (category && search) {
-    const like = `%${search}%`
-    const rows = await sql`
-      SELECT * FROM posts
-      WHERE category = ${category}
-        AND (title ILIKE ${like} OR excerpt ILIKE ${like})
-      ORDER BY published_at DESC
-    `
-    return rows as Post[]
-  }
+      if (category) {
+        const rows = await sql`
+          SELECT * FROM posts
+          WHERE category = ${category}
+          ORDER BY published_at DESC
+        `
+        return rows as Post[]
+      }
 
-  if (category) {
-    const rows = await sql`
-      SELECT * FROM posts
-      WHERE category = ${category}
-      ORDER BY published_at DESC
-    `
-    return rows as Post[]
-  }
+      if (search) {
+        const like = `%${search}%`
+        const rows = await sql`
+          SELECT * FROM posts
+          WHERE title ILIKE ${like} OR excerpt ILIKE ${like}
+          ORDER BY published_at DESC
+        `
+        return rows as Post[]
+      }
 
-  if (search) {
-    const like = `%${search}%`
-    const rows = await sql`
-      SELECT * FROM posts
-      WHERE title ILIKE ${like} OR excerpt ILIKE ${like}
-      ORDER BY published_at DESC
-    `
-    return rows as Post[]
-  }
-
-  const rows = await sql`SELECT * FROM posts ORDER BY published_at DESC`
-  return rows as Post[]
-})
+      const rows = await sql`SELECT * FROM posts ORDER BY published_at DESC`
+      return rows as Post[]
+    },
+    ['all-posts'],
+    { revalidate: 1800, tags: ['blog-all'] }
+  )
+)
 
 export async function getAllPosts(options?: { category?: string; search?: string }): Promise<Post[]> {
-  return _getAllPosts(options)
+  const { category, search } = options ?? {}
+  return _getAllPosts(category, search)
 }
 
-const _getPostBySlug = cache(async (slug: string): Promise<Post | null> => {
-  const rows = await sql`SELECT * FROM posts WHERE slug = ${slug} LIMIT 1`
-  return (rows[0] as Post) ?? null
-})
+const _getPostBySlug = cache(
+  unstable_cache(
+    async (slug: string): Promise<Post | null> => {
+      const rows = await sql`SELECT * FROM posts WHERE slug = ${slug} LIMIT 1`
+      return (rows[0] as Post) ?? null
+    },
+    ['post-by-slug'],
+    { revalidate: 3600, tags: ['blog-post'] }
+  )
+)
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
   return _getPostBySlug(slug)
 }
 
-const _getRelatedPosts = cache(async (slug: string, category: string, limit = 3): Promise<Post[]> => {
-  const rows = await sql`
-    SELECT * FROM posts
-    WHERE category = ${category} AND slug <> ${slug}
-    ORDER BY published_at DESC
-    LIMIT ${limit}
-  `
-  return rows as Post[]
-})
+const _getRelatedPosts = cache(
+  unstable_cache(
+    async (slug: string, category: string, limit: number): Promise<Post[]> => {
+      const rows = await sql`
+        SELECT * FROM posts
+        WHERE category = ${category} AND slug <> ${slug}
+        ORDER BY published_at DESC
+        LIMIT ${limit}
+      `
+      return rows as Post[]
+    },
+    ['related-posts'],
+    { revalidate: 3600, tags: ['blog-all'] }
+  )
+)
 
 export async function getRelatedPosts(slug: string, category: string, limit = 3): Promise<Post[]> {
   return _getRelatedPosts(slug, category, limit)
@@ -138,10 +174,16 @@ export async function incrementPostViews(slug: string): Promise<void> {
   await sql`UPDATE posts SET views = views + 1 WHERE slug = ${slug}`
 }
 
-const _getAllSlugs = cache(async (): Promise<{ slug: string; published_at: string }[]> => {
-  const rows = await sql`SELECT slug, published_at FROM posts ORDER BY published_at DESC`
-  return rows as { slug: string; published_at: string }[]
-})
+const _getAllSlugs = cache(
+  unstable_cache(
+    async (): Promise<{ slug: string; published_at: string }[]> => {
+      const rows = await sql`SELECT slug, published_at FROM posts ORDER BY published_at DESC`
+      return rows as { slug: string; published_at: string }[]
+    },
+    ['all-slugs'],
+    { revalidate: 86400, tags: ['sitemap'] }
+  )
+)
 
 export async function getAllSlugs(): Promise<{ slug: string; published_at: string }[]> {
   return _getAllSlugs()
