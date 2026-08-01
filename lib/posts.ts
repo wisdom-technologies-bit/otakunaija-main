@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { sql } from "./db"
 
 export type Post = {
@@ -27,7 +28,7 @@ export function getCoverImage(post: Pick<Post, "cover_image" | "title" | "catego
   return `/placeholder.svg?height=${h}&width=${w}&query=${encodeURIComponent(`anime ${post.category} ${post.title}`)}`
 }
 
-export async function getFeaturedPosts(limit = 4): Promise<Post[]> {
+const _getFeaturedPosts = cache(async (limit = 4): Promise<Post[]> => {
   const rows = await sql`
     SELECT * FROM posts
     WHERE featured = true
@@ -35,9 +36,13 @@ export async function getFeaturedPosts(limit = 4): Promise<Post[]> {
     LIMIT ${limit}
   `
   return rows as Post[]
+})
+
+export async function getFeaturedPosts(limit = 4): Promise<Post[]> {
+  return _getFeaturedPosts(limit)
 }
 
-export async function getTrendingPosts(limit = 5): Promise<Post[]> {
+const _getTrendingPosts = cache(async (limit = 5): Promise<Post[]> => {
   const rows = await sql`
     SELECT * FROM posts
     WHERE trending = true
@@ -45,9 +50,13 @@ export async function getTrendingPosts(limit = 5): Promise<Post[]> {
     LIMIT ${limit}
   `
   return rows as Post[]
+})
+
+export async function getTrendingPosts(limit = 5): Promise<Post[]> {
+  return _getTrendingPosts(limit)
 }
 
-export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
+const _getRecentPosts = cache(async (limit = 6, offset = 0): Promise<Post[]> => {
   const rows = await sql`
     SELECT * FROM posts
     ORDER BY published_at DESC
@@ -55,9 +64,13 @@ export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
     OFFSET ${offset}
   `
   return rows as Post[]
+})
+
+export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
+  return _getRecentPosts(limit, offset)
 }
 
-export async function getAllPosts(options?: { category?: string; search?: string }): Promise<Post[]> {
+const _getAllPosts = cache(async (options?: { category?: string; search?: string }): Promise<Post[]> => {
   const { category, search } = options ?? {}
 
   if (category && search) {
@@ -92,14 +105,22 @@ export async function getAllPosts(options?: { category?: string; search?: string
 
   const rows = await sql`SELECT * FROM posts ORDER BY published_at DESC`
   return rows as Post[]
+})
+
+export async function getAllPosts(options?: { category?: string; search?: string }): Promise<Post[]> {
+  return _getAllPosts(options)
 }
 
-export async function getPostBySlug(slug: string): Promise<Post | null> {
+const _getPostBySlug = cache(async (slug: string): Promise<Post | null> => {
   const rows = await sql`SELECT * FROM posts WHERE slug = ${slug} LIMIT 1`
   return (rows[0] as Post) ?? null
+})
+
+export async function getPostBySlug(slug: string): Promise<Post | null> {
+  return _getPostBySlug(slug)
 }
 
-export async function getRelatedPosts(slug: string, category: string, limit = 3): Promise<Post[]> {
+const _getRelatedPosts = cache(async (slug: string, category: string, limit = 3): Promise<Post[]> => {
   const rows = await sql`
     SELECT * FROM posts
     WHERE category = ${category} AND slug <> ${slug}
@@ -107,15 +128,23 @@ export async function getRelatedPosts(slug: string, category: string, limit = 3)
     LIMIT ${limit}
   `
   return rows as Post[]
+})
+
+export async function getRelatedPosts(slug: string, category: string, limit = 3): Promise<Post[]> {
+  return _getRelatedPosts(slug, category, limit)
 }
 
 export async function incrementPostViews(slug: string): Promise<void> {
   await sql`UPDATE posts SET views = views + 1 WHERE slug = ${slug}`
 }
 
-export async function getAllSlugs(): Promise<{ slug: string; published_at: string }[]> {
+const _getAllSlugs = cache(async (): Promise<{ slug: string; published_at: string }[]> => {
   const rows = await sql`SELECT slug, published_at FROM posts ORDER BY published_at DESC`
   return rows as { slug: string; published_at: string }[]
+})
+
+export async function getAllSlugs(): Promise<{ slug: string; published_at: string }[]> {
+  return _getAllSlugs()
 }
 
 export function formatDate(date: string | Date) {

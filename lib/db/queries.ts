@@ -1,9 +1,10 @@
+import { cache } from 'react'
 import { db } from './index'
 import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
 import { eq, asc, desc, and, lt, gt, sql } from 'drizzle-orm'
 
 // Get all series with all their episodes, for sitemap generation
-export async function getAllSeriesWithEpisodesForSitemap() {
+const _getAllSeriesWithEpisodesForSitemap = cache(async () => {
   const result = await db
     .select({
       series: series,
@@ -27,10 +28,14 @@ export async function getAllSeriesWithEpisodesForSitemap() {
   }
 
   return Array.from(seriesMap.values())
+})
+
+export async function getAllSeriesWithEpisodesForSitemap() {
+  return _getAllSeriesWithEpisodesForSitemap()
 }
 
 // Get all series with their creators
-export async function getAllSeriesWithCreators() {
+const _getAllSeriesWithCreators = cache(async () => {
   return db
     .select({
       series: series,
@@ -39,10 +44,14 @@ export async function getAllSeriesWithCreators() {
     .from(series)
     .leftJoin(creators, eq(series.creatorId, creators.id))
     .orderBy(desc(series.createdAt))
+})
+
+export async function getAllSeriesWithCreators() {
+  return _getAllSeriesWithCreators()
 }
 
 // Get one series by slug with creator and all episodes
-export async function getSeriesBySlugWithEpisodes(slug: string) {
+const _getSeriesBySlugWithEpisodes = cache(async (slug: string) => {
   const result = await db
     .select({
       series: series,
@@ -71,10 +80,14 @@ export async function getSeriesBySlugWithEpisodes(slug: string) {
     creator: creatorData,
     episodes: episodesData,
   }
+})
+
+export async function getSeriesBySlugWithEpisodes(slug: string) {
+  return _getSeriesBySlugWithEpisodes(slug)
 }
 
 // Get one episode by slug with series and creator info
-export async function getEpisodeBySlugWithContext(episodeSlug: string) {
+const _getEpisodeBySlugWithContext = cache(async (episodeSlug: string) => {
   const result = await db
     .select({
       episode: episodes,
@@ -92,13 +105,17 @@ export async function getEpisodeBySlugWithContext(episodeSlug: string) {
   }
 
   return result[0]
+})
+
+export async function getEpisodeBySlugWithContext(episodeSlug: string) {
+  return _getEpisodeBySlugWithContext(episodeSlug)
 }
 
 // Get previous and next episode in the same series
-export async function getPreviousAndNextEpisode(
+const _getPreviousAndNextEpisode = cache(async (
   seriesId: number,
   episodeNumber: number
-) {
+) => {
   const [prevEp] = await db
     .select()
     .from(episodes)
@@ -114,20 +131,31 @@ export async function getPreviousAndNextEpisode(
     .limit(1)
 
   return { previous: prevEp, next: nextEp }
+})
+
+export async function getPreviousAndNextEpisode(
+  seriesId: number,
+  episodeNumber: number
+) {
+  return _getPreviousAndNextEpisode(seriesId, episodeNumber)
 }
 
 // Get all episodes in a series ordered by episode number
-export async function getEpisodesBySeries(seriesId: number) {
+const _getEpisodesBySeries = cache(async (seriesId: number) => {
   return db
     .select()
     .from(episodes)
     .where(eq(episodes.seriesId, seriesId))
     .orderBy(asc(episodes.episodeNumber))
+})
+
+export async function getEpisodesBySeries(seriesId: number) {
+  return _getEpisodesBySeries(seriesId)
 }
 
 // Get the N most recently published episodes across ALL series, with series+creator context
 // Used for the "New Releases" section on /episodes and its "View All" page
-export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
+const _getRecentEpisodesAcrossAllSeries = cache(async (limit = 10, offset = 0) => {
   return db
     .select({
       episode: episodes,
@@ -140,11 +168,15 @@ export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
     .orderBy(desc(episodes.publishedAt))
     .limit(limit)
     .offset(offset)
+})
+
+export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
+  return _getRecentEpisodesAcrossAllSeries(limit, offset)
 }
 
 // Get all series with a given status ("ongoing" or "completed"), with creator context —
 // used for the continuously-scrolling "Ongoing Series" row
-export async function getSeriesByStatus(status: 'ongoing' | 'completed') {
+const _getSeriesByStatus = cache(async (status: 'ongoing' | 'completed') => {
   return db
     .select({
       series: series,
@@ -154,10 +186,14 @@ export async function getSeriesByStatus(status: 'ongoing' | 'completed') {
     .leftJoin(creators, eq(series.creatorId, creators.id))
     .where(eq(series.status, status))
     .orderBy(desc(series.createdAt))
+})
+
+export async function getSeriesByStatus(status: 'ongoing' | 'completed') {
+  return _getSeriesByStatus(status)
 }
 
 // Get all series filtered by genre, with creator context — used for the genre filter pills
-export async function getSeriesByGenre(genre: string) {
+const _getSeriesByGenre = cache(async (genre: string) => {
   return db
     .select({
       series: series,
@@ -167,11 +203,15 @@ export async function getSeriesByGenre(genre: string) {
     .leftJoin(creators, eq(series.creatorId, creators.id))
     .where(eq(series.genre, genre))
     .orderBy(desc(series.createdAt))
+})
+
+export async function getSeriesByGenre(genre: string) {
+  return _getSeriesByGenre(genre)
 }
 
 // Get the top N series by total views across their episodes — used for "Trending Now" on /episodes.
 // Since series itself has no view_count column, this sums each series' episodes' view counts.
-export async function getTrendingSeries(limit = 5) {
+const _getTrendingSeries = cache(async (limit = 5) => {
   const result = await db
     .select({
       series: series,
@@ -186,17 +226,25 @@ export async function getTrendingSeries(limit = 5) {
     .limit(limit)
 
   return result
+})
+
+export async function getTrendingSeries(limit = 5) {
+  return _getTrendingSeries(limit)
 }
 
 // Get every distinct genre currently in use across all series — used to build the filter pills
 // dynamically instead of hardcoding a genre list that may not match what's actually in the database
-export async function getAllUsedGenres() {
+const _getAllUsedGenres = cache(async () => {
   const result = await db
     .selectDistinct({ genre: series.genre })
     .from(series)
     .where(sql`${series.genre} IS NOT NULL`)
 
   return result.map((r) => r.genre).filter((g): g is string => g !== null)
+})
+
+export async function getAllUsedGenres() {
+  return _getAllUsedGenres()
 }
 
 // Search episodes and series by query

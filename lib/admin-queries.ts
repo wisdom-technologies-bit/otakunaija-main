@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { sql } from "./db"
 import type { Post } from "./posts"
 
@@ -8,7 +9,7 @@ export type AdminStats = {
   totalMessages: number
 }
 
-export async function getAdminStats(): Promise<AdminStats> {
+const _getAdminStats = cache(async (): Promise<AdminStats> => {
   const [postsRow] = (await sql`SELECT COUNT(*)::int AS c, COALESCE(SUM(views),0)::int AS v FROM posts`) as {
     c: number
     v: number
@@ -21,22 +22,39 @@ export async function getAdminStats(): Promise<AdminStats> {
     totalSubscribers: subsRow?.c ?? 0,
     totalMessages: msgRow?.c ?? 0,
   }
+})
+
+export async function getAdminStats(): Promise<AdminStats> {
+  return _getAdminStats()
 }
 
-export async function getAdminPosts(): Promise<Post[]> {
+const _getAdminPosts = cache(async (): Promise<Post[]> => {
   const rows = await sql`SELECT * FROM posts ORDER BY published_at DESC`
   return rows as Post[]
+})
+
+export async function getAdminPosts(): Promise<Post[]> {
+  return _getAdminPosts()
 }
 
-export async function getAdminPostById(id: number): Promise<Post | null> {
+const _getAdminPostById = cache(async (id: number): Promise<Post | null> => {
   const rows = await sql`SELECT * FROM posts WHERE id = ${id} LIMIT 1`
   return (rows[0] as Post) ?? null
+})
+
+export async function getAdminPostById(id: number): Promise<Post | null> {
+  return _getAdminPostById(id)
 }
 
 export type Subscriber = { id: number; email: string; subscribed_at: string }
-export async function getAllSubscribers(): Promise<Subscriber[]> {
+
+const _getAllSubscribers = cache(async (): Promise<Subscriber[]> => {
   const rows = await sql`SELECT * FROM subscribers ORDER BY subscribed_at DESC`
   return rows as Subscriber[]
+})
+
+export async function getAllSubscribers(): Promise<Subscriber[]> {
+  return _getAllSubscribers()
 }
 
 export type ContactMessage = {
@@ -47,9 +65,14 @@ export type ContactMessage = {
   message: string
   created_at: string
 }
-export async function getAllMessages(): Promise<ContactMessage[]> {
+
+const _getAllMessages = cache(async (): Promise<ContactMessage[]> => {
   const rows = await sql`SELECT * FROM contact_messages ORDER BY created_at DESC`
   return rows as ContactMessage[]
+})
+
+export async function getAllMessages(): Promise<ContactMessage[]> {
+  return _getAllMessages()
 }
 
 function slugify(input: string): string {
