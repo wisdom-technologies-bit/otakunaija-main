@@ -5,134 +5,161 @@ import { creators, series, episodes, postViews, episodeViews, episodeWatchPings 
 import { eq, asc, desc, and, lt, gt, sql } from 'drizzle-orm'
 
 // Get all series with all their episodes, for sitemap generation
-const _getAllSeriesWithEpisodesForSitemap = cache(async () => {
-  const result = await db
-    .select({
-      series: series,
-      episode: episodes,
-    })
-    .from(series)
-    .leftJoin(episodes, eq(series.id, episodes.seriesId))
+const _getAllSeriesWithEpisodesForSitemap = cache(
+  unstable_cache(
+    async () => {
+      const result = await db
+        .select({
+          series: series,
+          episode: episodes,
+        })
+        .from(series)
+        .leftJoin(episodes, eq(series.id, episodes.seriesId))
 
-  const seriesMap = new Map<number, { slug: string; episodes: { slug: string; publishedAt: Date | null }[] }>()
+      const seriesMap = new Map<number, { slug: string; episodes: { slug: string; publishedAt: Date | null }[] }>()
 
-  for (const row of result) {
-    if (!seriesMap.has(row.series.id)) {
-      seriesMap.set(row.series.id, { slug: row.series.slug, episodes: [] })
-    }
-    if (row.episode) {
-      seriesMap.get(row.series.id)!.episodes.push({
-        slug: row.episode.slug,
-        publishedAt: row.episode.publishedAt,
-      })
-    }
-  }
+      for (const row of result) {
+        if (!seriesMap.has(row.series.id)) {
+          seriesMap.set(row.series.id, { slug: row.series.slug, episodes: [] })
+        }
+        if (row.episode) {
+          seriesMap.get(row.series.id)!.episodes.push({
+            slug: row.episode.slug,
+            publishedAt: row.episode.publishedAt,
+          })
+        }
+      }
 
-  return Array.from(seriesMap.values())
-})
+      return Array.from(seriesMap.values())
+    },
+    ['series-episodes-sitemap'],
+    { revalidate: 86400, tags: ['sitemap'] }
+  )
+)
 
 export async function getAllSeriesWithEpisodesForSitemap() {
   return _getAllSeriesWithEpisodesForSitemap()
 }
 
 // Get all series with their creators
-const _getAllSeriesWithCreators = cache(async () => {
-  return db
-    .select({
-      series: series,
-      creator: creators,
-    })
-    .from(series)
-    .leftJoin(creators, eq(series.creatorId, creators.id))
-    .orderBy(desc(series.createdAt))
-})
+const _getAllSeriesWithCreators = cache(
+  unstable_cache(
+    async () => {
+      return db
+        .select({
+          series: series,
+          creator: creators,
+        })
+        .from(series)
+        .leftJoin(creators, eq(series.creatorId, creators.id))
+        .orderBy(desc(series.createdAt))
+    },
+    ['all-series-creators'],
+    { revalidate: 3600, tags: ['series'] }
+  )
+)
 
 export async function getAllSeriesWithCreators() {
   return _getAllSeriesWithCreators()
 }
 
 // Get one series by slug with creator and all episodes
-const _getSeriesBySlugWithEpisodes = cache(async (slug: string) => {
-  const result = await db
-    .select({
-      series: series,
-      creator: creators,
-      episodes: episodes,
-    })
-    .from(series)
-    .leftJoin(creators, eq(series.creatorId, creators.id))
-    .leftJoin(episodes, eq(series.id, episodes.seriesId))
-    .where(eq(series.slug, slug))
-    .orderBy(asc(episodes.episodeNumber))
+const _getSeriesBySlugWithEpisodes = cache(
+  unstable_cache(
+    async (slug: string) => {
+      const result = await db
+        .select({
+          series: series,
+          creator: creators,
+          episodes: episodes,
+        })
+        .from(series)
+        .leftJoin(creators, eq(series.creatorId, creators.id))
+        .leftJoin(episodes, eq(series.id, episodes.seriesId))
+        .where(eq(series.slug, slug))
+        .orderBy(asc(episodes.episodeNumber))
 
-  if (result.length === 0) {
-    return null
-  }
+      if (result.length === 0) {
+        return null
+      }
 
-  // Group episodes by series
-  const seriesData = result[0].series
-  const creatorData = result[0].creator
-  const episodesData = result
-    .map((r) => r.episodes)
-    .filter((ep) => ep !== null)
+      // Group episodes by series
+      const seriesData = result[0].series
+      const creatorData = result[0].creator
+      const episodesData = result
+        .map((r) => r.episodes)
+        .filter((ep) => ep !== null)
 
-  return {
-    series: seriesData,
-    creator: creatorData,
-    episodes: episodesData,
-  }
-})
+      return {
+        series: seriesData,
+        creator: creatorData,
+        episodes: episodesData,
+      }
+    },
+    ['series-by-slug'],
+    { revalidate: 3600, tags: ['series'] }
+  )
+)
 
 export async function getSeriesBySlugWithEpisodes(slug: string) {
   return _getSeriesBySlugWithEpisodes(slug)
 }
 
 // Get one episode by slug with series and creator info
-const _getEpisodeBySlugWithContext = cache(async (episodeSlug: string) => {
-  const result = await db
-    .select({
-      episode: episodes,
-      series: series,
-      creator: creators,
-    })
-    .from(episodes)
-    .leftJoin(series, eq(episodes.seriesId, series.id))
-    .leftJoin(creators, eq(series.creatorId, creators.id))
-    .where(eq(episodes.slug, episodeSlug))
-    .limit(1)
+const _getEpisodeBySlugWithContext = cache(
+  unstable_cache(
+    async (episodeSlug: string) => {
+      const result = await db
+        .select({
+          episode: episodes,
+          series: series,
+          creator: creators,
+        })
+        .from(episodes)
+        .leftJoin(series, eq(episodes.seriesId, series.id))
+        .leftJoin(creators, eq(series.creatorId, creators.id))
+        .where(eq(episodes.slug, episodeSlug))
+        .limit(1)
 
-  if (result.length === 0) {
-    return null
-  }
+      if (result.length === 0) {
+        return null
+      }
 
-  return result[0]
-})
+      return result[0]
+    },
+    ['episode-by-slug'],
+    { revalidate: 7200, tags: ['episodes'] }
+  )
+)
 
 export async function getEpisodeBySlugWithContext(episodeSlug: string) {
   return _getEpisodeBySlugWithContext(episodeSlug)
 }
 
 // Get previous and next episode in the same series
-const _getPreviousAndNextEpisode = cache(async (
-  seriesId: number,
-  episodeNumber: number
-) => {
-  const [prevEp] = await db
-    .select()
-    .from(episodes)
-    .where(and(eq(episodes.seriesId, seriesId), lt(episodes.episodeNumber, episodeNumber)))
-    .orderBy(desc(episodes.episodeNumber))
-    .limit(1)
+const _getPreviousAndNextEpisode = cache(
+  unstable_cache(
+    async (seriesId: number, episodeNumber: number) => {
+      const [prevEp] = await db
+        .select()
+        .from(episodes)
+        .where(and(eq(episodes.seriesId, seriesId), lt(episodes.episodeNumber, episodeNumber)))
+        .orderBy(desc(episodes.episodeNumber))
+        .limit(1)
 
-  const [nextEp] = await db
-    .select()
-    .from(episodes)
-    .where(and(eq(episodes.seriesId, seriesId), gt(episodes.episodeNumber, episodeNumber)))
-    .orderBy(asc(episodes.episodeNumber))
-    .limit(1)
+      const [nextEp] = await db
+        .select()
+        .from(episodes)
+        .where(and(eq(episodes.seriesId, seriesId), gt(episodes.episodeNumber, episodeNumber)))
+        .orderBy(asc(episodes.episodeNumber))
+        .limit(1)
 
-  return { previous: prevEp, next: nextEp }
-})
+      return { previous: prevEp, next: nextEp }
+    },
+    ['episode-navigation'],
+    { revalidate: 3600, tags: ['episodes'] }
+  )
+)
 
 export async function getPreviousAndNextEpisode(
   seriesId: number,
@@ -142,13 +169,19 @@ export async function getPreviousAndNextEpisode(
 }
 
 // Get all episodes in a series ordered by episode number
-const _getEpisodesBySeries = cache(async (seriesId: number) => {
-  return db
-    .select()
-    .from(episodes)
-    .where(eq(episodes.seriesId, seriesId))
-    .orderBy(asc(episodes.episodeNumber))
-})
+const _getEpisodesBySeries = cache(
+  unstable_cache(
+    async (seriesId: number) => {
+      return db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.seriesId, seriesId))
+        .orderBy(asc(episodes.episodeNumber))
+    },
+    ['episodes-by-series'],
+    { revalidate: 3600, tags: ['episodes'] }
+  )
+)
 
 export async function getEpisodesBySeries(seriesId: number) {
   return _getEpisodesBySeries(seriesId)
@@ -156,20 +189,26 @@ export async function getEpisodesBySeries(seriesId: number) {
 
 // Get the N most recently published episodes across ALL series, with series+creator context
 // Used for the "New Releases" section on /episodes and its "View All" page
-const _getRecentEpisodesAcrossAllSeries = cache(async (limit = 10, offset = 0) => {
-  return db
-    .select({
-      episode: episodes,
-      series: series,
-      creator: creators,
-    })
-    .from(episodes)
-    .leftJoin(series, eq(episodes.seriesId, series.id))
-    .leftJoin(creators, eq(series.creatorId, creators.id))
-    .orderBy(desc(episodes.publishedAt))
-    .limit(limit)
-    .offset(offset)
-})
+const _getRecentEpisodesAcrossAllSeries = cache(
+  unstable_cache(
+    async (limit: number, offset: number) => {
+      return db
+        .select({
+          episode: episodes,
+          series: series,
+          creator: creators,
+        })
+        .from(episodes)
+        .leftJoin(series, eq(episodes.seriesId, series.id))
+        .leftJoin(creators, eq(series.creatorId, creators.id))
+        .orderBy(desc(episodes.publishedAt))
+        .limit(limit)
+        .offset(offset)
+    },
+    ['recent-episodes'],
+    { revalidate: 1800, tags: ['episodes-recent'] }
+  )
+)
 
 export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
   return _getRecentEpisodesAcrossAllSeries(limit, offset)
@@ -177,34 +216,46 @@ export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
 
 // Get all series with a given status ("ongoing" or "completed"), with creator context —
 // used for the continuously-scrolling "Ongoing Series" row
-const _getSeriesByStatus = cache(async (status: 'ongoing' | 'completed') => {
-  return db
-    .select({
-      series: series,
-      creator: creators,
-    })
-    .from(series)
-    .leftJoin(creators, eq(series.creatorId, creators.id))
-    .where(eq(series.status, status))
-    .orderBy(desc(series.createdAt))
-})
+const _getSeriesByStatus = cache(
+  unstable_cache(
+    async (status: 'ongoing' | 'completed') => {
+      return db
+        .select({
+          series: series,
+          creator: creators,
+        })
+        .from(series)
+        .leftJoin(creators, eq(series.creatorId, creators.id))
+        .where(eq(series.status, status))
+        .orderBy(desc(series.createdAt))
+    },
+    ['series-by-status'],
+    { revalidate: 3600, tags: ['series'] }
+  )
+)
 
 export async function getSeriesByStatus(status: 'ongoing' | 'completed') {
   return _getSeriesByStatus(status)
 }
 
 // Get all series filtered by genre, with creator context — used for the genre filter pills
-const _getSeriesByGenre = cache(async (genre: string) => {
-  return db
-    .select({
-      series: series,
-      creator: creators,
-    })
-    .from(series)
-    .leftJoin(creators, eq(series.creatorId, creators.id))
-    .where(eq(series.genre, genre))
-    .orderBy(desc(series.createdAt))
-})
+const _getSeriesByGenre = cache(
+  unstable_cache(
+    async (genre: string) => {
+      return db
+        .select({
+          series: series,
+          creator: creators,
+        })
+        .from(series)
+        .leftJoin(creators, eq(series.creatorId, creators.id))
+        .where(eq(series.genre, genre))
+        .orderBy(desc(series.createdAt))
+    },
+    ['series-by-genre'],
+    { revalidate: 3600, tags: ['series'] }
+  )
+)
 
 export async function getSeriesByGenre(genre: string) {
   return _getSeriesByGenre(genre)
@@ -241,14 +292,20 @@ export async function getTrendingSeries(limit = 5) {
 
 // Get every distinct genre currently in use across all series — used to build the filter pills
 // dynamically instead of hardcoding a genre list that may not match what's actually in the database
-const _getAllUsedGenres = cache(async () => {
-  const result = await db
-    .selectDistinct({ genre: series.genre })
-    .from(series)
-    .where(sql`${series.genre} IS NOT NULL`)
+const _getAllUsedGenres = cache(
+  unstable_cache(
+    async () => {
+      const result = await db
+        .selectDistinct({ genre: series.genre })
+        .from(series)
+        .where(sql`${series.genre} IS NOT NULL`)
 
-  return result.map((r) => r.genre).filter((g): g is string => g !== null)
-})
+      return result.map((r) => r.genre).filter((g): g is string => g !== null)
+    },
+    ['all-genres'],
+    { revalidate: 86400, tags: ['series'] }
+  )
+)
 
 export async function getAllUsedGenres() {
   return _getAllUsedGenres()
