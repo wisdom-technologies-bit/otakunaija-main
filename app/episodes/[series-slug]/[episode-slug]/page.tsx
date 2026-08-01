@@ -20,7 +20,7 @@ import { LiveViewerWidget } from '@/components/episodes/live-viewer-widget'
 import { AboutSeriesSidebar } from '@/components/episodes/about-series-sidebar'
 import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
 
-export const revalidate = 3600
+export const revalidate = 43200 // 12 hours
 
 interface Props {
   params: Promise<{ 'series-slug': string; 'episode-slug': string }>

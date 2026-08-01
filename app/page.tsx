@@ -12,7 +12,7 @@ import { InfinitePostList } from "@/components/infinite-post-list"
 import { HeroCarousel } from "@/components/hero-carousel"
 import { HomepageLatestSection } from "@/components/homepage-latest-section"
 
-export const revalidate = 900
+export const revalidate = 3600 // 1 hour
 
 export default async function HomePage() {
   const [featured, recent, trending] = await Promise.all([
@@ -48,8 +48,8 @@ export default async function HomePage() {
               <div className="rounded-xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-6 md:p-8 flex flex-col justify-between">
                 <div>
                   <h1 className="font-display text-2xl md:text-3xl font-bold leading-tight text-balance">
-  Anime News, Reviews &amp; Guides for <span className="text-primary">Nigerian Otakus</span>
-</h1>
+                    Anime News, Reviews &amp; Guides for <span className="text-primary">Nigerian Otakus</span>
+                  </h1>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     Reviews, news, episode breakdowns, and recommendations — written by Nigerian otakus, for the global
                     anime community.

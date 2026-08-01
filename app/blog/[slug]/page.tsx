@@ -24,7 +24,7 @@ import {
   getTrendingPosts,
 } from "@/lib/posts"
 
-export const revalidate = 1800
+export const revalidate = 21600 // 6 hours
 
 export async function generateStaticParams() {
   const slugs = await getAllSlugs()

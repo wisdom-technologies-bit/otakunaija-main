@@ -11,7 +11,7 @@ import { SeriesEpisodesPanel } from '@/components/episodes/series-episodes-panel
 import { AdSlot } from '@/components/ad-slot'
 import { Calendar, Play, Tag } from 'lucide-react'
 
-export const revalidate = 1800
+export const revalidate = 21600 // 6 hours
 
 interface Props {
   params: Promise<{ 'series-slug': string }>
@@ -138,9 +138,8 @@ export default async function SeriesPage({ params }: Props) {
                   </span>
                 )}
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium text-white ${
-                    series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
-                  }`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
+                    }`}
                 >
                   {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
                 </span>
@@ -178,12 +177,12 @@ export default async function SeriesPage({ params }: Props) {
                     <Image src={series.posterImageUrl} alt={`${series.title} poster`} fill className="object-cover" sizes="96px" />
                   </div>
                 )}
-                
+
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-xl font-bold text-foreground">{series.title}</h1>
                   </div>
-                  
+
                   {/* Genre badges */}
                   <div className="flex flex-wrap gap-2">
                     {series.genre && (
@@ -192,14 +191,13 @@ export default async function SeriesPage({ params }: Props) {
                       </span>
                     )}
                     <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium text-white ${
-                        series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
-                      }`}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
+                        }`}
                     >
                       {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
                     </span>
                   </div>
-                  
+
                   {/* Quick stats */}
                   <div className="text-xs text-foreground/70 space-y-1">
                     {year && <div><span className="font-medium">{year}</span> • Year</div>}
