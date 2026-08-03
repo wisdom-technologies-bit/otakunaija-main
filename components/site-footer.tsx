@@ -53,6 +53,25 @@ export function SiteFooter() {
                 <Link href="/contact" className="text-muted-foreground hover:text-primary">
                   Contact
                 </Link>
+                <a
+  href="/rss.xml"
+  target="_blank"
+  rel="alternate"
+  type="application/rss+xml"
+  className="hover:text-primary"
+>
+  Blog RSS
+</a>
+
+<a
+  href="/episodes-rss.xml"
+  target="_blank"
+  rel="alternate"
+  type="application/rss+xml"
+  className="hover:text-primary"
+>
+  Episodes RSS
+</a>
               </li>
             </ul>
           </div>
@@ -76,7 +95,7 @@ export function SiteFooter() {
 
         <div className="flex flex-col gap-3 border-t border-border py-6 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} OtakuNaija. All rights reserved.</p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center gap-5">
             <Link href="/privacy" className="hover:text-primary">
               Privacy Policy
             </Link>
