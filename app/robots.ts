@@ -11,5 +11,11 @@ export default function robots(): MetadataRoute.Robots {
     ],
     sitemap: "https://otakunaija.name.ng/sitemap.xml",
     host: "https://otakunaija.name.ng",
+    other: {
+      RSS: [
+        "https://otakunaija.name.ng/rss.xml",
+        "https://otakunaija.name.ng/episodes-rss.xml",
+      ],
+    },
   }
 }
