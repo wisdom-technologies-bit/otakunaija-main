@@ -118,6 +118,7 @@ export default function RootLayout({
       <head>
         <meta name="monetag" content="3ebb044040c6a2400146260166c743ea" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        <link rel="alternate" type="application/rss+xml" title="OtakuNaija RSS Feed" href="/rss.xml" />
 
         {/* Google Analytics */}
         <Script
