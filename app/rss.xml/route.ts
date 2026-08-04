@@ -1,5 +1,7 @@
 import { getAllSlugs, getPostBySlug } from "@/lib/posts"
 
+export const dynamic = "force-dynamic"
+
 const BASE = "https://otakunaija.name.ng"
 
 export async function GET() {
