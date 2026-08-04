@@ -12,18 +12,7 @@ import { InfinitePostList } from "@/components/infinite-post-list"
 import { HeroCarousel } from "@/components/hero-carousel"
 import { HomepageLatestSection } from "@/components/homepage-latest-section"
 
-const BLOG_DYNAMIC =
-  process.env.BLOG_RENDER_MODE === "dynamic"
-
-export const dynamic =
-  process.env.BLOG_RENDER_MODE === "dynamic"
-    ? "force-dynamic"
-    : "auto"
-
-export const revalidate =
-  process.env.BLOG_RENDER_MODE === "dynamic"
-    ? 0
-    : 3600
+export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
   const [featured, recent, trending] = await Promise.all([

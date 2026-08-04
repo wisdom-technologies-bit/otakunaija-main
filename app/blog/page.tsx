@@ -34,15 +34,7 @@ export async function generateMetadata({
 
 type Search = { category?: string; q?: string }
 
-export const dynamic =
-  process.env.BLOG_RENDER_MODE === "dynamic"
-    ? "force-dynamic"
-    : "auto"
-
-export const revalidate =
-  process.env.BLOG_RENDER_MODE === "dynamic"
-    ? 0
-    : 3600
+export const dynamic = "force-dynamic"
 
 export default async function BlogPage({
   searchParams,
