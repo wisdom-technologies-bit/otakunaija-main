@@ -24,7 +24,17 @@ import {
   getTrendingPosts,
 } from "@/lib/posts"
 
-export const revalidate = 21600 // 6 hours
+const BLOG_RENDER_MODE = process.env.BLOG_RENDER_MODE ?? "isr"
+
+export const dynamic =
+  BLOG_RENDER_MODE === "dynamic"
+    ? "force-dynamic"
+    : "auto"
+
+export const revalidate =
+  BLOG_RENDER_MODE === "dynamic"
+    ? 0
+    : 21600 // 6 hours
 
 export async function generateStaticParams() {
   const slugs = await getAllSlugs()

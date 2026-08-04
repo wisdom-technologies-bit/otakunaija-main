@@ -2,6 +2,9 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { sql } from "./db"
 
+const BLOG_DYNAMIC =
+  process.env.BLOG_RENDER_MODE === "dynamic"
+
 export type Post = {
   id: number
   slug: string
@@ -66,6 +69,17 @@ const _getTrendingPosts = cache(
 )
 
 export async function getTrendingPosts(limit = 5): Promise<Post[]> {
+  if (BLOG_DYNAMIC) {
+    const rows = await sql`
+      SELECT *
+      FROM posts
+      WHERE trending = true
+      ORDER BY views DESC
+      LIMIT ${limit}
+    `
+    return rows as Post[]
+  }
+
   return _getTrendingPosts(limit)
 }
 
@@ -86,6 +100,17 @@ const _getRecentPosts = cache(
 )
 
 export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
+  if (BLOG_DYNAMIC) {
+    const rows = await sql`
+      SELECT *
+      FROM posts
+      ORDER BY published_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `
+    return rows as Post[]
+  }
+
   return _getRecentPosts(limit, offset)
 }
 
@@ -147,6 +172,17 @@ const _getPostBySlug = cache(
 )
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
+  if (BLOG_DYNAMIC) {
+    const rows = await sql`
+      SELECT *
+      FROM posts
+      WHERE slug = ${slug}
+      LIMIT 1
+    `
+
+    return (rows[0] as Post) ?? null
+  }
+
   return _getPostBySlug(slug)
 }
 
