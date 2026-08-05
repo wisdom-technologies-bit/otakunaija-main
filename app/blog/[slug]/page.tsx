@@ -2,7 +2,12 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Clock, Eye, User, Calendar } from "lucide-react"
+import {
+  ArrowLeft,
+  Calendar,
+  Timer,
+  ChartNoAxesColumn,
+} from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Sidebar } from "@/components/sidebar"
@@ -173,7 +178,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card/70 backdrop-blur-sm">
 
-  <div className="grid grid-cols-5 divide-x divide-border">
+  <div className="grid grid-cols-4 divide-x divide-border">
 
     {/* Writer */}
     <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
@@ -206,7 +211,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     {/* Reading Time */}
     <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-      <Clock className="h-4 w-4 text-primary" />
+      <Timer className="h-4 w-4 text-primary" />
 
       <span className="text-[10px] text-center">
         {post.read_time} min
@@ -217,43 +222,44 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     {/* Views */}
     <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-      <Eye className="h-4 w-4 text-primary" />
+      <ChartNoAxesColumn className="h-4 w-4 text-primary" />
 
       <span className="text-[10px] text-center">
         {post.views.toLocaleString()}
       </span>
 
     </div>
-
-    {/* Google Preferred Source */}
-    <Link
-      href="https://www.google.com/preferences/source?q=otakunaija.name.ng"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center justify-center p-2 transition-colors hover:bg-primary/5"
-    >
-
-      {/* Dark Mode */}
-      <Image
-        src="/google_preferred_source_badge_light_en@2x.png"
-        alt="Google Preferred Source"
-        width={95}
-        height={30}
-        className="hidden dark:block h-auto w-full max-w-[95px]"
-      />
-
-      {/* Light Mode */}
-      <Image
-        src="/google_preferred_source_badge_dark_en@2x.png"
-        alt="Google Preferred Source"
-        width={95}
-        height={30}
-        className="block dark:hidden h-auto w-full max-w-[95px]"
-      />
-
-    </Link>
-
   </div>
+</div>
+
+<div className="mt-4 flex flex-col items-center rounded-xl border border-border bg-card/70 p-5">
+
+  <Link
+    href="https://www.google.com/preferences/source?q=otakunaija.name.ng"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="transition-transform duration-200 hover:scale-105"
+  >
+
+    {/* Dark Theme */}
+    <Image
+      src="/google_preferred_source_badge_light_en@2x.png"
+      alt="Google Preferred Source"
+      width={240}
+      height={76}
+      className="hidden dark:block h-auto w-full max-w-[240px]"
+    />
+
+    {/* Light Theme */}
+    <Image
+      src="/google_preferred_source_badge_dark_en@2x.png"
+      alt="Google Preferred Source"
+      width={240}
+      height={76}
+      className="block dark:hidden h-auto w-full max-w-[240px]"
+    />
+
+  </Link>
 
 </div>
 
