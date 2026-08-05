@@ -178,90 +178,92 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card/70 backdrop-blur-sm">
 
-  <div className="grid grid-cols-4 divide-x divide-border">
+                <div className="grid grid-cols-4 divide-x divide-border">
 
-    {/* Writer */}
-    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
+                  {/* Writer */}
+                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-      <Image
-        src="/logo.png"
-        alt="OtakuNaija"
-        width={28}
-        height={28}
-        className="rounded-full border border-primary"
-      />
+                    <Image
+                      src="/logo.png"
+                      alt="OtakuNaija"
+                      width={28}
+                      height={28}
+                      className="rounded-full border border-primary"
+                    />
 
-      <span className="text-[10px] font-medium text-center leading-tight">
-        {post.author}
-      </span>
+                    <span className="text-[10px] font-medium text-center leading-tight">
+                      {post.author}
+                    </span>
 
-    </div>
+                  </div>
 
-    {/* Published */}
-    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
+                  {/* Published */}
+                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-      <Calendar className="h-4 w-4 text-primary" />
+                    <Calendar className="h-4 w-4 text-primary" />
 
-      <span className="text-[10px] text-center leading-tight">
-        {formatDate(post.published_at)}
-      </span>
+                    <span className="text-[10px] text-center leading-tight">
+                      {formatDate(post.published_at)}
+                    </span>
 
-    </div>
+                  </div>
 
-    {/* Reading Time */}
-    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
+                  {/* Reading Time */}
+                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-      <Timer className="h-4 w-4 text-primary" />
+                    <Timer className="h-4 w-4 text-primary" />
 
-      <span className="text-[10px] text-center">
-        {post.read_time} min
-      </span>
+                    <span className="text-[10px] text-center">
+                      {post.read_time} min
+                    </span>
 
-    </div>
+                  </div>
 
-    {/* Views */}
-    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
+                  {/* Views */}
+                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-      <ChartNoAxesColumn className="h-4 w-4 text-primary" />
+                    <ChartNoAxesColumn className="h-4 w-4 text-primary" />
 
-      <span className="text-[10px] text-center">
-        {post.views.toLocaleString()}
-      </span>
+                    <span className="text-[10px] text-center">
+                      {post.views.toLocaleString()}
+                    </span>
 
-    </div>
-  </div>
-</div>
+                  </div>
+                </div>
+              </div>
 
-<div className="mt-4 flex flex-col items-center rounded-xl border border-border bg-card/70 p-5">
+              <div className="mt-4 flex justify-start">
 
-  <Link
-    href="https://www.google.com/preferences/source?q=otakunaija.name.ng"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="transition-transform duration-200 hover:scale-105"
-  >
+                <Link
+                  href="https://www.google.com/preferences/source?q=otakunaija.name.ng"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-transform duration-200 hover:scale-105"
+                >
 
-    {/* Dark Theme */}
-    <Image
-      src="/google_preferred_source_badge_light_en@2x.png"
-      alt="Google Preferred Source"
-      width={240}
-      height={76}
-      className="hidden dark:block h-auto w-full max-w-[240px]"
-    />
+                  {/* Dark Mode */}
+                  <Image
+                    src="/google_preferred_source_badge_light_en@2x.png"
+                    alt="Add OtakuNaija as a preferred source on Google"
+                    width={100}
+                    height={32}
+                    className="hidden dark:block h-8 w-auto"
+                    priority
+                  />
 
-    {/* Light Theme */}
-    <Image
-      src="/google_preferred_source_badge_dark_en@2x.png"
-      alt="Google Preferred Source"
-      width={240}
-      height={76}
-      className="block dark:hidden h-auto w-full max-w-[240px]"
-    />
+                  {/* Light Mode */}
+                  <Image
+                    src="/google_preferred_source_badge_dark_en@2x.png"
+                    alt="Add OtakuNaija as a preferred source on Google"
+                    width={100}
+                    height={32}
+                    className="block dark:hidden h-8 w-auto"
+                    priority
+                  />
 
-  </Link>
+                </Link>
 
-</div>
+              </div>
 
               <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-border bg-muted">
                 <Image
