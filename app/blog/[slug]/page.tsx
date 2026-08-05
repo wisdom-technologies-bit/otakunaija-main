@@ -79,12 +79,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     getTrendingPosts(5),
   ])
 
-  const midpoint = Math.floor(post.content.length / 2)
-  // Split at the nearest paragraph break so we don't cut a sentence in half
-  const splitIndex = post.content.indexOf("\n\n", midpoint)
-  const actualSplit = splitIndex === -1 ? post.content.length : splitIndex
-  const firstHalf = post.content.slice(0, actualSplit)
-  const secondHalf = post.content.slice(actualSplit)
+  // Split the markdown into paragraphs
+const paragraphs = post.content
+  .split("\n\n")
+  .filter((paragraph) => paragraph.trim().length > 0)
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -277,14 +275,27 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               </div>
 
               <div className="mt-8 prose-anime prose prose-invert max-w-none prose-sm md:prose-base">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{firstHalf}</ReactMarkdown>
 
-                <div className="my-10 not-prose">
-                  <AdSlot slot="footer" />
-                </div>
+  {paragraphs.map((paragraph, index) => (
+    <div key={index}>
 
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{secondHalf}</ReactMarkdown>
-              </div>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
+        {paragraph}
+      </ReactMarkdown>
+
+      {(index + 1) % 4 === 0 && index !== paragraphs.length - 1 && (
+        <div className="my-8 not-prose">
+          <AdSlot slot="footer" />
+        </div>
+      )}
+
+    </div>
+  ))}
+
+</div>
 
               {post.tags && post.tags.length > 0 ? (
                 <div className="mt-10 flex flex-wrap items-center gap-2 border-t border-border pt-6">
