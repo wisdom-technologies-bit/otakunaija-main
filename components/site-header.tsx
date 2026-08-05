@@ -1,55 +1,59 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useState } from "react"
-import { Mail, Menu, Search, X } from "lucide-react"
-import { CATEGORIES } from "@/lib/posts"
-import { Button } from "@/components/ui/button"
-import { SearchBar } from "@/components/search-bar"
-import { EpisodesSearchBar } from "@/components/episodes/episodes-search-bar"
-import { ThemeToggle } from "@/components/theme-toggle"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { Menu, Search, X } from "lucide-react";
+import { Mail02Icon } from "@hugeicons/react";
+import { CATEGORIES } from "@/lib/posts";
+import { Button } from "@/components/ui/button";
+import { SearchBar } from "@/components/search-bar";
+import { EpisodesSearchBar } from "@/components/episodes/episodes-search-bar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },
   { href: "/episodes", label: "Episodes" },
-]
+];
 
 export function SiteHeader() {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
-  const isEpisodesSection = pathname?.startsWith("/episodes")
-  const isHome = pathname === "/"
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const isEpisodesSection = pathname?.startsWith("/episodes");
+  const isHome = pathname === "/";
 
   const handleNewsletterClick = () => {
-    const target = document.getElementById("newsletter")
+    const target = document.getElementById("newsletter");
     if (!target) {
       // Newsletter section isn't on this page (e.g. an admin page) — go to homepage first
-      router.push("/#newsletter")
-      return
+      router.push("/#newsletter");
+      return;
     }
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
     if (isDesktop) {
       // Already visible on desktop — pulse-highlight instead of scrolling
-      target.classList.add("newsletter-highlight")
-      setTimeout(() => target.classList.remove("newsletter-highlight"), 1200)
+      target.classList.add("newsletter-highlight");
+      setTimeout(() => target.classList.remove("newsletter-highlight"), 1200);
     } else {
-      target.scrollIntoView({ behavior: "smooth", block: "start" })
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }
+  };
   const visibleNavLinks = NAV_LINKS.filter((l) => {
-    if (l.href === "/" && isHome) return false
-    if (l.href === "/episodes" && isEpisodesSection) return false
-    return true
-  })
+    if (l.href === "/" && isHome) return false;
+    if (l.href === "/episodes" && isEpisodesSection) return false;
+    return true;
+  });
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:px-6">
-        <Link href={isEpisodesSection ? "/episodes" : "/"} className="flex items-center gap-2 font-display text-xl font-bold tracking-tight">
+        <Link
+          href={isEpisodesSection ? "/episodes" : "/"}
+          className="flex items-center gap-2 font-display text-xl font-bold tracking-tight"
+        >
           <img
             src="/logo.png"
             alt="OtakuNaija logo"
@@ -80,7 +84,11 @@ export function SiteHeader() {
             onClick={() => setSearchOpen((s) => !s)}
             className="text-foreground/80 hover:text-primary"
           >
-            {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            {searchOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
           </Button>
           <ThemeToggle />
           <Button
@@ -88,7 +96,7 @@ export function SiteHeader() {
             onClick={handleNewsletterClick}
             className="hidden md:inline-flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <Mail className="h-4 w-4" /> Newsletter
+            <Mail02Icon className="h-4 w-4" strokeWidth={2} /> Newsletter
           </Button>
           <Button
             variant="ghost"
@@ -97,7 +105,7 @@ export function SiteHeader() {
             aria-label="Newsletter"
             className="md:hidden text-primary hover:text-primary/80"
           >
-            <Mail className="h-5 w-5" />
+            <Mail02Icon className="h-5 w-5" strokeWidth={2} />
           </Button>
           <Button
             variant="ghost"
@@ -106,7 +114,11 @@ export function SiteHeader() {
             aria-label="Open menu"
             onClick={() => setMobileOpen((s) => !s)}
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </div>
@@ -126,7 +138,9 @@ export function SiteHeader() {
       {!isEpisodesSection && (
         <div className="hidden md:block border-t border-border bg-card/40">
           <div className="mx-auto flex max-w-7xl items-center gap-6 overflow-x-auto px-4 py-2 md:px-6">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Categories:</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Categories:
+            </span>
             {CATEGORIES.map((c) => (
               <Link
                 key={c}
@@ -174,5 +188,5 @@ export function SiteHeader() {
         </div>
       ) : null}
     </header>
-  )
+  );
 }

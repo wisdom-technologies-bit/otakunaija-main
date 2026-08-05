@@ -86,7 +86,10 @@ export function NewsletterForm({ variant = "card", className }: NewsletterFormPr
       )}
     >
       <div className="flex items-center gap-2 text-primary">
-        <Mail className="h-4 w-4" />
+        <Mail02Icon
+          className="h-4 w-4"
+          strokeWidth={2}
+        />
         <span className="text-xs font-semibold uppercase tracking-wider">Newsletter</span>
       </div>
       <h3 className="mt-2 font-display text-lg font-semibold text-foreground text-balance">
