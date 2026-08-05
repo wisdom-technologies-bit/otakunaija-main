@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { CATEGORIES } from "@/lib/posts"
 import { AdSlot } from "@/components/ad-slot"
+import Image from "next/image"
 
 export function SiteFooter() {
   return (
@@ -53,25 +54,6 @@ export function SiteFooter() {
                 <Link href="/contact" className="text-muted-foreground hover:text-primary">
                   Contact
                 </Link>
-                <a
-  href="/rss.xml"
-  target="_blank"
-  rel="alternate"
-  type="application/rss+xml"
-  className="hover:text-primary"
->
-  Blog RSS
-</a>
-
-<a
-  href="/episodes-rss.xml"
-  target="_blank"
-  rel="alternate"
-  type="application/rss+xml"
-  className="hover:text-primary"
->
-  Episodes RSS
-</a>
               </li>
             </ul>
           </div>
@@ -93,41 +75,106 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border py-6 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} OtakuNaija. All rights reserved.</p>
-          <div className="flex flex-wrap items-center gap-5">
-            <Link href="/privacy" className="hover:text-primary">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-primary">
-              Terms &amp; Conditions
-            </Link>
-            <Link href="/contact" className="hover:text-primary">
-              Contact
-            </Link>
-            <a
-              href="https://dashboard.simpleanalytics.com/otakunaija.name.ng?utm_source=otakunaija.name.ng&utm_content=badge&affiliate=kiwed"
-              referrerPolicy="origin"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <picture>
-                <source
-                  srcSet="https://simpleanalyticsbadges.com/otakunaija.name.ng?mode=dark"
-                  media="(prefers-color-scheme: dark)"
-                />
-                <img
-                  src="https://simpleanalyticsbadges.com/otakunaija.name.ng?mode=light"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  alt="Simple Analytics badge"
-                  className="h-6 w-auto"
-                />
-              </picture>
-            </a>
-          </div>
-        </div>
+        <div className="border-t border-border py-6 text-sm text-muted-foreground">
+
+  <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+
+    <p>
+      © {new Date().getFullYear()} OtakuNaija. All rights reserved.
+    </p>
+
+    <div className="flex flex-wrap items-center gap-5">
+
+      <Link href="/privacy" className="hover:text-primary">
+        Privacy Policy
+      </Link>
+
+      <Link href="/terms" className="hover:text-primary">
+        Terms &amp; Conditions
+      </Link>
+
+      <Link href="/contact" className="hover:text-primary">
+        Contact
+      </Link>
+
+      {/* Google Preferred Source */}
+      <a
+        href="https://www.google.com/preferences/source?q=otakunaija.name.ng"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+
+        <Image
+          src="/google_preferred_source_badge_light_en@2x.png"
+          alt="Google Preferred Source"
+          width={100}
+          height={32}
+          className="hidden dark:block h-6 w-auto"
+        />
+
+        <Image
+          src="/google_preferred_source_badge_dark_en@2x.png"
+          alt="Google Preferred Source"
+          width={100}
+          height={32}
+          className="block dark:hidden h-6 w-auto"
+        />
+
+      </a>
+
+      {/* Simple Analytics */}
+      <a
+        href="https://dashboard.simpleanalytics.com/otakunaija.name.ng?utm_source=otakunaija.name.ng&utm_content=badge&affiliate=kiwed"
+        referrerPolicy="origin"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <picture>
+          <source
+            srcSet="https://simpleanalyticsbadges.com/otakunaija.name.ng?mode=dark"
+            media="(prefers-color-scheme: dark)"
+          />
+          <img
+            src="https://simpleanalyticsbadges.com/otakunaija.name.ng?mode=light"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
+            alt="Simple Analytics badge"
+            className="h-6 w-auto"
+          />
+        </picture>
+      </a>
+
+    </div>
+
+  </div>
+
+  {/* RSS Links */}
+  <div className="mt-5 flex flex-col items-center gap-3 border-t border-border pt-5 sm:flex-row sm:justify-center">
+
+    <a
+      href="/rss.xml"
+      target="_blank"
+      rel="alternate"
+      type="application/rss+xml"
+      className="hover:text-primary"
+    >
+      Blog RSS Feed
+    </a>
+
+    <a
+      href="/episodes-rss.xml"
+      target="_blank"
+      rel="alternate"
+      type="application/rss+xml"
+      className="hover:text-primary"
+    >
+      Episodes RSS Feed
+    </a>
+
+  </div>
+
+</div>
       </div>
     </footer>
   )
