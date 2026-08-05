@@ -173,103 +173,89 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card/70 backdrop-blur-sm">
 
-                {/* Top Row */}
-                <div className="grid grid-cols-3 divide-x divide-border">
+  <div className="grid grid-cols-5 divide-x divide-border">
 
-                  {/* Author */}
-                  <div className="flex flex-col items-center justify-center px-2 py-2 text-center">
-                    <Image
-                      src="/logo.png"
-                      alt="OtakuNaija"
-                      width={38}
-                      height={38}
-                      className="mb-3 rounded-full border-2 border-primary object-cover"
-                    />
+    {/* Writer */}
+    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-                    <span className="text-[10px] text-muted-foreground">
-                      Written by
-                    </span>
+      <Image
+        src="/logo.png"
+        alt="OtakuNaija"
+        width={28}
+        height={28}
+        className="rounded-full border border-primary"
+      />
 
-                    <span className="mt-1 text-sm font-bold">
-                      {post.author}
-                    </span>
-                  </div>
+      <span className="text-[10px] font-medium text-center leading-tight">
+        {post.author}
+      </span>
 
-                  {/* Date */}
-                  <div className="flex flex-col items-center justify-center px-2 py-2 text-center">
-                    <div className="mb-1.5 rounded-lg bg-primary/10 p-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                    </div>
+    </div>
 
-                    <span className="text-[10px] text-muted-foreground">
-                      Published
-                    </span>
+    {/* Published */}
+    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-                    <span className="mt-1 text-sm font-bold">
-                      {formatDate(post.published_at)}
-                    </span>
-                  </div>
+      <Calendar className="h-4 w-4 text-primary" />
 
-                  {/* Reading Time */}
-                  <div className="flex flex-col items-center justify-center px-2 py-2 text-center">
-                    <div className="mb-3 rounded-xl bg-primary/10 px-3">
-                      <Clock className="h-4 w-4 text-primary" />
-                    </div>
+      <span className="text-[10px] text-center leading-tight">
+        {formatDate(post.published_at)}
+      </span>
 
-                    <span className="text-[10px] text-muted-foreground">
-                      Reading Time
-                    </span>
+    </div>
 
-                    <span className="mt-1 text-sm font-bold">
-                      {post.read_time} min read
-                    </span>
-                  </div>
+    {/* Reading Time */}
+    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-                </div>
+      <Clock className="h-4 w-4 text-primary" />
 
-                {/* Divider */}
-                <div className="border-t border-border" />
+      <span className="text-[10px] text-center">
+        {post.read_time} min
+      </span>
 
-                {/* Bottom Row */}
-                <div className="grid grid-cols-2 divide-x divide-border">
+    </div>
 
-                  {/* Views */}
-                  <div className="flex items-center gap-2 px-3 py-2.5">
-                    <div className="rounded-xl bg-primary/10 p-3">
-                      <Eye className="h-4 w-4 text-primary" />
-                    </div>
+    {/* Views */}
+    <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
-                    <div>
-                      <p className="text-[10px] text-muted-foreground">
-                        Total Views
-                      </p>
+      <Eye className="h-4 w-4 text-primary" />
 
-                      <p className="text-[15px] font-bold leading-tight">
-                        {post.views.toLocaleString()} views
-                      </p>
-                    </div>
-                  </div>
+      <span className="text-[10px] text-center">
+        {post.views.toLocaleString()}
+      </span>
 
-                  {/* Support Message */}
-                  <div className="flex items-center gap-2 px-3 py-2.5">
-                    <div className="rounded-xl bg-primary/10 p-3">
-                      <TrendingUp className="h-4 w-4 text-primary" />
-                    </div>
+    </div>
 
-                    <div>
-                      <p className="text-sm font-semibold">
-                        Thanks for reading!
-                      </p>
+    {/* Google Preferred Source */}
+    <Link
+      href="https://www.google.com/preferences/source?q=otakunaija.name.ng"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-center p-2 transition-colors hover:bg-primary/5"
+    >
 
-                      <p className="text-xs text-muted-foreground">
-                        Your support means a lot.
-                      </p>
-                    </div>
-                  </div>
+      {/* Dark Mode */}
+      <Image
+        src="/google_preferred_source_badge_light_en@2x.png"
+        alt="Google Preferred Source"
+        width={95}
+        height={30}
+        className="hidden dark:block h-auto w-full max-w-[95px]"
+      />
 
-                </div>
+      {/* Light Mode */}
+      <Image
+        src="/google_preferred_source_badge_dark_en@2x.png"
+        alt="Google Preferred Source"
+        width={95}
+        height={30}
+        className="block dark:hidden h-auto w-full max-w-[95px]"
+      />
 
-              </div>
+    </Link>
+
+  </div>
+
+</div>
 
               <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-border bg-muted">
                 <Image
