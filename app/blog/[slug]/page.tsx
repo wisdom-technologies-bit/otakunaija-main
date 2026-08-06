@@ -189,9 +189,12 @@ const paragraphs = post.content
                       className="rounded-full border border-primary"
                     />
 
-                    <span className="text-[10px] font-medium text-center leading-tight">
-                      {post.author}
-                    </span>
+                   <img
+  src={post.author.trim().toLowerCase() === 'wisdom' ? '/wisdom.png' : '/logo.png'}
+  alt={post.author}
+  className="h-6 w-6 rounded-full object-cover flex-shrink-0"
+/>
+<span className="font-medium text-foreground/80">{post.author}</span>
 
                   </div>
 
