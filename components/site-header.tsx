@@ -4,8 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Menu, Search, X } from "lucide-react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Mail02Icon } from "@hugeicons/core-free-icons";
+import { Mail02Icon } from "@hugeicons/react";
 import { CATEGORIES } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
@@ -97,8 +96,7 @@ export function SiteHeader() {
             onClick={handleNewsletterClick}
             className="hidden md:inline-flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <HugeiconsIcon
-          icon={Mail02Icon} className="h-4 w-4" strokeWidth={2} /> Newsletter
+            <Mail02Icon className="h-4 w-4" strokeWidth={2} /> Newsletter
           </Button>
           <Button
             variant="ghost"
@@ -107,8 +105,7 @@ export function SiteHeader() {
             aria-label="Newsletter"
             className="md:hidden text-primary hover:text-primary/80"
           >
-            <HugeiconsIcon
-          icon={Mail02Icon} className="h-5 w-5" strokeWidth={2} />
+            <Mail02Icon className="h-5 w-5" strokeWidth={2} />
           </Button>
           <Button
             variant="ghost"

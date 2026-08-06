@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Mail01FreeIcons } from "@hugeicons/core-free-icons"
+import { Mail } from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -87,9 +86,8 @@ export function NewsletterForm({ variant = "card", className }: NewsletterFormPr
       )}
     >
       <div className="flex items-center gap-2 text-primary">
-        <HugeiconsIcon
-          icon={Mail01FreeIcons}
-          size={16}
+        <Mail02Icon
+          className="h-4 w-4"
           strokeWidth={2}
         />
         <span className="text-xs font-semibold uppercase tracking-wider">Newsletter</span>
