@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Clock, Eye, User, Calendar } from "lucide-react"
+import { Timer, ChartNoAxesColumn, User, Calendar } from "lucide-react"
 import { type Post, formatDate, formatRelativeTime, getCoverImage } from "@/lib/posts"
 import { cn } from "@/lib/utils"
 
@@ -98,11 +98,11 @@ export function PostCard({ post, variant = "default", className, priority = fals
           </time>
           <span aria-hidden className="hidden sm:inline">•</span>
           <span className="inline-flex items-center gap-1 whitespace-nowrap">
-            <Clock className="h-3 w-3" /> {post.read_time} min
+            <Timer className="h-3 w-3" /> {post.read_time} min
           </span>
           {isFeatured ? (
             <span className="hidden sm:inline-flex items-center gap-1">
-              <Eye className="h-3 w-3" /> {post.views.toLocaleString()}
+              <ChartNoAxesColumn className="h-3 w-3" /> {post.views.toLocaleString()}
             </span>
           ) : null}
         </div>

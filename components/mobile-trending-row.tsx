@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Eye } from 'lucide-react'
+import { ChartNoAxesColumn } from 'lucide-react'
 import { type Post, formatRelativeTime, getCoverImage } from '@/lib/posts'
 
 interface MobileTrendingRowProps {
@@ -35,7 +35,7 @@ export function MobileTrendingRow({ post }: MobileTrendingRowProps) {
         <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>By {post.author}</span>
           <span aria-hidden>|</span>
-          <Eye className="h-3.5 w-3.5" />
+          <ChartNoAxesColumn className="h-3.5 w-3.5" />
           <span>{post.views.toLocaleString()}</span>
         </div>
       </div>
