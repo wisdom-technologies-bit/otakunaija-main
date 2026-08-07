@@ -182,19 +182,16 @@ const paragraphs = post.content
                   <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
 
                     <Image
-                      src="/logo.png"
-                      alt="OtakuNaija"
-                      width={28}
-                      height={28}
-                      className="rounded-full border border-primary"
-                    />
+                      src={post.author.trim().toLowerCase() === "wisdom" ? "/wisdom.png" : "/logo.png"}
+                        alt={post.author}
+                          width={28}
+                            height={28}
+                              className="rounded-full border border-primary object-cover"
+                              />
 
-                   <img
-  src={post.author.trim().toLowerCase() === 'wisdom' ? '/wisdom.png' : '/logo.png'}
-  alt={post.author}
-  className="h-6 w-6 rounded-full object-cover flex-shrink-0"
-/>
-<span className="font-medium text-foreground/80">{post.author}</span>
+                              <span className="font-medium text-foreground/80">
+                                {post.author}
+                                </span>
 
                   </div>
 
