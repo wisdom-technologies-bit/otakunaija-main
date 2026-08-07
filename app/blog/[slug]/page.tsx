@@ -189,7 +189,7 @@ const paragraphs = post.content
                               className="rounded-full border border-primary object-cover"
                               />
 
-                              <span className="font-medium text-foreground/80">
+                              <span className="text-[10px] text-center font-medium leading-tight text-foreground/80">
                                 {post.author}
                                 </span>
 
