@@ -39,9 +39,11 @@ export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
       }
 
       const rect = range.getBoundingClientRect()
-      // Position above the selection
+
+      // The toolbar uses position: fixed, so getBoundingClientRect()
+      // is already relative to the viewport. Do not add window.scrollY.
       const x = rect.left + rect.width / 2
-      const y = rect.top + window.scrollY - 10 // slightly above
+      const y = rect.top - 8
 
       setPosition({ x, y })
       setSelectedText(text)
@@ -108,6 +110,7 @@ export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
       <Button
         variant="ghost"
         size="sm"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={handleCopy}
         className="h-7 px-2 text-xs"
       >
@@ -117,6 +120,7 @@ export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
       <Button
         variant="ghost"
         size="sm"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={handleCommentClick}
         className="h-7 px-2 text-xs text-primary"
       >

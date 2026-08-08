@@ -64,13 +64,38 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
 
   // Reload comments (after adding a new one)
   const refreshComments = useCallback(async () => {
-    const res = await fetch(`/api/posts/${postSlug}/comments`)
-    const data = await res.json()
-    setComments(data.comments || [])
-    // Also refresh annotations to update highlight count? Not necessary.
-    const annRes = await fetch(`/api/posts/${postSlug}/annotations`)
-    const annData = await annRes.json()
-    setAnnotations(annData.annotations || [])
+    try {
+      const res = await fetch(`/api/posts/${postSlug}/comments`, {
+        cache: "no-store",
+      })
+
+      if (!res.ok) {
+        console.error("Failed to refresh comments:", res.status)
+        return
+      }
+
+      const data = await res.json()
+
+      // Only replace the existing comments when the API actually
+      // returned a valid comments array. This prevents a temporary
+      // API failure from making all comments disappear from the UI.
+      if (Array.isArray(data.comments)) {
+        setComments(data.comments)
+      }
+
+      const annRes = await fetch(`/api/posts/${postSlug}/annotations`, {
+        cache: "no-store",
+      })
+
+      if (annRes.ok) {
+        const annData = await annRes.json()
+        if (Array.isArray(annData.annotations)) {
+          setAnnotations(annData.annotations)
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh comments:", err)
+    }
   }, [postSlug])
 
   // Intersection Observer for active annotation (desktop only)
@@ -319,7 +344,7 @@ function NewCommentForm({
     if (!body.trim() || !user) return
     setSubmitting(true)
     try {
-      await fetch(`/api/posts/${postSlug}/comments`, {
+      const res = await fetch(`/api/posts/${postSlug}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -327,8 +352,15 @@ function NewCommentForm({
         },
         body: JSON.stringify({ body }),
       })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null)
+        console.error("Failed to post comment:", errorData || res.status)
+        return
+      }
+
       setBody("")
-      onCommentAdded()
+      await onCommentAdded()
     } catch (err) {
       console.error("Failed to post comment", err)
     } finally {
