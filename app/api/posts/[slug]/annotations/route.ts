@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createAnnotation, getAnnotations, getUserFromRequest } from "@/lib/db/queries/comments"
+import { createAnnotation, getAnnotations } from "@/lib/db/queries/comments"
+import { getUserFromRequest } from "@/lib/auth-utils"
 
 export async function GET(
   request: NextRequest,

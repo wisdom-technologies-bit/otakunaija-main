@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { db } from "@/lib/db"
+import { db } from "@/lib/db/index"
 import { commentUsers } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { randomBytes } from "crypto"

@@ -1,4 +1,5 @@
-import { db } from "@/lib/db"
+import { db } from "@/lib/db/index"
+import { sql as neonSql } from "@/lib/db"
 import {
   commentUsers,
   comments,
@@ -169,18 +170,25 @@ export async function createComment(data: {
   postSlug: string
   userId: number
   body: string
-  parentId?: number
+  parentId?: number | null
 }) {
-  const [newComment] = await db
-    .insert(comments)
-    .values({
-      postSlug: data.postSlug,
-      userId: data.userId,
-      body: data.body,
-      parentId: data.parentId ?? null,
-    })
-    .returning()
-  return newComment
+  const rows = await neonSql`
+    INSERT INTO comments (post_slug, parent_id, user_id, body)
+    VALUES (${data.postSlug}, ${data.parentId ?? null}, ${data.userId}, ${data.body})
+    RETURNING id, post_slug, parent_id, user_id, body, likes, created_at
+  `
+
+  const row = rows[0]
+
+  return {
+    id: row.id,
+    postSlug: row.post_slug,
+    parentId: row.parent_id,
+    userId: row.user_id,
+    body: row.body,
+    likes: row.likes,
+    createdAt: row.created_at,
+  }
 }
 
 // ---------- Annotations ----------

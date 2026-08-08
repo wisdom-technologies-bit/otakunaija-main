@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
+import { db } from "@/lib/db/index"
 import { comments, commentUsers } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const parentId = parseInt(params.id)
+  const { id } = await params
+  const parentId = parseInt(id)
   if (isNaN(parentId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 })
   }
@@ -23,7 +24,7 @@ export async function GET(
         name: commentUsers.name,
         username: commentUsers.username,
       },
-      // We'll not include nested replies further; they can be loaded on demand
+      // We'll not include nested replies further; they can be loaded on demand yes on demand
     })
     .from(comments)
     .leftJoin(commentUsers, eq(comments.userId, commentUsers.id))

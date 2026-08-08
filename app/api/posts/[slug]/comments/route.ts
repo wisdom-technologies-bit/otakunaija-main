@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCommentsByPostSlug, createComment, getUserFromRequest } from "@/lib/db/queries/comments"
+import { getCommentsByPostSlug, createComment } from "@/lib/db/queries/comments"
+import { getUserFromRequest } from "@/lib/auth-utils"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const comments = await getCommentsByPostSlug(params.slug)
+    const { slug } = await params
+    const comments = await getCommentsByPostSlug(slug)
     return NextResponse.json({ comments })
   } catch (error) {
     console.error("Get comments error:", error)
@@ -16,9 +18,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params
     const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -30,7 +33,7 @@ export async function POST(
     }
 
     const newComment = await createComment({
-      postSlug: params.slug,
+      postSlug: slug,
       userId: user.id,
       body,
       parentId: parent_id || undefined,

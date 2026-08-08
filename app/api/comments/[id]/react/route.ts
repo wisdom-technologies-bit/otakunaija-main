@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { toggleReaction, getUserFromRequest } from "@/lib/db/queries/comments"
+import { toggleReaction } from "@/lib/db/queries/comments"
+import { getUserFromRequest } from "@/lib/auth-utils"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const commentId = parseInt(params.id)
+    const commentId = parseInt(id)
     if (isNaN(commentId)) {
       return NextResponse.json({ error: "Invalid comment id" }, { status: 400 })
     }
