@@ -16,6 +16,7 @@ import { AdSlot } from "@/components/ad-slot"
 import { NewsletterForm } from "@/components/newsletter-form"
 import { BlogViewTracker } from "@/components/blog-view-tracker"
 import { ExpandableExcerpt } from "@/components/expandable-excerpt"
+import { CommentsSection } from "@/components/comments/CommentsSection"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
@@ -325,6 +326,9 @@ const paragraphs = post.content
                   </div>
                 </section>
               ) : null}
+
+              {/* Comment System */}
+              <CommentsSection postSlug={post.slug} />
             </article>
 
             <Sidebar recent={recent} trending={trending} />

@@ -73,6 +73,13 @@ export function Sidebar({ recent, trending }: SidebarProps) {
       </section>
 
       <AdSlot slot="sidebar" />
+
+      {/* NEW: Pin Panel container */}
+      <div
+        id="comments-pin-panel"
+        className="rounded-xl border border-border bg-card p-4 min-h-[300px]"
+      ></div>
+
     </aside>
   )
 }
