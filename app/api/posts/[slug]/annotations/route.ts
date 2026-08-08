@@ -4,10 +4,11 @@ import { getUserFromRequest } from "@/lib/auth-utils"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const annotations = await getAnnotations(params.slug)
+    const { slug } = await params
+    const annotations = await getAnnotations(slug)
     return NextResponse.json({ annotations })
   } catch (error) {
     console.error("Get annotations error:", error)
@@ -20,6 +21,7 @@ export async function POST(
   { params }: { params: { slug: string } }
 ) {
   try {
+    const { slug } = await params
     const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -32,7 +34,7 @@ export async function POST(
     }
 
     const result = await createAnnotation({
-      postSlug: params.slug,
+      postSlug: slug,
       selectedText: selected_text,
       contextHash: context_hash,
       startOffset: start_offset,
