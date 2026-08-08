@@ -12,7 +12,10 @@ export async function GET(
     return NextResponse.json({ comments })
   } catch (error) {
     console.error("Get comments error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to load comments" },
+      { status: 500 }
+    )
   }
 }
 
@@ -42,6 +45,9 @@ export async function POST(
     return NextResponse.json({ comment: newComment })
   } catch (error) {
     console.error("Create comment error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to create comment" },
+      { status: 500 }
+    )
   }
 }

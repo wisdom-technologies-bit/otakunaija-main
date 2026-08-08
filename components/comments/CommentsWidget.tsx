@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { AuthProvider, useAuth } from "./AuthProvider"
 import { AuthModal } from "./AuthModal"
 import { SelectionToolbar, type RangeData } from "./SelectionToolbar"
+import { AnnotationCommentModal } from "./AnnotationCommentModal"
 import { AnnotationHighlighter } from "./AnnotationHighlighter"
 import { PinPanel } from "./PinPanel"
 import { ConnectorLine } from "./ConnectorLine"
@@ -31,11 +32,18 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
 
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showAnnotationCommentModal, setShowAnnotationCommentModal] = useState(false)
+
   const [annotations, setAnnotations] = useState<any[]>([])
   const [comments, setComments] = useState<CommentData[]>([])
   const [activeAnnotationId, setActiveAnnotationId] = useState<number | null>(null)
   const [mobileAnnotationId, setMobileAnnotationId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  const pendingAnnotation = useRef<{
+    selectedText: string
+    rangeData: RangeData
+  } | null>(null)
 
   // Activation and initial data fetch
   useEffect(() => {
@@ -124,35 +132,77 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
     return () => observer.disconnect()
   }, [isDesktop, annotations])
 
-  // Handlers for creating annotation
-  const handleAnnotationComment = async (selectedText: string, rangeData: RangeData) => {
-    if (!user) {
-      // Store the pending action? For simplicity, show auth modal; after login, they'll have to reselect.
-      setShowAuthModal(true)
-      return
-    }
-
+  // Create an annotation together with its actual comment.
+  const createAnnotation = async (
+    selectedText: string,
+    rangeData: RangeData,
+    commentBody: string,
+    token: string
+  ) => {
     try {
       const res = await fetch(`/api/posts/${postSlug}/annotations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           selected_text: selectedText,
           context_hash: rangeData.contextHash,
           start_offset: rangeData.startOffset,
           end_offset: rangeData.endOffset,
+          comment_body: commentBody,
         }),
       })
-      if (res.ok) {
-        // Refresh data
-        await refreshComments()
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null)
+        console.error("Failed to create annotation:", errorData || res.status)
+        throw new Error("Failed to create annotation")
       }
+
+      await refreshComments()
     } catch (err) {
       console.error("Failed to create annotation", err)
+      throw err
     }
+  }
+
+  // Selecting text and clicking Comment opens the annotation
+  // comment modal. If authentication is required, remember the
+  // selection until login succeeds.
+  const handleAnnotationComment = async (
+    selectedText: string,
+    rangeData: RangeData
+  ) => {
+    pendingAnnotation.current = {
+      selectedText,
+      rangeData,
+    }
+
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+
+    setShowAnnotationCommentModal(true)
+  }
+
+  const handleAnnotationSubmit = async (commentBody: string) => {
+    const pending = pendingAnnotation.current
+
+    if (!pending || !user) {
+      return
+    }
+
+    await createAnnotation(
+      pending.selectedText,
+      pending.rangeData,
+      commentBody,
+      user.token
+    )
+
+    pendingAnnotation.current = null
   }
 
   // Handlers for comments
@@ -254,7 +304,31 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
       <AnnotationHighlighter annotations={annotations.map((a: any) => a.annotation)} onAnnotationClick={handleAnnotationClick} />
 
       {/* Auth modal */}
-      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        onSuccess={() => {
+          // AuthProvider has already stored the new user. The next render
+          // will provide it through useAuth(), so open the annotation
+          // comment modal after successful authentication.
+          if (pendingAnnotation.current) {
+            setShowAnnotationCommentModal(true)
+          }
+        }}
+      />
+
+      <AnnotationCommentModal
+        open={showAnnotationCommentModal}
+        onOpenChange={(open) => {
+          setShowAnnotationCommentModal(open)
+
+          if (!open) {
+            pendingAnnotation.current = null
+          }
+        }}
+        selectedText={pendingAnnotation.current?.selectedText || ""}
+        onSubmit={handleAnnotationSubmit}
+      />
 
       {/* Desktop: Connector line + PinPanel */}
       {isDesktop && (

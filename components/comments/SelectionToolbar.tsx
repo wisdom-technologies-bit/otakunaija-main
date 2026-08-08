@@ -17,8 +17,33 @@ export interface RangeData {
 
 export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null)
+  const toolbarVisibleRef = useRef(false)
+
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
   const [selectedText, setSelectedText] = useState("")
+
+  useEffect(() => {
+    toolbarVisibleRef.current = position !== null
+  }, [position])
+
+  // Prevent the browser context menu from appearing on top of our
+  // custom toolbar while the selection toolbar is visible.
+  useEffect(() => {
+    const article = document.querySelector("article")
+    if (!article) return
+
+    const preventContextMenu = (e: MouseEvent) => {
+      if (toolbarVisibleRef.current) {
+        e.preventDefault()
+      }
+    }
+
+    article.addEventListener("contextmenu", preventContextMenu)
+
+    return () => {
+      article.removeEventListener("contextmenu", preventContextMenu)
+    }
+  }, [])
 
   useEffect(() => {
     const handleSelectionChange = () => {
@@ -111,6 +136,7 @@ export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
         variant="ghost"
         size="sm"
         onMouseDown={(e) => e.preventDefault()}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={handleCopy}
         className="h-7 px-2 text-xs"
       >
@@ -120,6 +146,7 @@ export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
       <Button
         variant="ghost"
         size="sm"
+        onMouseDown={(e) => e.preventDefault()}
         onMouseDown={(e) => e.preventDefault()}
         onClick={handleCommentClick}
         className="h-7 px-2 text-xs text-primary"

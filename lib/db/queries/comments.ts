@@ -204,13 +204,17 @@ export async function createAnnotation(data: {
   startOffset: number
   endOffset: number
   userId: number
-  commentBody?: string
+  commentBody: string
 }) {
-  // Create comment first
+  if (!data.commentBody || !data.commentBody.trim()) {
+    throw new Error("Annotation comment body is required")
+  }
+
+  // Create the actual comment first.
   const comment = await createComment({
     postSlug: data.postSlug,
     userId: data.userId,
-    body: data.commentBody || "",
+    body: data.commentBody.trim(),
   })
 
   const [annotation] = await db

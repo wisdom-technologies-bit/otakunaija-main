@@ -15,7 +15,7 @@ import { useAuth } from "./AuthProvider"
 interface AuthModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess?: () => void
+  onSuccess?: (userData: { token: string; username: string }) => void
 }
 
 export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
@@ -34,9 +34,14 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
     }
     setSubmitting(true)
     try {
-      await login(email.trim(), name.trim() || undefined)
+      const userData = await login(email.trim(), name.trim() || undefined)
+
+      onSuccess?.({
+        token: userData.token,
+        username: userData.username,
+      })
+
       onOpenChange(false)
-      onSuccess?.()
     } catch (err) {
       setError("Failed to login. Please try again.")
     } finally {
