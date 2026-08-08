@@ -61,10 +61,15 @@ async function generateUniqueUsername(base: string): Promise<string> {
 
 // ---------- Post activation ----------
 export async function activatePost(slug: string) {
-  await db
-    .insert(activatedPosts)
-    .values({ slug })
-    .onConflictDoNothing()
+  if (!slug || typeof slug !== "string") {
+    throw new Error("A valid post slug is required to activate a post")
+  }
+
+  await neonSql`
+    INSERT INTO activated_posts (slug)
+    VALUES (${slug})
+    ON CONFLICT (slug) DO NOTHING
+  `
 }
 
 // ---------- Comments ----------

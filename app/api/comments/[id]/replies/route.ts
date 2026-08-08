@@ -24,7 +24,7 @@ export async function GET(
         name: commentUsers.name,
         username: commentUsers.username,
       },
-      // We'll not include nested replies further; they can be loaded on demand yes on demand on demand
+      // We'll not include nested replies further; they can be loaded on demand yes on demand on demand demand
     })
     .from(comments)
     .leftJoin(commentUsers, eq(comments.userId, commentUsers.id))
