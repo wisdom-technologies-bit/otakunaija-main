@@ -83,6 +83,60 @@ export const episodeWatchPings = pgTable(
   (table) => [unique('episode_watch_pings_episode_device_unique').on(table.episodeId, table.deviceId)],
 )
 
+// ... at the end of lib/db/schema.ts
+
+export const commentUsers = pgTable('comment_users', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  username: text('username').notNull().unique(),
+  token: text('token').notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+export const comments = pgTable('comments', {
+  id: serial('id').primaryKey(),
+  postSlug: text('post_slug').notNull(),
+  parentId: integer('parent_id'),
+  userId: integer('user_id').notNull().references(() => commentUsers.id),
+  body: text('body').notNull(),
+  likes: integer('likes').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+export const textAnnotations = pgTable('text_annotations', {
+  id: serial('id').primaryKey(),
+  postSlug: text('post_slug').notNull(),
+  selectedText: text('selected_text'),
+  contextHash: text('context_hash'),
+  startOffset: integer('start_offset'),
+  endOffset: integer('end_offset'),
+  commentId: integer('comment_id').references(() => comments.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+
+export const reactions = pgTable('reactions', {
+  id: serial('id').primaryKey(),
+  commentId: integer('comment_id').notNull().references(() => comments.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => commentUsers.id),
+  type: text('type').notNull(), // 'like','love','laugh','wow'
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => ({
+  unique: unique('reactions_comment_user_type').on(table.commentId, table.userId, table.type),
+}))
+
+export const commentLikes = pgTable('comment_likes', {
+  commentId: integer('comment_id').notNull().references(() => comments.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => commentUsers.id),
+}, (table) => ({
+  unique: unique('comment_likes_comment_user').on(table.commentId, table.userId),
+}))
+
+export const activatedPosts = pgTable('activated_posts', {
+  slug: text('slug').primaryKey(),
+  activatedAt: timestamp('activated_at').defaultNow(),
+})
+
 // Relations
 export const creatorsRelations = relations(creators, ({ many }) => ({
   series: many(series),
