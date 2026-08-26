@@ -20,6 +20,7 @@ import { CommentsSection } from "@/components/comments/CommentsSection"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
+import { SocialPreview } from "@/components/social-preview"
 import {
   formatDate,
   getAllSlugs,
@@ -81,9 +82,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   ])
 
   // Split the markdown into paragraphs
-const paragraphs = post.content
-  .split("\n\n")
-  .filter((paragraph) => paragraph.trim().length > 0)
+  const paragraphs = post.content
+    .split("\n\n")
+    .filter((paragraph) => paragraph.trim().length > 0)
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -184,15 +185,15 @@ const paragraphs = post.content
 
                     <Image
                       src={post.author.trim().toLowerCase() === "wisdom" ? "/wisdom.png" : "/logo.png"}
-                        alt={post.author}
-                          width={28}
-                            height={28}
-                              className="rounded-full border border-primary object-cover"
-                              />
+                      alt={post.author}
+                      width={28}
+                      height={28}
+                      className="rounded-full border border-primary object-cover"
+                    />
 
-                              <span className="text-[10px] text-center font-medium leading-tight text-foreground/80">
-                                {post.author}
-                                </span>
+                    <span className="text-[10px] text-center font-medium leading-tight text-foreground/80">
+                      {post.author}
+                    </span>
 
                   </div>
 
@@ -277,26 +278,51 @@ const paragraphs = post.content
 
               <div className="mt-8 prose-anime prose prose-invert max-w-none prose-sm md:prose-base">
 
-  {paragraphs.map((paragraph, index) => (
-    <div key={index}>
+                {paragraphs.map((paragraph, index) => (
+                  <div key={index}>
 
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-      >
-        {paragraph}
-      </ReactMarkdown>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                          components={{
+                              a({ href, children, ...props }) {
+                                    const text = String(children)
 
-      {(index + 1) % 4 === 0 && index !== paragraphs.length - 1 && (
-        <div className="my-8 not-prose">
-          <AdSlot slot="footer" />
-        </div>
-      )}
+                                          // Automatically turn a standalone URL into an OG preview
+                                                if (
+                                                        href &&
+                                                                text === href &&
+                                                                        /^https?:\/\//i.test(href)
+                                                                              ) {
+                                                                                      return <SocialPreview url={href} />
+                                                                                            }
 
-    </div>
-  ))}
+                                                                                                  return (
+                                                                                                          <a
+                                                                                                                    href={href}
+                                                                                                                              {...props}
+                                                                                                                                        target="_blank"
+                                                                                                                                                  rel="noopener noreferrer"
+                                                                                                                                                          >
+                                                                                                                                                                    {children}
+                                                                                                                                                                            </a>
+                                                                                                                                                                                  )
+                                                                                                                                                                                      },
+                                                                                                                                                                                        }}
+                                                                                                                                                                                        >
+                                                                                                                                                                                          {paragraph}
+                                                                                                                                                                                          </ReactMarkdown>
 
-</div>
+                    {(index + 1) % 4 === 0 && index !== paragraphs.length - 1 && (
+                      <div className="my-8 not-prose">
+                        <AdSlot slot="footer" />
+                      </div>
+                    )}
+
+                  </div>
+                ))}
+
+              </div>
 
               {post.tags && post.tags.length > 0 ? (
                 <div className="mt-10 flex flex-wrap items-center gap-2 border-t border-border pt-6">
