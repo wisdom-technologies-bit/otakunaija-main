@@ -152,8 +152,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <AdSlot slot="header" />
           </div>
 
-          <div className="grid gap-10 py-8 lg:grid-cols-[1fr_320px]">
-            <article>
+          <div className="grid min-w-0 gap-10 py-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <article className="min-w-0">
               <Link
                 href="/blog"
                 className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-primary"
@@ -178,7 +178,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card/70 backdrop-blur-sm">
 
-                <div className="grid grid-cols-4 divide-x divide-border">
+                <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
 
                   {/* Writer */}
                   <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">

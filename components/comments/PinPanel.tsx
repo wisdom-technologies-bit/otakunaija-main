@@ -28,9 +28,11 @@ export function PinPanel({
   const { user } = useAuth()
 
   useEffect(() => {
-    // Find the mount point in the sidebar
-    const el = document.getElementById("comments-pin-panel")
-    setPortalElement(el)
+    const findMount = () => setPortalElement(document.getElementById("comments-pin-panel"))
+    findMount()
+    const observer = new MutationObserver(findMount)
+    observer.observe(document.body, { childList: true, subtree: true })
+    return () => observer.disconnect()
   }, [])
 
   if (!portalElement || activeAnnotationId === null) return null

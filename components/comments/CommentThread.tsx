@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Heart, MessageCircle } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Heart, Smile, MessageCircle } from "lucide-react"
 import { formatDistanceToNow } from "date-fns" // you can install date-fns if not already
 import { useAuth } from "./AuthProvider"
 
@@ -79,9 +80,9 @@ export function CommentThread({
   const shouldShowReplyButton = depth < 5 // limit depth
 
   return (
-    <div className={`${depth > 0 ? "ml-6 border-l-2 border-border pl-4" : ""} mb-4`}>
+    <div className={`${depth > 0 ? "ml-3 border-l-2 border-border pl-3 sm:ml-6 sm:pl-4" : ""} mb-4 min-w-0 max-w-full`}>
       {/* Comment card */}
-      <div className="rounded-lg border border-border bg-card p-3">
+      <div className="min-w-0 max-w-full overflow-hidden rounded-lg border border-border bg-card p-3">
         <div className="flex items-start gap-3">
           <div className="flex-1">
             <div className="flex min-w-0 items-center gap-2 text-sm">
@@ -90,7 +91,7 @@ export function CommentThread({
               </span>
               <span className="shrink-0 text-muted-foreground text-xs">{timeAgo}</span>
             </div>
-            <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{comment.body}</p>
+            <p className="mt-1 max-w-full break-words whitespace-pre-wrap text-sm text-foreground">{comment.body}</p>
 
             <div className="mt-2 flex items-center gap-2">
               {/* Like button */}
@@ -104,20 +105,20 @@ export function CommentThread({
                 {comment.likes > 0 && comment.likes}
               </Button>
 
-              {/* Reactions are always visible so their counts are discoverable. */}
-              <div className="flex items-center gap-1">
-                {[['👍', 'like'], ['❤️', 'love'], ['😂', 'laugh'], ['😮', 'wow']].map(([emoji, type]) => (
-                  <button
-                    key={type}
-                    type="button"
-                    aria-label={`React ${emoji}`}
-                    className="rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent"
-                    onClick={() => handleReact(type)}
-                  >
-                    {emoji} {comment.reactions[type] || 0}
-                  </button>
-                ))}
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" aria-label="Open reactions" className="h-7 px-2 text-xs text-muted-foreground">
+                    <Smile className="h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="flex w-auto gap-1 p-2">
+                  {[['👍', 'like'], ['❤️', 'love'], ['😂', 'laugh'], ['😮', 'wow']].map(([emoji, type]) => (
+                    <button key={type} type="button" className="rounded p-1 text-sm hover:bg-accent" onClick={() => handleReact(type)}>
+                      {emoji} {comment.reactions[type] || 0}
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
 
               {/* Reply button */}
               {shouldShowReplyButton && user && (
@@ -140,7 +141,7 @@ export function CommentThread({
                   value={replyBody}
                   onChange={(e) => setReplyBody(e.target.value)}
                   placeholder="Write a reply..."
-                  className="min-h-[60px] text-sm"
+                  className="min-h-[60px] max-w-full break-words text-sm"
                 />
                 <div className="flex gap-2 justify-end">
                   <Button

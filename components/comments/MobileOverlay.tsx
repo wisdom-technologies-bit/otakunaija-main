@@ -29,11 +29,11 @@ export function MobileOverlay({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg h-[80vh] flex flex-col">
+      <DialogContent className="flex h-[min(80dvh,680px)] w-[calc(100%-1rem)] max-w-lg flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Comment</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pr-1">
           {rootComment ? (
             <CommentThread
               comment={rootComment}

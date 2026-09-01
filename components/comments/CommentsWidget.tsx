@@ -448,7 +448,7 @@ function NewCommentForm({
         placeholder="Add a comment..."
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        className="min-h-[80px]"
+        className="min-h-[80px] max-w-full break-words"
       />
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={!body.trim() || submitting}>
