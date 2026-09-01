@@ -7,7 +7,7 @@ interface ConnectorLineProps {
 }
 
 export function ConnectorLine({ activeAnnotationId }: ConnectorLineProps) {
-  const [linePoints, setLinePoints] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+  const [linePoints, setLinePoints] = useState<{ x1: number; y1: number; x2: number; y2: number; elbowX: number } | null>(null)
 
   useEffect(() => {
     if (activeAnnotationId === null) {
@@ -28,7 +28,8 @@ export function ConnectorLine({ activeAnnotationId }: ConnectorLineProps) {
       const x2 = panelRect.left
       const y2 = panelRect.top + panelRect.height / 2
 
-      setLinePoints({ x1, y1, x2, y2 })
+      const elbowX = Math.min(x1 + 28, x2 - 18)
+      setLinePoints({ x1, y1, x2, y2, elbowX })
     }
 
     updateLine()
@@ -48,14 +49,11 @@ export function ConnectorLine({ activeAnnotationId }: ConnectorLineProps) {
       className="fixed inset-0 pointer-events-none z-40"
       style={{ width: "100vw", height: "100vh" }}
     >
-      <line
-        x1={linePoints.x1}
-        y1={linePoints.y1}
-        x2={linePoints.x2}
-        y2={linePoints.y2}
+      <path
+        d={`M ${linePoints.x1} ${linePoints.y1} H ${linePoints.elbowX} V ${linePoints.y2} H ${linePoints.x2}`}
+        fill="none"
         stroke="#FF4C4D"
-        strokeWidth="2"
-        strokeDasharray="4 4"
+        strokeWidth="1"
         opacity="0.7"
       />
     </svg>

@@ -8,9 +8,10 @@ import { AdSlot } from "@/components/ad-slot"
 type SidebarProps = {
   recent: Post[]
   trending: Post[]
+  showAnnotationPanel?: boolean
 }
 
-export function Sidebar({ recent, trending }: SidebarProps) {
+export function Sidebar({ recent, trending, showAnnotationPanel = false }: SidebarProps) {
   return (
     <aside className="space-y-8 lg:sticky lg:top-20">
       <div id="newsletter" className="scroll-mt-24">
@@ -74,11 +75,9 @@ export function Sidebar({ recent, trending }: SidebarProps) {
 
       <AdSlot slot="sidebar" />
 
-      {/* NEW: Pin Panel container */}
-      <div
-        id="comments-pin-panel"
-        className="rounded-xl border border-border bg-card p-4 min-h-[300px]"
-      ></div>
+      {showAnnotationPanel ? (
+        <div id="comments-pin-panel" aria-live="polite" />
+      ) : null}
 
     </aside>
   )

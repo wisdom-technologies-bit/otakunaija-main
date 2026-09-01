@@ -357,7 +357,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               <CommentsSection postSlug={post.slug} />
             </article>
 
-            <Sidebar recent={recent} trending={trending} />
+            <Sidebar recent={recent} trending={trending} showAnnotationPanel />
           </div>
         </div>
       </main>
