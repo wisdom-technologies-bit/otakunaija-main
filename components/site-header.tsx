@@ -10,7 +10,6 @@ import { CATEGORIES } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
 import { EpisodesSearchBar } from "@/components/episodes/episodes-search-bar";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -91,7 +90,6 @@ export function SiteHeader() {
               <Search className="h-5 w-5" />
             )}
           </Button>
-          <ThemeToggle />
           <Button
             variant="default"
             onClick={handleNewsletterClick}

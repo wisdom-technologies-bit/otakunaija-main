@@ -184,7 +184,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <HideV0Badge />
           {children}
           <MobileBottomNav />
