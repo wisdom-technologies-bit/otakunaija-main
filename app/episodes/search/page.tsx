@@ -7,6 +7,8 @@ import { SeriesCard } from '@/components/episodes/series-card'
 import { EpisodeRow } from '@/components/episodes/episode-row'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
+import type { InferSelectModel } from 'drizzle-orm'
+import type { series, episodes } from '@/lib/db/schema'
 
 export const metadata: Metadata = {
   title: 'Search Episodes',
@@ -24,8 +26,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const sp = await searchParams
   const query = sp.q?.trim() || ''
 
-  let seriesResults = []
-  let episodesResults = []
+  type SeriesResult = InferSelectModel<typeof series> & { episodeCount?: number }
+  type EpisodeResult = { episode: InferSelectModel<typeof episodes>; series: InferSelectModel<typeof series> | null }
+  let seriesResults: SeriesResult[] = []
+  let episodesResults: EpisodeResult[] = []
   let hasResults = false
 
   if (query) {

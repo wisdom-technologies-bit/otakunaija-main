@@ -118,7 +118,7 @@ export function CreatorEditor({ mode, creator, justCreated }: Props) {
               id="facebook_url"
               name="facebook_url"
               type="url"
-              defaultValue={creator?.facebook_url || ""}
+              defaultValue={creator?.facebookUrl || ""}
               placeholder="https://facebook.com/..."
               className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -127,7 +127,7 @@ export function CreatorEditor({ mode, creator, justCreated }: Props) {
 
         <div>
           <div className="rounded-xl border border-border bg-card p-4">
-            <ImageUploader name="avatar_url" defaultValue={creator?.avatar_url ?? ""} label="Avatar" />
+            <ImageUploader name="avatar_url" defaultValue={creator?.avatarUrl ?? ""} label="Avatar" />
           </div>
         </div>
       </div>

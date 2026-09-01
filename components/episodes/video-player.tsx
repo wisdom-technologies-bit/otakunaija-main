@@ -104,7 +104,6 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: Vid
               srcLang="en"
               label="English"
               default
-              crossOrigin="anonymous"
             />
           )}
           Your browser does not support the video tag.

@@ -136,7 +136,6 @@ export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
         variant="ghost"
         size="sm"
         onMouseDown={(e) => e.preventDefault()}
-        onMouseDown={(e) => e.preventDefault()}
         onClick={handleCopy}
         className="h-7 px-2 text-xs"
       >
@@ -146,7 +145,6 @@ export function SelectionToolbar({ onComment }: SelectionToolbarProps) {
       <Button
         variant="ghost"
         size="sm"
-        onMouseDown={(e) => e.preventDefault()}
         onMouseDown={(e) => e.preventDefault()}
         onClick={handleCommentClick}
         className="h-7 px-2 text-xs text-primary"

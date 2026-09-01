@@ -69,18 +69,16 @@ const _getTrendingPosts = cache(
 )
 
 export async function getTrendingPosts(limit = 5): Promise<Post[]> {
-  if (BLOG_DYNAMIC) {
-    const rows = await sql`
-      SELECT *
-      FROM posts
-      WHERE trending = true
-      ORDER BY views DESC
-      LIMIT ${limit}
-    `
-    return rows as Post[]
-  }
-
-  return _getTrendingPosts(limit)
+  // Trending rankings depend on mutable view counts, so serving a one-hour cached
+  // snapshot made newer high-view posts invisible until the cache expired.
+  const rows = await sql`
+    SELECT *
+    FROM posts
+    WHERE trending = true
+    ORDER BY views DESC, published_at DESC
+    LIMIT ${limit}
+  `
+  return rows as Post[]
 }
 
 const _getRecentPosts = cache(

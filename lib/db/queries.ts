@@ -16,16 +16,17 @@ const _getAllSeriesWithEpisodesForSitemap = cache(
         .from(series)
         .leftJoin(episodes, eq(series.id, episodes.seriesId))
 
-      const seriesMap = new Map<number, { slug: string; episodes: { slug: string; publishedAt: Date | null }[] }>()
+      const seriesMap = new Map<number, { title: string; slug: string; episodes: { title: string; slug: string; publishedAt: Date | null }[] }>()
 
       for (const row of result) {
         if (!seriesMap.has(row.series.id)) {
-          seriesMap.set(row.series.id, { slug: row.series.slug, episodes: [] })
+          seriesMap.set(row.series.id, { title: row.series.title, slug: row.series.slug, episodes: [] })
         }
         if (row.episode) {
           seriesMap.get(row.series.id)!.episodes.push({
-            slug: row.episode.slug,
-            publishedAt: row.episode.publishedAt,
+title: row.episode.title,
+  slug: row.episode.slug,
+  publishedAt: row.episode.publishedAt,
           })
         }
       }

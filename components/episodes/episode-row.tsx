@@ -59,7 +59,7 @@ export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps
         {/* Metadata column */}
         <div className="flex flex-shrink-0 flex-col items-end gap-0.5 text-xs text-foreground/60">
           <span>{durationStr}</span>
-          <span>{formatViewCount(episode.viewCount)} views</span>
+          <span>{formatViewCount(episode.viewCount ?? 0)} views</span>
           <span>{publishedDate}</span>
         </div>
 

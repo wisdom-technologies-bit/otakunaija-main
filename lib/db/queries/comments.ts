@@ -8,8 +8,8 @@ import {
   commentLikes,
   activatedPosts,
 } from "@/lib/db/schema"
-import { eq, and, sql, count, desc } from "drizzle-orm"
-import { generateToken, generateUsername } from "@/lib/auth-utils"  // we'll move generateUsername here
+import { eq, and, sql, count, desc, isNull } from "drizzle-orm"
+import { generateToken } from "@/lib/auth-utils"
 
 // ---------- Auth ----------
 export async function registerOrLogin(email: string, name?: string) {
@@ -89,7 +89,7 @@ export async function getCommentsTree(postSlug: string) {
     })
     .from(comments)
     .leftJoin(commentUsers, eq(comments.userId, commentUsers.id))
-    .where(and(eq(comments.postSlug, postSlug), eq(comments.parentId, null)))
+    .where(and(eq(comments.postSlug, postSlug), isNull(comments.parentId)))
     .orderBy(desc(comments.createdAt))
 
   // For each comment, get its immediate replies (depth 1) with deeper count

@@ -101,7 +101,7 @@ export default async function EpisodesPage() {
 
                   {/* Published date */}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(ep.publishedAt).toLocaleDateString()}
+                    {new Date(ep.publishedAt || new Date()).toLocaleDateString()}
                   </span>
 
                   {/* Actions */}

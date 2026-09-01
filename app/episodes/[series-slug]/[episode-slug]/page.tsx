@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'player',
       title: `${episode.title} — ${series?.title}`,
       description: episode.synopsis,
-      image: episode.thumbnailUrl,
+      images: episode.thumbnailUrl ? [episode.thumbnailUrl] : [],
     },
   }
 }
@@ -227,7 +227,7 @@ export default async function WatchPage({ params }: Props) {
                   <span>·</span>
                   <span>Episode {episode.episodeNumber}</span>
                   <span>·</span>
-                  <span>{formatViewCount(episode.viewCount)} views</span>
+                  <span>{formatViewCount(episode.viewCount ?? 0)} views</span>
                   <span>·</span>
                   <span>
                     {episode.totalWatchMinutes && episode.totalWatchMinutes > 0
@@ -261,7 +261,7 @@ export default async function WatchPage({ params }: Props) {
 
               {/* Mobile About Series Section */}
               <div className="lg:hidden">
-                <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={episode.id} />
+                <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={String(episode.id)} />
               </div>
             </div>
 
@@ -287,7 +287,7 @@ export default async function WatchPage({ params }: Props) {
           {/* Sidebar - Desktop Only */}
           <div className="hidden lg:block">
             <div className="sticky top-0 space-y-6">
-              <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={episode.id} />
+              <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={String(episode.id)} />
             </div>
           </div>
         </div>

@@ -33,7 +33,7 @@ export async function GET() {
       <link>${BASE}/episodes/${episode.seriesSlug}/${episode.episodeSlug}</link>
       <guid isPermaLink="true">${BASE}/episodes/${episode.seriesSlug}/${episode.episodeSlug}</guid>
       <description><![CDATA[Latest episode release for ${episode.seriesTitle}.]]></description>
-      <pubDate>${new Date(episode.publishedAt).toUTCString()}</pubDate>
+      <pubDate>${new Date(episode.publishedAt ?? Date.now()).toUTCString()}</pubDate>
       <category>Episodes</category>
     </item>`
     )

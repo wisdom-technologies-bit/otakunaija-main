@@ -80,7 +80,7 @@ export function AboutSeriesSidebar({ series, episodes, currentEpisodeId }: About
         <div className="space-y-2">
           {upcomingEpisodes.length > 0 ? (
             upcomingEpisodes.map((episode) => {
-              const isCurrentEpisode = episode.id === currentEpisodeId
+              const isCurrentEpisode = String(episode.id) === currentEpisodeId
               const publishedDate = new Date(episode.publishedAt || new Date()).toLocaleDateString(
                 'en-US',
                 { year: 'numeric', month: 'short', day: 'numeric' }
@@ -126,7 +126,7 @@ export function AboutSeriesSidebar({ series, episodes, currentEpisodeId }: About
                     <div className="text-[11px] text-foreground/60 flex items-center gap-2">
                       <span>{publishedDate}</span>
                       <span>·</span>
-                      <span>{formatViewCount(episode.viewCount)} views</span>
+                      <span>{formatViewCount(episode.viewCount ?? 0)} views</span>
                     </div>
                   </div>
 

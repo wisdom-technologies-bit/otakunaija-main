@@ -65,10 +65,10 @@ export default async function SeriesPage() {
               {seriesWithCounts.map(({ series: s, creator, episodeCount }) => (
                 <div key={s.id} className="flex flex-col md:flex-row items-start md:items-center gap-3 px-4 py-3 hover:bg-background/50">
                   {/* Cover */}
-                  {s.cover_image_url && (
+                  {s.coverImageUrl && (
                     <div className="relative h-12 w-20 flex-shrink-0 overflow-hidden rounded bg-muted">
                       <Image
-                        src={s.cover_image_url}
+                        src={s.coverImageUrl}
                         alt={s.title}
                         fill
                         className="object-cover"

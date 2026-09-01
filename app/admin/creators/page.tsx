@@ -45,10 +45,10 @@ export default async function CreatorsPage() {
               {creatorsWithCounts.map((creator) => (
                 <div key={creator.id} className="flex flex-col md:flex-row items-start md:items-center gap-3 px-4 py-3 hover:bg-background/50">
                   {/* Avatar */}
-                  {creator.avatar_url && (
+                  {creator.avatarUrl && (
                     <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-muted">
                       <Image
-                        src={creator.avatar_url}
+                        src={creator.avatarUrl}
                         alt={creator.name}
                         fill
                         className="object-cover"
@@ -72,9 +72,9 @@ export default async function CreatorsPage() {
                   </div>
 
                   {/* Facebook link */}
-                  {creator.facebook_url && (
+                  {creator.facebookUrl && (
                     <a
-                      href={creator.facebook_url}
+                      href={creator.facebookUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="h-8 w-8 text-muted-foreground hover:text-primary flex items-center justify-center"
