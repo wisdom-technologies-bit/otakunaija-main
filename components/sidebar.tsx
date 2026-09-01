@@ -73,11 +73,11 @@ export function Sidebar({ recent, trending, showAnnotationPanel = false }: Sideb
         </ul>
       </section>
 
-      <AdSlot slot="sidebar" />
-
       {showAnnotationPanel ? (
-        <div id="comments-pin-panel" aria-live="polite" />
+        <div id="comments-pin-panel" className="mt-4" aria-live="polite" />
       ) : null}
+
+      <AdSlot slot="sidebar" />
 
     </aside>
   )

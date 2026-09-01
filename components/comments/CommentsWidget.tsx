@@ -123,13 +123,19 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
           setActiveAnnotationId(null)
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0, rootMargin: "-35% 0px -50% 0px" }
     )
 
-    const highlightEls = document.querySelectorAll(".otaku-annotation-highlight")
-    highlightEls.forEach((el) => observer.observe(el))
+    const observeHighlights = () => {
+      document.querySelectorAll(".otaku-annotation-highlight").forEach((el) => observer.observe(el))
+    }
+    observeHighlights()
+    const frame = requestAnimationFrame(observeHighlights)
 
-    return () => observer.disconnect()
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
   }, [isDesktop, annotations])
 
   // Create an annotation together with its actual comment.
@@ -250,9 +256,11 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
   return data.replies || []
 }
 
-  // Mobile click handler for annotation highlight
+  // Clicking a highlight should always select its own comment; desktop opens the sidebar card.
   const handleAnnotationClick = (annotationId: number) => {
-    if (!isDesktop) {
+    if (isDesktop) {
+      setActiveAnnotationId(annotationId)
+    } else {
       setMobileAnnotationId(annotationId)
     }
   }
@@ -448,7 +456,7 @@ function NewCommentForm({
         placeholder="Add a comment..."
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        className="min-h-[80px] max-w-full break-words"
+        className="min-h-[80px] max-w-full [overflow-wrap:anywhere]"
       />
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={!body.trim() || submitting}>

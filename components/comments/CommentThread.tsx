@@ -91,7 +91,7 @@ export function CommentThread({
               </span>
               <span className="shrink-0 text-muted-foreground text-xs">{timeAgo}</span>
             </div>
-            <p className="mt-1 max-w-full break-words whitespace-pre-wrap text-sm text-foreground">{comment.body}</p>
+            <p className="mt-1 max-w-full [overflow-wrap:anywhere] whitespace-pre-wrap text-sm text-foreground">{comment.body}</p>
 
             <div className="mt-2 flex items-center gap-2">
               {/* Like button */}
@@ -114,7 +114,7 @@ export function CommentThread({
                 <PopoverContent className="flex w-auto gap-1 p-2">
                   {[['👍', 'like'], ['❤️', 'love'], ['😂', 'laugh'], ['😮', 'wow']].map(([emoji, type]) => (
                     <button key={type} type="button" className="rounded p-1 text-sm hover:bg-accent" onClick={() => handleReact(type)}>
-                      {emoji} {comment.reactions[type] || 0}
+                      {emoji} {comment.reactions[type] > 0 ? comment.reactions[type] : null}
                     </button>
                   ))}
                 </PopoverContent>
@@ -141,7 +141,7 @@ export function CommentThread({
                   value={replyBody}
                   onChange={(e) => setReplyBody(e.target.value)}
                   placeholder="Write a reply..."
-                  className="min-h-[60px] max-w-full break-words text-sm"
+                  className="min-h-[60px] max-w-full [overflow-wrap:anywhere] text-sm"
                 />
                 <div className="flex gap-2 justify-end">
                   <Button

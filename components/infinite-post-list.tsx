@@ -23,13 +23,15 @@ export function InfinitePostList({
   const [posts, setPosts] = useState<Post[]>(initialPosts)
   const [offset, setOffset] = useState(initialOffset)
   const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(initialPosts.length > 0)
+  const [hasMore, setHasMore] = useState(initialPosts.length >= 10)
+  const loadingRef = useRef(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const trendingSet = new Set(trendingIds)
 
   const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return
+    if (loadingRef.current || !hasMore) return
+    loadingRef.current = true
     setLoading(true)
     try {
       const newPosts = await loadMorePosts(offset, 10, category ?? undefined)
@@ -43,6 +45,7 @@ export function InfinitePostList({
     } catch (err) {
       console.error('Failed to load more posts:', err)
     } finally {
+      loadingRef.current = false
       setLoading(false)
     }
   }, [offset, loading, hasMore, category])
@@ -57,7 +60,7 @@ export function InfinitePostList({
           loadMore()
         }
       },
-      { rootMargin: '400px' }
+      { rootMargin: '0px', threshold: 1 }
     )
 
     observer.observe(sentinel)

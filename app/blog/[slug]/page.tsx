@@ -176,60 +176,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <ExpandableExcerpt excerpt={post.excerpt} />
 
-              <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card/70 backdrop-blur-sm">
-
-                <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
-
-                  {/* Writer */}
-                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
-
-                    <Image
-                      src={post.author.trim().toLowerCase() === "wisdom" ? "/wisdom.png" : "/logo.png"}
-                      alt={post.author}
-                      width={28}
-                      height={28}
-                      className="rounded-full border border-primary object-cover"
-                    />
-
-                    <span className="text-[10px] text-center font-medium leading-tight text-foreground/80">
-                      {post.author}
-                    </span>
-
-                  </div>
-
-                  {/* Published */}
-                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
-
-                    <Calendar className="h-4 w-4 text-primary" />
-
-                    <span className="text-[10px] text-center leading-tight">
-                      {formatDate(post.published_at)}
-                    </span>
-
-                  </div>
-
-                  {/* Reading Time */}
-                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
-
-                    <Timer className="h-4 w-4 text-primary" />
-
-                    <span className="text-[10px] text-center">
-                      {post.read_time} min
-                    </span>
-
-                  </div>
-
-                  {/* Views */}
-                  <div className="flex flex-col items-center justify-center gap-1 px-2 py-3">
-
-                    <ChartNoAxesColumn className="h-4 w-4 text-primary" />
-
-                    <span className="text-[10px] text-center">
-                      {post.views.toLocaleString()}
-                    </span>
-
-                  </div>
-                </div>
+              <div className="mt-5 space-y-1 text-sm text-muted-foreground">
+                <p>Written by <span className="font-semibold text-foreground">{post.author}</span></p>
+                <p>{formatDate(post.published_at)} · {post.read_time} min · {post.views.toLocaleString()} views</p>
               </div>
 
               <div className="mt-4 flex justify-start">
