@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
 type AdSlotProps = {
@@ -26,45 +26,59 @@ const ZONE_IDS: Record<AdSlotProps["slot"], string | undefined> = {
 export function AdSlot({ slot, label = "Sponsored", className }: AdSlotProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const zoneId = ZONE_IDS[slot]
+  const [collapsed, setCollapsed] = useState(!zoneId)
 
   useEffect(() => {
     if (!zoneId || !containerRef.current) return
 
+    const container = containerRef.current
+    const isDesktopHeader = slot === "header" && window.matchMedia("(min-width: 768px)").matches
+    if (isDesktopHeader) {
+      setCollapsed(true)
+      return
+    }
+
+    let hasAdContent = false
+    const observer = new MutationObserver(() => {
+      hasAdContent = Array.from(container.childNodes).some((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) return (node as Element).tagName !== "SCRIPT"
+        return Boolean(node.textContent?.trim().length)
+      })
+      if (hasAdContent) observer.disconnect()
+    })
+    observer.observe(container, { childList: true, subtree: true, characterData: true })
+
+    const collapseTimer = window.setTimeout(() => {
+      if (!hasAdContent) setCollapsed(true)
+      observer.disconnect()
+    }, 5000)
+
     const script = document.createElement("script")
     script.async = true
     script.referrerPolicy = "no-referrer-when-downgrade"
-    script.src = zoneId // for HilltopAds, we're passing the full script src URL as the "zoneId" value directly
-    containerRef.current.appendChild(script)
+    script.src = zoneId
+    container.appendChild(script)
 
     return () => {
-      if (containerRef.current?.contains(script)) {
-        containerRef.current.removeChild(script)
-      }
+      window.clearTimeout(collapseTimer)
+      observer.disconnect()
+      if (container.contains(script)) container.removeChild(script)
     }
-  }, [zoneId])
+  }, [slot, zoneId])
 
-  if (!zoneId) {
-    return (
-      <aside
-        aria-label={label}
-        data-ad-slot={slot}
-        className={cn(
-          "flex w-full items-center justify-center rounded-lg border border-dashed border-border bg-card/40 text-xs font-medium uppercase tracking-widest text-muted-foreground",
-          SIZES[slot],
-          className,
-        )}
-      >
-        <span>{label}</span>
-      </aside>
-    )
-  }
+  if (collapsed) return null
 
   return (
     <div
       ref={containerRef}
       aria-label={label}
       data-ad-slot={slot}
-      className={cn("flex w-full items-center justify-center", SIZES[slot], className)}
+      className={cn(
+        "flex w-full items-center justify-center",
+        slot === "header" && "md:hidden",
+        SIZES[slot],
+        className,
+      )}
     />
   )
 }
