@@ -176,22 +176,40 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <ExpandableExcerpt excerpt={post.excerpt} />
 
-              <dl className="mt-5 grid max-w-xl gap-x-8 gap-y-3 border-y border-border py-4 text-sm sm:grid-cols-2">
-                <div className="min-w-0">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Written by</dt>
-                  <dd className="mt-1 truncate font-semibold text-foreground" title={post.author}>{post.author}</dd>
+              <dl className="mt-5 grid max-w-2xl grid-cols-2 overflow-hidden rounded-xl border border-border/70 bg-muted/20 text-sm sm:grid-cols-4">
+                <div className="col-span-2 flex min-w-0 items-center gap-3 border-b border-border/70 px-3 py-3 sm:col-span-1 sm:border-b-0 sm:border-r">
+                  <Image
+                    src={post.author.trim().toLowerCase() === "wisdom" ? "/wisdom.png" : "/logo.png"}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 shrink-0 rounded-full border border-primary/40 object-cover"
+                  />
+                  <div className="min-w-0">
+                    <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Written by</dt>
+                    <dd className="truncate font-semibold text-foreground" title={post.author}>{post.author}</dd>
+                  </div>
                 </div>
-                <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Published</dt>
-                  <dd className="mt-1 text-foreground">{formatDate(post.published_at)}</dd>
+                <div className="flex items-center gap-2 border-b border-border/70 px-3 py-3 sm:border-b-0 sm:border-r">
+                  <Calendar className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <div>
+                    <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Published</dt>
+                    <dd className="text-xs font-medium text-foreground">{formatDate(post.published_at)}</dd>
+                  </div>
                 </div>
-                <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Reading time</dt>
-                  <dd className="mt-1 text-foreground">{post.read_time} min</dd>
+                <div className="flex items-center gap-2 border-r border-border/70 px-3 py-3">
+                  <Timer className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <div>
+                    <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Read time</dt>
+                    <dd className="text-xs font-medium text-foreground">{post.read_time} min</dd>
+                  </div>
                 </div>
-                <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Views</dt>
-                  <dd className="mt-1 text-foreground">{post.views.toLocaleString()}</dd>
+                <div className="flex items-center gap-2 px-3 py-3">
+                  <ChartNoAxesColumn className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <div>
+                    <dt className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Views</dt>
+                    <dd className="text-xs font-medium text-foreground">{post.views.toLocaleString()}</dd>
+                  </div>
                 </div>
               </dl>
 
