@@ -39,6 +39,7 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
   const [activeAnnotationId, setActiveAnnotationId] = useState<number | null>(null)
   const [mobileAnnotationId, setMobileAnnotationId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showAllComments, setShowAllComments] = useState(false)
 
   const pendingAnnotation = useRef<{
     selectedText: string
@@ -390,7 +391,7 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
         )}
         {comments.length > 0 ? (
           <div className="mt-6 space-y-4">
-            {comments.map((c) => (
+            {(showAllComments ? comments : comments.slice(0, 5)).map((c) => (
               <CommentThread
                 key={c.id}
                 comment={c}
@@ -401,6 +402,11 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
                 onLoadReplies={handleLoadReplies}
               />
             ))}
+            {comments.length > 5 && !showAllComments && (
+              <Button variant="outline" className="w-full" onClick={() => setShowAllComments(true)}>
+                See more comments
+              </Button>
+            )}
           </div>
         ) : (
           <p className="text-muted-foreground text-sm">No comments yet. Be the first to share your thoughts!</p>

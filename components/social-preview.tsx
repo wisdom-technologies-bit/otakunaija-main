@@ -87,7 +87,7 @@ export function SocialPreview({ url }: { url: string }) {
       href={data.url || url}
       target="_blank"
       rel="noopener noreferrer"
-      className="my-6 block overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-lg"
+      className="my-6 block overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:border-primary/50 hover:shadow-lg"
     >
       {data.image && (
         <div className="relative aspect-[1.91/1] w-full overflow-hidden bg-muted">
@@ -104,7 +104,7 @@ export function SocialPreview({ url }: { url: string }) {
 
       <div className="p-4">
         <p className="mb-1 text-xs font-medium text-muted-foreground">
-          {data.siteName}
+          OtakuNaija
         </p>
 
         <h3 className="font-display text-lg font-bold leading-tight">
@@ -117,9 +117,7 @@ export function SocialPreview({ url }: { url: string }) {
           </p>
         )}
 
-        <p className="mt-3 truncate text-xs text-primary">
-          {data.url}
-        </p>
+
       </div>
     </Link>
   )

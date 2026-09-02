@@ -23,7 +23,7 @@ export function InfinitePostList({
   const [posts, setPosts] = useState<Post[]>(initialPosts)
   const [offset, setOffset] = useState(initialOffset)
   const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(initialPosts.length >= 10)
+  const [hasMore, setHasMore] = useState(true)
   const loadingRef = useRef(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -48,7 +48,7 @@ export function InfinitePostList({
       loadingRef.current = false
       setLoading(false)
     }
-  }, [offset, loading, hasMore, category])
+  }, [offset, hasMore, category])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
