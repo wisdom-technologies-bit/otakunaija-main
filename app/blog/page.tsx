@@ -48,7 +48,7 @@ export default async function BlogPage({
   const q = sp.q?.trim() || undefined
 
   const [posts, recent, trending] = await Promise.all([
-    getAllPosts({ category, search: q }),
+    getAllPosts({ category, search: q, limit: 10 }),
     getRecentPosts(4),
     getTrendingPosts(5),
   ])
@@ -160,6 +160,7 @@ export default async function BlogPage({
                       initialPosts={posts.slice(4)}
                       initialOffset={posts.length}
                       category={category}
+                      search={q}
                       trendingIds={trending.map((p) => p.id)}
                     />
                   </>

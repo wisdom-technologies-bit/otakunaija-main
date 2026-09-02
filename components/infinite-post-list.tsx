@@ -11,6 +11,7 @@ interface InfinitePostListProps {
   initialPosts: Post[]
   initialOffset: number
   category?: string | null
+  search?: string | null
   trendingIds: number[]
 }
 
@@ -18,6 +19,7 @@ export function InfinitePostList({
   initialPosts,
   initialOffset,
   category,
+  search,
   trendingIds,
 }: InfinitePostListProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts)
@@ -34,7 +36,7 @@ export function InfinitePostList({
     loadingRef.current = true
     setLoading(true)
     try {
-      const newPosts = await loadMorePosts(offset, 10, category ?? undefined)
+      const newPosts = await loadMorePosts(offset, 10, category ?? undefined, search ?? undefined)
       if (newPosts.length === 0) {
         setHasMore(false)
       } else {
@@ -48,7 +50,7 @@ export function InfinitePostList({
       loadingRef.current = false
       setLoading(false)
     }
-  }, [offset, hasMore, category])
+  }, [offset, hasMore, category, search])
 
   useEffect(() => {
     const sentinel = sentinelRef.current

@@ -114,15 +114,16 @@ export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
 
 const _getAllPosts = cache(
   unstable_cache(
-    async (category?: string, search?: string): Promise<Post[]> => {
+    async (category?: string, search?: string, limit = 10, offset = 0): Promise<Post[]> => {
       if (category && search) {
         const like = `%${search}%`
         const rows = await sql`
           SELECT * FROM posts
           WHERE category = ${category}
             AND (title ILIKE ${like} OR excerpt ILIKE ${like})
-          ORDER BY published_at DESC
-        `
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `
         return rows as Post[]
       }
 
@@ -130,8 +131,9 @@ const _getAllPosts = cache(
         const rows = await sql`
           SELECT * FROM posts
           WHERE category = ${category}
-          ORDER BY published_at DESC
-        `
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `
         return rows as Post[]
       }
 
@@ -140,12 +142,17 @@ const _getAllPosts = cache(
         const rows = await sql`
           SELECT * FROM posts
           WHERE title ILIKE ${like} OR excerpt ILIKE ${like}
-          ORDER BY published_at DESC
-        `
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `
         return rows as Post[]
       }
 
-      const rows = await sql`SELECT * FROM posts ORDER BY published_at DESC`
+      const rows = await sql`
+        SELECT * FROM posts
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `
       return rows as Post[]
     },
     ['all-posts'],
@@ -153,9 +160,9 @@ const _getAllPosts = cache(
   )
 )
 
-export async function getAllPosts(options?: { category?: string; search?: string }): Promise<Post[]> {
-  const { category, search } = options ?? {}
-  return _getAllPosts(category, search)
+export async function getAllPosts(options?: { category?: string; search?: string; limit?: number; offset?: number }): Promise<Post[]> {
+  const { category, search, limit = 10, offset = 0 } = options ?? {}
+  return _getAllPosts(category, search, limit, offset)
 }
 
 const _getPostBySlug = cache(
