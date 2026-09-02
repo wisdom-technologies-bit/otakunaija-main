@@ -131,8 +131,8 @@ export default async function BlogPage({
           </section>
 
           <section className="pb-14">
-            <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
-              <div>
+            <div className="grid min-w-0 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="min-w-0">
                 {posts.length === 0 ? (
                   <Empty className="rounded-xl border border-border bg-card">
                     <EmptyHeader>
@@ -156,14 +156,12 @@ export default async function BlogPage({
                       </div>
                     ) : null}
 
-                    {posts.length > 4 ? (
-                      <InfinitePostList
-                        initialPosts={posts.slice(4)}
-                        initialOffset={posts.length}
-                        category={category}
-                        trendingIds={trending.map((p) => p.id)}
-                      />
-                    ) : null}
+                    <InfinitePostList
+                      initialPosts={posts.slice(4)}
+                      initialOffset={posts.length}
+                      category={category}
+                      trendingIds={trending.map((p) => p.id)}
+                    />
                   </>
                 )}
               </div>

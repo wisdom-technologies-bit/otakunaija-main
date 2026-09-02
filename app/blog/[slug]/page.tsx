@@ -176,10 +176,24 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               <ExpandableExcerpt excerpt={post.excerpt} />
 
-              <div className="mt-5 space-y-1 text-sm text-muted-foreground">
-                <p>Written by <span className="font-semibold text-foreground">{post.author}</span></p>
-                <p>{formatDate(post.published_at)} · {post.read_time} min · {post.views.toLocaleString()} views</p>
-              </div>
+              <dl className="mt-5 grid max-w-xl gap-x-8 gap-y-3 border-y border-border py-4 text-sm sm:grid-cols-2">
+                <div className="min-w-0">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Written by</dt>
+                  <dd className="mt-1 truncate font-semibold text-foreground" title={post.author}>{post.author}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Published</dt>
+                  <dd className="mt-1 text-foreground">{formatDate(post.published_at)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Reading time</dt>
+                  <dd className="mt-1 text-foreground">{post.read_time} min</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Views</dt>
+                  <dd className="mt-1 text-foreground">{post.views.toLocaleString()}</dd>
+                </div>
+              </dl>
 
               <div className="mt-4 flex justify-start">
 
