@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, foreignKey, unique } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, timestamp, integer, boolean, unique, index } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 export const creators = pgTable('creators', {
@@ -136,6 +136,62 @@ export const activatedPosts = pgTable('activated_posts', {
   slug: text('slug').primaryKey(),
   activatedAt: timestamp('activated_at').defaultNow(),
 })
+
+export const polls = pgTable('polls', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  status: text('status').notNull().default('DRAFT'),
+  featured: boolean('featured').notNull().default(false),
+  allowMultipleVotes: boolean('allow_multiple_votes').notNull().default(false),
+  startsAt: timestamp('starts_at'),
+  endsAt: timestamp('ends_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => [index('polls_status_idx').on(table.status)])
+
+export const pollOptions = pgTable('poll_options', {
+  id: serial('id').primaryKey(),
+  pollId: integer('poll_id').notNull().references(() => polls.id, { onDelete: 'cascade' }),
+  label: text('label').notNull(),
+  description: text('description'),
+  imageUrl: text('image_url'),
+  imagePublicId: text('image_public_id'),
+  displayOrder: integer('display_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => [index('poll_options_poll_order_idx').on(table.pollId, table.displayOrder)])
+
+export const pollVotes = pgTable('poll_votes', {
+  id: serial('id').primaryKey(),
+  pollId: integer('poll_id').notNull().references(() => polls.id, { onDelete: 'cascade' }),
+  optionId: integer('option_id').notNull().references(() => pollOptions.id, { onDelete: 'cascade' }),
+  voterHash: text('voter_hash').notNull(),
+  countryCode: text('country_code'),
+  countryName: text('country_name'),
+  region: text('region'),
+  city: text('city'),
+  timezone: text('timezone'),
+  continent: text('continent'),
+  deviceType: text('device_type'),
+  userAgentHash: text('user_agent_hash'),
+  referrer: text('referrer'),
+  votedAt: timestamp('voted_at').notNull().defaultNow(),
+}, (table) => [
+  unique('poll_votes_poll_voter_unique').on(table.pollId, table.voterHash),
+  index('poll_votes_poll_time_idx').on(table.pollId, table.votedAt),
+])
+
+export const pollViews = pgTable('poll_views', {
+  id: serial('id').primaryKey(),
+  pollId: integer('poll_id').notNull().references(() => polls.id, { onDelete: 'cascade' }),
+  deviceId: text('device_id').notNull(),
+  source: text('source'),
+  sourceArticleId: integer('source_article_id'),
+  viewedAt: timestamp('viewed_at').notNull().defaultNow(),
+}, (table) => [index('poll_views_poll_time_idx').on(table.pollId, table.viewedAt)])
 
 // Relations
 export const creatorsRelations = relations(creators, ({ many }) => ({

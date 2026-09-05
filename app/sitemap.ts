@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 import { CATEGORIES, getAllSlugs } from "@/lib/posts"
 import { getAllSeriesWithEpisodesForSitemap } from "@/lib/db/queries"
+import { getPublicPollSlugs } from "@/lib/db/queries/polls"
 
 export const dynamic = "force-dynamic"
 
@@ -9,6 +10,7 @@ const BASE = "https://otakunaija.name.ng"
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await getAllSlugs()
   const allSeries = await getAllSeriesWithEpisodesForSitemap()
+  const publicPolls = await getPublicPollSlugs()
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, changeFrequency: "daily", priority: 1.0 },
@@ -17,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/contact`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE}/privacy`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE}/terms`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${BASE}/polls`, changeFrequency: "daily", priority: 0.8 },
   ]
 
   const categoryRoutes: MetadataRoute.Sitemap = CATEGORIES.map((c) => ({
@@ -42,6 +45,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
+  const pollRoutes: MetadataRoute.Sitemap = publicPolls.map((poll) => ({
+    url: `${BASE}/polls/${poll.slug}`,
+    lastModified: poll.updatedAt || undefined,
+    changeFrequency: "daily" as const,
+    priority: 0.7,
+  }))
+
   const episodeRoutes: MetadataRoute.Sitemap = allSeries.flatMap((s) =>
     s.episodes.map((e) => ({
       url: `${BASE}/episodes/${s.slug}/${e.slug}`,
@@ -58,5 +68,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...episodesLandingRoute,
     ...seriesRoutes,
     ...episodeRoutes,
+    ...pollRoutes,
   ]
 }
