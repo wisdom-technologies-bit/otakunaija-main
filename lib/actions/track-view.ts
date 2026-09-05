@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { randomUUID } from 'crypto'
 import { recordPostView, recordEpisodeView } from '@/lib/db/queries'
+import { trackPollView as recordPollView } from '@/lib/db/queries/polls'
 
 const DEVICE_ID_COOKIE = 'otakunaija_device_id'
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60 // 1 year in seconds
@@ -44,5 +45,14 @@ export async function trackEpisodeView(episodeId: number) {
     await recordEpisodeView(episodeId, deviceId)
   } catch (err) {
     console.error('Failed to track episode view:', err)
+  }
+}
+
+export async function trackHomepagePollView(pollId: number) {
+  try {
+    const deviceId = await getOrCreateDeviceId()
+    await recordPollView(pollId, deviceId, 'homepage')
+  } catch (err) {
+    console.error('Failed to track poll view:', err)
   }
 }

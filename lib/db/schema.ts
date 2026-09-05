@@ -164,6 +164,14 @@ export const pollOptions = pgTable('poll_options', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => [index('poll_options_poll_order_idx').on(table.pollId, table.displayOrder)])
 
+export const rateLimits = pgTable('rate_limits', {
+  id: serial('id').primaryKey(),
+  identifier: text('identifier').notNull(),
+  action: text('action').notNull(),
+  count: integer('count').default(1),
+  windowStart: timestamp('window_start').defaultNow(),
+}, (table) => [unique('rate_limits_identifier_action_unique').on(table.identifier, table.action)])
+
 export const pollVotes = pgTable('poll_votes', {
   id: serial('id').primaryKey(),
   pollId: integer('poll_id').notNull().references(() => polls.id, { onDelete: 'cascade' }),
@@ -192,6 +200,13 @@ export const pollViews = pgTable('poll_views', {
   sourceArticleId: integer('source_article_id'),
   viewedAt: timestamp('viewed_at').notNull().defaultNow(),
 }, (table) => [index('poll_views_poll_time_idx').on(table.pollId, table.viewedAt)])
+
+export const pollVoteSubmissions = pgTable('poll_vote_submissions', {
+  id: serial('id').primaryKey(),
+  pollId: integer('poll_id').notNull().references(() => polls.id, { onDelete: 'cascade' }),
+  voterHash: text('voter_hash').notNull(),
+  submittedAt: timestamp('submitted_at').notNull().defaultNow(),
+}, (table) => [unique('poll_vote_submissions_poll_voter_unique').on(table.pollId, table.voterHash)])
 
 // Relations
 export const creatorsRelations = relations(creators, ({ many }) => ({

@@ -13,6 +13,7 @@ import { HeroCarousel } from "@/components/hero-carousel"
 import { HomepageLatestSection } from "@/components/homepage-latest-section"
 import { PollCard } from "@/components/poll-card"
 import { getRandomActivePolls } from "@/lib/db/queries/polls"
+import { PollImpressionTracker } from "@/components/poll-impression-tracker"
 
 export const dynamic = "force-dynamic"
 
@@ -93,10 +94,13 @@ export default async function HomePage() {
           </section>
 
           {activePolls.length > 0 ? (
+            <>
+            <PollImpressionTracker pollIds={activePolls.map((poll) => poll.id)} />
             <section className="border-b border-border py-10 md:py-14">
               <div className="mb-6 flex items-end justify-between"><div><h2 className="font-display text-2xl font-bold md:text-3xl">Polls</h2><p className="mt-1 text-sm text-muted-foreground">Join the conversation.</p></div><Button asChild variant="ghost" className="text-primary hover:bg-primary/10"><Link href="/polls" className="gap-1">View all <ArrowRight className="size-4" /></Link></Button></div>
               <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible xl:grid-cols-3">{activePolls.map((poll) => <div key={poll.id} className="min-w-[min(88vw,360px)] snap-start md:min-w-0"><PollCard poll={poll} compact /></div>)}</div>
             </section>
+            </>
           ) : null}
 
           {/* Latest + Sidebar */}

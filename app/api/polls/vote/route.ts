@@ -1,42 +1,64 @@
 import { NextResponse } from 'next/server'
-import { headers, cookies } from 'next/headers'
-import { eq } from 'drizzle-orm'
-import { db } from '@/lib/db/index'
-import { pollVotes } from '@/lib/db/schema'
-import { getPollById, getPollOptionIds, getPollVoteByHash, insertPollVote } from '@/lib/db/queries/polls'
-import { detectDeviceType, getClientIp, getGeolocation, hashUserAgent, hashVoter, isPollOpen } from '@/lib/poll-utils'
+import { cookies, headers } from 'next/headers'
+import { consumePollVoteRateLimit, insertPollVote, getPollById, getPollOptionIds, reservePollVote } from '@/lib/db/queries/polls'
+import { detectDeviceType, getClientIp, getGeolocation, hashUserAgent, hashVoter, isPollOpen, POLL_VISITOR_COOKIE } from '@/lib/poll-utils'
+import { randomUUID } from 'crypto'
+
+const VISITOR_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
+const MAX_OPTIONS = 5
+
+function errorResponse(message: string, status: number) {
+  return NextResponse.json({ error: message }, { status })
+}
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { pollId?: number; optionIds?: number[] }
-    const pollId = Number(body.pollId)
-    const optionIds = Array.isArray(body.optionIds) ? body.optionIds.map(Number).filter(Number.isInteger) : []
-    if (!Number.isInteger(pollId) || optionIds.length === 0) return NextResponse.json({ error: 'Choose at least one option.' }, { status: 400 })
+    const body = await request.json() as { pollId?: unknown; optionIds?: unknown }
+    const pollId = typeof body.pollId === 'number' && Number.isInteger(body.pollId) ? body.pollId : Number(body.pollId)
+    const optionIds = Array.isArray(body.optionIds) ? body.optionIds.map(Number) : []
+    if (!Number.isInteger(pollId) || optionIds.length === 0 || optionIds.some((id) => !Number.isInteger(id))) return errorResponse('Choose at least one option.', 400)
+    if (new Set(optionIds).size !== optionIds.length) return errorResponse('Invalid poll option.', 400)
 
     const poll = await getPollById(pollId)
-    if (!poll) return NextResponse.json({ error: 'Poll not found.' }, { status: 404 })
-    if (!isPollOpen(poll)) return NextResponse.json({ error: poll.startsAt && new Date() < poll.startsAt ? 'This poll has not started yet.' : 'This poll has ended.' }, { status: 409 })
-    if (!poll.allowMultipleVotes && optionIds.length !== 1) return NextResponse.json({ error: 'Choose one option.' }, { status: 400 })
-    if (poll.allowMultipleVotes && optionIds.length > 5) return NextResponse.json({ error: 'Choose up to five options.' }, { status: 400 })
+    if (!poll) return errorResponse('Poll not found.', 404)
+    const now = new Date()
+    if (poll.status !== 'ACTIVE' || (poll.startsAt && now < poll.startsAt)) return errorResponse(poll.startsAt && now < poll.startsAt ? "Voting hasn't started yet." : 'This poll has ended.', 409)
+    if (poll.endsAt && now >= poll.endsAt) return errorResponse('This poll has ended.', 409)
+    if ((!poll.allowMultipleVotes && optionIds.length !== 1) || (poll.allowMultipleVotes && optionIds.length > MAX_OPTIONS)) return errorResponse(poll.allowMultipleVotes ? `Choose up to ${MAX_OPTIONS} options.` : 'Choose one option.', 400)
 
     const validIds = new Set((await getPollOptionIds(pollId)).map((option) => option.id))
-    if (optionIds.some((id) => !validIds.has(id)) || new Set(optionIds).size !== optionIds.length) return NextResponse.json({ error: 'Invalid poll option.' }, { status: 400 })
+    if (optionIds.some((id) => !validIds.has(id))) return errorResponse('Invalid poll option.', 400)
 
     const requestHeaders = await headers()
     const requestCookies = await cookies()
     const userAgent = requestHeaders.get('user-agent') || 'unknown'
     const ip = getClientIp(requestHeaders.get('x-forwarded-for'), requestHeaders.get('x-real-ip'))
-    const voterHash = hashVoter(ip, pollId, userAgent)
-    if (await getPollVoteByHash(pollId, voterHash).then((rows) => rows.length > 0)) return NextResponse.json({ error: 'You have already voted in this poll.' }, { status: 409 })
+    let visitorId = requestCookies.get(POLL_VISITOR_COOKIE)?.value
+    const shouldSetVisitorCookie = !visitorId
+    visitorId ||= randomUUID()
+    const voterHash = hashVoter(`${visitorId}:${ip}`, pollId, userAgent)
+    if (!(await consumePollVoteRateLimit(hashVoter(`${ip}:${userAgent}`, 0, 'poll-vote-rate')))) return errorResponse('Too many attempts right now. Please try again shortly.', 429)
+
+    // The submission reservation is the atomic duplicate guard for both single- and multi-choice polls.
+    if (!(await reservePollVote(pollId, voterHash))) return errorResponse("You've already voted in this poll.", 409)
 
     const geo = await getGeolocation(ip)
-    const base = { pollId, voterHash, countryCode: geo?.country_code, countryName: geo?.country_name, region: geo?.region, city: geo?.city, timezone: geo?.timezone, continent: geo?.continent, deviceType: detectDeviceType(userAgent), userAgentHash: hashUserAgent(userAgent), referrer: requestHeaders.get('referer')?.slice(0, 500) }
+    const vercelGeo = {
+      countryCode: requestHeaders.get('x-vercel-ip-country') || geo?.country_code,
+      countryName: geo?.country_name,
+      region: requestHeaders.get('x-vercel-ip-country-region') || geo?.region,
+      city: requestHeaders.get('x-vercel-ip-city') || geo?.city,
+      timezone: requestHeaders.get('x-vercel-ip-timezone') || geo?.timezone,
+      continent: geo?.continent,
+    }
+    const referrer = requestHeaders.get('referer')?.slice(0, 500) || null
+    const base = { pollId, voterHash, countryCode: vercelGeo.countryCode, countryName: vercelGeo.countryName, region: vercelGeo.region, city: vercelGeo.city, timezone: vercelGeo.timezone, continent: vercelGeo.continent, deviceType: detectDeviceType(userAgent), userAgentHash: hashUserAgent(userAgent), referrer }
     for (const optionId of optionIds) await insertPollVote({ ...base, optionId })
 
-    requestCookies.set(`poll-voted-${pollId}`, '1', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 365, path: '/' })
+    if (shouldSetVisitorCookie) requestCookies.set(POLL_VISITOR_COOKIE, visitorId, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: VISITOR_COOKIE_MAX_AGE, path: '/' })
     return NextResponse.json({ ok: true })
   } catch (error) {
-    if (error instanceof Error && /unique/i.test(error.message)) return NextResponse.json({ error: 'You have already voted in this poll.' }, { status: 409 })
-    return NextResponse.json({ error: 'Unable to record your vote right now.' }, { status: 500 })
+    console.error('[v0] poll vote failed', error)
+    return errorResponse('Something went wrong. Please try again.', 500)
   }
 }

@@ -3,7 +3,10 @@ import type { polls } from './db/schema'
 
 type Poll = typeof polls.$inferSelect
 
-const POLL_SECRET = process.env.SESSION_SECRET || 'otakunaija-poll-secret'
+const POLL_SECRET: string = process.env.SESSION_SECRET ?? (() => { throw new Error('SESSION_SECRET is not set') })()
+const ANONYMOUS_COOKIE = 'otakunaija_poll_visitor'
+export const POLL_VISITOR_COOKIE = ANONYMOUS_COOKIE
+
 
 /**
  * Hash voter fingerprint with HMAC to prevent duplicate votes

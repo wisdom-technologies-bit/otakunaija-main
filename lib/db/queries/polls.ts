@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/index'
-import { pollOptions, pollViews, pollVotes, polls } from '@/lib/db/schema'
+import { pollOptions, pollViews, pollVoteSubmissions, pollVotes, polls, rateLimits } from '@/lib/db/schema'
 
 export type PublicPoll = {
   id: number
@@ -83,8 +83,18 @@ export async function getAdminPolls() {
   return rows.map((poll) => ({ ...poll, totalVotes: countMap.get(poll.id) || 0 }))
 }
 
-export async function trackPollView(pollId: number, deviceId: string, source?: string) {
-  await db.insert(pollViews).values({ pollId, deviceId, source })
+export async function trackPollView(pollId: number, deviceId: string, source = 'homepage') {
+  await db.insert(pollViews).values({ pollId, deviceId, source }).onConflictDoNothing()
+}
+
+export async function consumePollVoteRateLimit(identifier: string) {
+  const [row] = await db.insert(rateLimits).values({ identifier, action: 'poll_vote', count: 1 }).onConflictDoUpdate({ target: [rateLimits.identifier, rateLimits.action], set: { count: sql`case when ${rateLimits.windowStart} < now() - interval '1 minute' then 1 else coalesce(${rateLimits.count}, 0) + 1 end`, windowStart: sql`case when ${rateLimits.windowStart} < now() - interval '1 minute' then now() else ${rateLimits.windowStart} end` } }).returning({ count: rateLimits.count })
+  return (row?.count ?? 1) <= 10
+}
+
+export async function reservePollVote(pollId: number, voterHash: string) {
+  const [submission] = await db.insert(pollVoteSubmissions).values({ pollId, voterHash }).onConflictDoNothing().returning({ id: pollVoteSubmissions.id })
+  return Boolean(submission)
 }
 
 export async function getPublicPollSlugs() {
