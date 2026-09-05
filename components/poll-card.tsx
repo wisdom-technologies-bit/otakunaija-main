@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 
 type Poll = { id: number; title: string; slug: string; description: string | null; status: string; endsAt: Date | string | null; allowMultipleVotes: boolean; options: Array<{ id: number; label: string; description?: string | null; imageUrl?: string | null }> ; totalVotes?: number }
 
-export function PollCard({ poll, compact = false }: { poll: Poll; compact?: boolean }) {
+export function PollCard({ poll, compact = false, onSubmitted }: { poll: Poll; compact?: boolean; onSubmitted?: () => void }) {
   const [selected, setSelected] = useState<number[]>([])
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -23,6 +23,7 @@ export function PollCard({ poll, compact = false }: { poll: Poll; compact?: bool
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Unable to vote')
       setSubmitted(true)
+      onSubmitted?.()
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to vote') } finally { setIsPending(false) }
   }
 

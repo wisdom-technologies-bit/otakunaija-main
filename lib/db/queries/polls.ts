@@ -67,12 +67,23 @@ export async function getPollVotes(pollId: number) {
 }
 
 export async function getPollAnalytics(pollId: number) {
-  const [{ votes }] = await db.select({ votes: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId))
-  const [{ views }] = await db.select({ views: sql<number>`count(*)::int` }).from(pollViews).where(eq(pollViews.pollId, pollId))
-  const countries = await db.select({ name: pollVotes.countryName, code: pollVotes.countryCode, count: sql<number>`count(*)::int` }).from(pollVotes).where(and(eq(pollVotes.pollId, pollId), sql`${pollVotes.countryCode} is not null`)).groupBy(pollVotes.countryName, pollVotes.countryCode).orderBy(desc(sql`count(*)`)).limit(20)
-  const devices = await db.select({ device: pollVotes.deviceType, count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(pollVotes.deviceType).orderBy(desc(sql`count(*)`))
+  const [{ votes }] = await db.select({ votes: sql<number>`count(distinct ${pollVotes.voterHash})::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId))
+  const [{ views }] = await db.select({ views: sql<number>`count(*) filter (where ${pollViews.source} <> 'result_view')::int` }).from(pollViews).where(eq(pollViews.pollId, pollId))
+  const [{ resultViews }] = await db.select({ resultViews: sql<number>`count(*) filter (where ${pollViews.source} = 'result_view')::int` }).from(pollViews).where(eq(pollViews.pollId, pollId))
+  const optionCounts = await db.select({ optionId: pollVotes.optionId, count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(pollVotes.optionId).orderBy(desc(sql`count(*)`))
+  const countries = await db.select({ name: sql<string>`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode}, 'Unknown')`, code: pollVotes.countryCode, count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode}, 'Unknown')`, pollVotes.countryCode).orderBy(desc(sql`count(*)`)).limit(20)
+  const countryOptions = await db.select({ country: sql<string>`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode}, 'Unknown')`, optionId: pollVotes.optionId, count: sql<number>`count(*)::int` }).from(pollVotes).where(and(eq(pollVotes.pollId, pollId), sql`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode}) is not null`)).groupBy(pollVotes.countryName, pollVotes.countryCode, pollVotes.optionId).orderBy(sql`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode})`, desc(sql`count(*)`))
+  const devices = await db.select({ device: sql<string>`coalesce(${pollVotes.deviceType}, 'Unknown')`, count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`coalesce(${pollVotes.deviceType}, 'Unknown')`).orderBy(desc(sql`count(*)`))
+  const sources = await db.select({ source: sql<string>`coalesce(${pollViews.source}, 'Unknown')`, count: sql<number>`count(*)::int` }).from(pollViews).where(and(eq(pollViews.pollId, pollId), sql`${pollViews.source} <> 'result_view'`)).groupBy(sql`coalesce(${pollViews.source}, 'Unknown')`).orderBy(desc(sql`count(*)`))
   const timeline = await db.select({ bucket: sql<string>`to_char(date_trunc('day', ${pollVotes.votedAt}), 'YYYY-MM-DD')`, count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`date_trunc('day', ${pollVotes.votedAt})`).orderBy(sql`date_trunc('day', ${pollVotes.votedAt})`)
-  return { votes: votes || 0, views: views || 0, conversion: views ? ((votes || 0) / views) * 100 : 0, countries, devices, timeline }
+  return { votes: votes || 0, views: views || 0, resultViews: resultViews || 0, conversion: views ? ((votes || 0) / views) * 100 : 0, optionCounts, countries, countryOptions, devices, sources, timeline }
+}
+
+export async function recordPollResultView(pollId: number, deviceId: string) {
+  const existing = await db.select({ id: pollViews.id }).from(pollViews).where(and(eq(pollViews.pollId, pollId), eq(pollViews.deviceId, deviceId), eq(pollViews.source, 'result_view'))).limit(1)
+  if (existing.length) return false
+  await db.insert(pollViews).values({ pollId, deviceId, source: 'result_view' })
+  return true
 }
 
 export async function getAdminPolls() {
