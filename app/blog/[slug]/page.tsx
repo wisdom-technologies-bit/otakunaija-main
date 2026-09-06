@@ -21,6 +21,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
 import { SocialPreview } from "@/components/social-preview"
+import { PollPlacement } from "@/components/poll-placement"
 import {
   formatDate,
   getAllSlugs,
@@ -338,8 +339,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               <CommentsSection postSlug={post.slug} />
             </article>
 
-            <Sidebar recent={recent} trending={trending} showAnnotationPanel />
+            <div className="space-y-8"><Sidebar recent={recent} trending={trending} showAnnotationPanel /><PollPlacement source="blog_article" className="hidden lg:block" /></div>
           </div>
+          <PollPlacement source="blog_article" className="lg:hidden" />
         </div>
       </main>
 

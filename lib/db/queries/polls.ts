@@ -59,6 +59,15 @@ export async function getPublicPolls({ filter = 'all', query = '', page = 1, pag
   return { polls: rows.map((poll) => ({ ...poll, options: options.filter((o) => o.pollId === poll.id), totalVotes: countMap.get(poll.id) || 0 })), total: total || 0, page, pageSize }
 }
 
+export async function getPlacementPoll() {
+  const now = new Date()
+  const [poll] = await db.select().from(polls).where(and(eq(polls.status, 'ACTIVE'), sql`(${polls.startsAt} is null or ${polls.startsAt} <= ${now})`, sql`(${polls.endsAt} is null or ${polls.endsAt} > ${now})`)).orderBy(desc(polls.featured), desc(polls.updatedAt), desc(polls.id)).limit(1)
+  if (!poll) return null
+  const options = await db.select().from(pollOptions).where(and(eq(pollOptions.pollId, poll.id), eq(pollOptions.isActive, true))).orderBy(asc(pollOptions.displayOrder), asc(pollOptions.id))
+  const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, poll.id))
+  return { ...poll, options, totalVotes: count || 0 }
+}
+
 export async function getRandomActivePolls(limit = 5) {
   const now = new Date()
   const rows = await db.select().from(polls).where(and(eq(polls.status, 'ACTIVE'), sql`(${polls.startsAt} is null or ${polls.startsAt} <= ${now})`, sql`(${polls.endsAt} is null or ${polls.endsAt} > ${now})`)).orderBy(sql`random()`).limit(limit)

@@ -48,10 +48,10 @@ export async function trackEpisodeView(episodeId: number) {
   }
 }
 
-export async function trackHomepagePollView(pollId: number) {
+export async function trackHomepagePollView(pollId: number, source = 'homepage') {
   try {
     const deviceId = await getOrCreateDeviceId()
-    await recordPollView(pollId, deviceId, 'homepage')
+    await recordPollView(pollId, deviceId, source)
   } catch (err) {
     console.error('Failed to track poll view:', err)
   }

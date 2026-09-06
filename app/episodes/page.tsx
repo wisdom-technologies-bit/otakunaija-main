@@ -20,6 +20,7 @@ import { EpisodesFilterPills } from '@/components/episodes/episodes-filter-pills
 import { NewReleasesRow } from '@/components/episodes/new-releases-row'
 import { OngoingSeriesScroll } from '@/components/episodes/ongoing-series-scroll'
 import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
+import { PollPlacement } from '@/components/poll-placement'
 
 export const metadata: Metadata = {
   title: 'Episodes',
@@ -200,6 +201,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
             </p>
           </div>
         )}
+        <PollPlacement source="episodes" className="mx-auto mt-14 max-w-2xl" />
       </main>
 
       <SiteFooter />

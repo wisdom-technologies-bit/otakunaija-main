@@ -9,6 +9,7 @@ import { AdSlot } from "@/components/ad-slot"
 import { InfinitePostList } from "@/components/infinite-post-list"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
 import { CATEGORIES, getAllPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
+import { PollPlacement } from "@/components/poll-placement"
 
 export async function generateMetadata({
   searchParams,
@@ -167,9 +168,10 @@ export default async function BlogPage({
                 )}
               </div>
 
-              <Sidebar recent={recent} trending={trending} />
+              <div className="space-y-8"><Sidebar recent={recent} trending={trending} /><PollPlacement source="blog" className="hidden lg:block" /></div>
             </div>
           </section>
+          <PollPlacement source="blog" className="mx-auto mb-12 max-w-2xl lg:hidden" />
         </div>
       </main>
 

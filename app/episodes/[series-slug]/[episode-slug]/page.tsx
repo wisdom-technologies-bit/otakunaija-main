@@ -19,6 +19,7 @@ import { ExpandableSynopsis } from '@/components/episodes/expandable-synopsis'
 import { LiveViewerWidget } from '@/components/episodes/live-viewer-widget'
 import { AboutSeriesSidebar } from '@/components/episodes/about-series-sidebar'
 import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
+import { PollPlacement } from '@/components/poll-placement'
 
 export const revalidate = 3600
 
@@ -282,6 +283,7 @@ export default async function WatchPage({ params }: Props) {
             <div className="pt-4">
               <TrendingSeriesSection trendingSeries={trendingSeriesData} />
             </div>
+            <PollPlacement source="episode" className="mt-8 max-w-2xl" />
           </div>
 
           {/* Sidebar - Desktop Only */}

@@ -10,6 +10,7 @@ import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { SeriesEpisodesPanel } from '@/components/episodes/series-episodes-panel'
 import { AdSlot } from '@/components/ad-slot'
 import { Calendar, Play, Tag } from 'lucide-react'
+import { PollPlacement } from '@/components/poll-placement'
 
 export const revalidate = 3600
 
@@ -276,6 +277,7 @@ export default async function SeriesPage({ params }: Props) {
             </section>
           </aside>
         </div>
+        <PollPlacement source="series" className="mx-auto mt-14 max-w-2xl" />
       </main>
 
       <SiteFooter />
