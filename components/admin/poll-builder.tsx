@@ -15,7 +15,12 @@ type PollOption = { id?: number; label: string; description: string; imageUrl: s
 type Initial = { id?: number; title: string; slug: string; description?: string | null; status: PollStatus; featured: boolean; allowMultipleVotes: boolean; startsAt?: Date | null; endsAt?: Date | null; options: Array<{ id?: number; label: string; description?: string | null; imageUrl?: string | null; imagePublicId?: string | null; isActive?: boolean }> }
 
 function slugify(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 220) }
-function dateInput(value?: Date | null) { return value ? new Date(value).toISOString().slice(0, 16) : '' }
+function dateInput(value?: Date | null) {
+  if (!value) return ''
+  const date = new Date(value)
+  const pad = (part: number) => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 export function PollBuilder({ initial }: { initial?: Initial }) {
   const router = useRouter()

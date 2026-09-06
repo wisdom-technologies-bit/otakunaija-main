@@ -9,6 +9,7 @@ import { and, eq, ne } from 'drizzle-orm'
 import { deletePollById, getPollById, updatePollStatus } from '@/lib/db/queries/polls'
 
 const optionSchema = z.object({
+  id: z.number().int().positive().optional(),
   label: z.string().trim().min(1, 'Each option needs a label').max(160),
   description: z.string().trim().max(500).optional().nullable(),
   imageUrl: z.string().url('Image URL is invalid').optional().or(z.literal('')).nullable(),
@@ -76,9 +77,19 @@ export async function updatePoll(id: number, input: unknown) {
   if (!existing) throw new Error('Poll not found')
   await ensureSlugAvailable(data.slug, id)
   await db.transaction(async (tx) => {
+    const currentOptions = await tx.select({ id: pollOptions.id }).from(pollOptions).where(eq(pollOptions.pollId, id))
+    const currentIds = new Set(currentOptions.map((option) => option.id))
+    const submittedIds = new Set(data.options.flatMap((option) => option.id ?? []))
+    if ([...submittedIds].some((optionId) => !currentIds.has(optionId))) throw new Error('One or more options do not belong to this poll')
+
     await tx.update(polls).set({ title: data.title, slug: data.slug, description: data.description || null, status: data.status, featured: data.featured, allowMultipleVotes: data.allowMultipleVotes, startsAt: data.startsAt || null, endsAt: data.endsAt || null, updatedAt: new Date() }).where(eq(polls.id, id))
-    await tx.delete(pollOptions).where(eq(pollOptions.pollId, id))
-    await tx.insert(pollOptions).values(data.options.map((option, index) => ({ pollId: id, label: option.label, description: option.description || null, imageUrl: option.imageUrl || null, imagePublicId: option.imagePublicId || null, displayOrder: index, isActive: option.isActive })))
+    await tx.update(pollOptions).set({ isActive: false, updatedAt: new Date() }).where(eq(pollOptions.pollId, id))
+
+    for (const [index, option] of data.options.entries()) {
+      const values = { label: option.label, description: option.description || null, imageUrl: option.imageUrl || null, imagePublicId: option.imagePublicId || null, displayOrder: index, isActive: option.isActive, updatedAt: new Date() }
+      if (option.id) await tx.update(pollOptions).set(values).where(and(eq(pollOptions.id, option.id), eq(pollOptions.pollId, id)))
+      else await tx.insert(pollOptions).values({ ...values, pollId: id })
+    }
   })
   revalidatePath('/polls')
   revalidatePath(`/polls/${existing.slug}`)
