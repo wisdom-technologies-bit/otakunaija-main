@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { getCurrentSession } from "@/lib/auth"
+import { ADMIN_EMAIL, getCurrentSession } from "@/lib/auth"
 import { isCloudinaryConfigured, uploadImageBuffer } from "@/lib/cloudinary"
 
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
   const session = await getCurrentSession()
-  if (!session) {
+  if (!session || session.email.toLowerCase() !== ADMIN_EMAIL) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -31,8 +31,8 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer())
   try {
-    const url = await uploadImageBuffer(buffer)
-    return NextResponse.json({ url })
+    const result = await uploadImageBuffer(buffer, "otakunaija/polls")
+    return NextResponse.json(result)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Upload failed"
     return NextResponse.json({ error: message }, { status: 500 })

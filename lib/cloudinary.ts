@@ -29,15 +29,15 @@ export function isCloudinaryConfigured(): boolean {
   )
 }
 
-export async function uploadImageBuffer(buffer: Buffer, folder = "otakunaija"): Promise<string> {
+export async function uploadImageBuffer(buffer: Buffer, folder = "otakunaija"): Promise<{ url: string; publicId: string }> {
   const cl = getCloudinary()
-  return new Promise<string>((resolve, reject) => {
+  return new Promise<{ url: string; publicId: string }>((resolve, reject) => {
     const stream = cl.uploader.upload_stream(
       { folder, resource_type: "image", overwrite: false, quality: "auto", fetch_format: "auto" },
       (error, result) => {
         if (error) return reject(error)
-        if (!result?.secure_url) return reject(new Error("Cloudinary upload returned no URL"))
-        resolve(result.secure_url)
+        if (!result?.secure_url || !result.public_id) return reject(new Error("Cloudinary upload returned incomplete metadata"))
+        resolve({ url: result.secure_url, publicId: result.public_id })
       },
     )
     stream.end(buffer)

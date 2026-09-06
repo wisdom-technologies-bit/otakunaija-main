@@ -43,7 +43,7 @@ export function PollCard({ poll, compact = false, onSubmitted }: { poll: Poll; c
     <div className="mt-5 flex flex-col gap-2">
       {visibleOptions.map((option) => <button key={option.id} type="button" onClick={() => !ended && !upcoming && !submitted && toggleOption(option.id)} disabled={!!ended || !!upcoming || submitted} aria-pressed={selected.includes(option.id)} className={`flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left text-sm transition-colors ${selected.includes(option.id) ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-background/40 hover:border-primary/60'} disabled:cursor-default`}>
         <span className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${selected.includes(option.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/50'}`}>{selected.includes(option.id) ? <Check className="size-3" /> : null}</span>
-        {option.imageUrl ? <img src={option.imageUrl} alt="" className="size-10 rounded-md object-cover" /> : null}<span className="font-medium">{option.label}</span>
+        {option.imageUrl ? <img src={option.imageUrl} alt={`${option.label} option`} loading="lazy" className="size-10 rounded-md object-cover" /> : null}<span className="font-medium">{option.label}</span>
       </button>)}
     </div>
     {poll.options.length > 5 ? <button type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)} className="mt-3 text-sm font-medium text-primary hover:underline">{expanded ? 'Show fewer options' : `Show all ${poll.options.length} options`}</button> : null}
