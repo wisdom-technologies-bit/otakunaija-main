@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies, headers } from 'next/headers'
 import { consumePollVoteRateLimit, insertPollVote, getPollById, getPollOptionIds, reservePollVote } from '@/lib/db/queries/polls'
-import { detectDeviceType, getClientIp, getGeolocation, hashUserAgent, hashVoter, isPollOpen, POLL_VISITOR_COOKIE } from '@/lib/poll-utils'
+import { detectDeviceType, getClientIp, getGeolocation, hashUserAgent, hashVoter, isPollOpen, normalizeGeolocation, POLL_VISITOR_COOKIE } from '@/lib/poll-utils'
 import { randomUUID } from 'crypto'
 
 const VISITOR_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
@@ -43,16 +43,18 @@ export async function POST(request: Request) {
     if (!(await reservePollVote(pollId, voterHash))) return errorResponse("You've already voted in this poll.", 409)
 
     const geo = await getGeolocation(ip)
-    const vercelGeo = {
+    const location = normalizeGeolocation({
+      // All values originate from server request headers or the server-side IP provider.
+      // Provider names take precedence over Vercel's abbreviated region headers.
       countryCode: requestHeaders.get('x-vercel-ip-country') || geo?.country_code,
       countryName: geo?.country_name,
-      region: requestHeaders.get('x-vercel-ip-country-region') || geo?.region,
-      city: requestHeaders.get('x-vercel-ip-city') || geo?.city,
-      timezone: requestHeaders.get('x-vercel-ip-timezone') || geo?.timezone,
+      region: geo?.region || requestHeaders.get('x-vercel-ip-country-region'),
+      city: geo?.city || requestHeaders.get('x-vercel-ip-city'),
+      timezone: geo?.timezone || requestHeaders.get('x-vercel-ip-timezone'),
       continent: geo?.continent,
-    }
+    })
     const referrer = requestHeaders.get('referer')?.slice(0, 500) || null
-    const base = { pollId, voterHash, countryCode: vercelGeo.countryCode, countryName: vercelGeo.countryName, region: vercelGeo.region, city: vercelGeo.city, timezone: vercelGeo.timezone, continent: vercelGeo.continent, deviceType: detectDeviceType(userAgent), userAgentHash: hashUserAgent(userAgent), referrer }
+    const base = { pollId, voterHash, countryCode: location.countryCode, countryName: location.countryName, region: location.region, city: location.city, timezone: location.timezone, continent: location.continent, deviceType: detectDeviceType(userAgent), userAgentHash: hashUserAgent(userAgent), referrer }
     for (const optionId of optionIds) await insertPollVote({ ...base, optionId })
 
     if (shouldSetVisitorCookie) requestCookies.set(POLL_VISITOR_COOKIE, visitorId, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: VISITOR_COOKIE_MAX_AGE, path: '/' })

@@ -75,9 +75,10 @@ export async function getGeolocation(ip: string): Promise<{
   }
 
   try {
-    // Using ip-api.com free tier (45 req/min)
-    const response = await fetch(`https://ip-api.com/json/${ip}?fields=country,countryCode,region,city,timezone,continent`, {
+    // ip-api supplies both provider-specific region codes and human-readable names.
+    const response = await fetch(`https://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,countryCode,region,regionName,city,timezone,continent`, {
       headers: { Accept: 'application/json' },
+      cache: 'no-store',
     })
 
     if (!response.ok) return null
@@ -87,6 +88,7 @@ export async function getGeolocation(ip: string): Promise<{
       country?: string
       countryCode?: string
       region?: string
+      regionName?: string
       city?: string
       timezone?: string
       continent?: string
@@ -96,7 +98,7 @@ export async function getGeolocation(ip: string): Promise<{
       return {
         country_code: data.countryCode || undefined,
         country_name: data.country || undefined,
-        region: data.region || undefined,
+        region: data.regionName || data.region || undefined,
         city: data.city || undefined,
         timezone: data.timezone || undefined,
         continent: data.continent || undefined,
@@ -107,6 +109,66 @@ export async function getGeolocation(ip: string): Promise<{
   } catch {
     // Geolocation failure should not prevent voting
     return null
+  }
+}
+
+function decodeGeoText(value: string | null | undefined): string | undefined {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  try {
+    const decoded = decodeURIComponent(trimmed)
+    return decoded === trimmed ? trimmed : decoded
+  } catch {
+    return trimmed
+  }
+}
+
+export type NormalizedGeolocation = {
+  countryCode: string | null
+  countryName: string | null
+  region: string | null
+  city: string | null
+  timezone: string | null
+  continent: string | null
+}
+
+const providerRegionNames: Record<string, Record<string, string>> = {
+  NG: { RI: 'Rivers' },
+}
+
+function countryNameFromCode(countryCode: string | null): string | null {
+  if (!countryCode) return null
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(countryCode) || null
+  } catch {
+    return null
+  }
+}
+
+function continentFromTimezone(timezone: string | null): string | null {
+  const prefix = timezone?.split('/')[0]
+  return prefix && ['Africa', 'America', 'Antarctica', 'Asia', 'Atlantic', 'Australia', 'Europe', 'Indian', 'Pacific'].includes(prefix) ? prefix : null
+}
+
+export function normalizeGeolocation(input: {
+  countryCode?: string | null
+  countryName?: string | null
+  region?: string | null
+  city?: string | null
+  timezone?: string | null
+  continent?: string | null
+}): NormalizedGeolocation {
+  const countryCode = input.countryCode?.trim().toUpperCase() || null
+  const timezone = decodeGeoText(input.timezone) || null
+  const rawRegion = decodeGeoText(input.region)
+  return {
+    countryCode,
+    countryName: decodeGeoText(input.countryName) || countryNameFromCode(countryCode),
+    region: rawRegion ? providerRegionNames[countryCode || '']?.[rawRegion.toUpperCase()] || rawRegion : null,
+    city: decodeGeoText(input.city) || null,
+    timezone,
+    continent: decodeGeoText(input.continent) || continentFromTimezone(timezone),
   }
 }
 
