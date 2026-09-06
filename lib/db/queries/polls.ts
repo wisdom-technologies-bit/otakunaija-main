@@ -100,6 +100,23 @@ export async function recordPollResultView(pollId: number, deviceId: string) {
   return true
 }
 
+export async function getAdminPollDashboard() {
+  const [summary] = await db.select({
+    totalPolls: sql<number>`count(*)::int`,
+    activePolls: sql<number>`count(*) filter (where ${polls.status} = 'ACTIVE')::int`,
+    draftPolls: sql<number>`count(*) filter (where ${polls.status} = 'DRAFT')::int`,
+    endedPolls: sql<number>`count(*) filter (where ${polls.status} = 'ENDED')::int`,
+  }).from(polls)
+  const [voteEngagement] = await db.select({ selections: sql<number>`count(*)::int`, voters: sql<number>`count(distinct ${pollVotes.voterHash})::int` }).from(pollVotes)
+  const [viewEngagement] = await db.select({ views: sql<number>`count(*)::int` }).from(pollViews)
+  const recent = await db.select({
+    day: sql<string>`to_char(date_trunc('day', ${pollVotes.votedAt}), 'YYYY-MM-DD')`,
+    selections: sql<number>`count(*)::int`,
+    voters: sql<number>`count(distinct ${pollVotes.voterHash})::int`,
+  }).from(pollVotes).where(gte(pollVotes.votedAt, sql`now() - interval '30 days'`)).groupBy(sql`date_trunc('day', ${pollVotes.votedAt})`).orderBy(sql`date_trunc('day', ${pollVotes.votedAt})`)
+  return { summary: summary ?? { totalPolls: 0, activePolls: 0, draftPolls: 0, endedPolls: 0 }, engagement: { selections: voteEngagement?.selections ?? 0, voters: voteEngagement?.voters ?? 0, views: viewEngagement?.views ?? 0 }, recent }
+}
+
 export async function getAdminPolls() {
   const rows = await db.select().from(polls).orderBy(desc(polls.createdAt))
   if (!rows.length) return []

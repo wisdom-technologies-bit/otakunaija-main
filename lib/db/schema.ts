@@ -188,7 +188,7 @@ export const pollVotes = pgTable('poll_votes', {
   referrer: text('referrer'),
   votedAt: timestamp('voted_at').notNull().defaultNow(),
 }, (table) => [
-  unique('poll_votes_poll_voter_unique').on(table.pollId, table.voterHash),
+  unique('poll_votes_poll_voter_option_unique').on(table.pollId, table.voterHash, table.optionId),
   index('poll_votes_poll_time_idx').on(table.pollId, table.votedAt),
 ])
 
