@@ -126,10 +126,17 @@
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
   }
 
   html {
     scroll-behavior: smooth;
+  }
+
+  .poll-results .recharts-responsive-container,
+  .poll-results .recharts-wrapper,
+  .poll-results svg {
+    max-width: 100% !important;
   }
 }
 

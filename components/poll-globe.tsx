@@ -16,8 +16,8 @@ export function PollGlobe({ locations }: { locations: Location[] }) {
   const points = locations.slice(0, 20).map((location, index) => ({ type: 'Feature', properties: { name: location.name, count: location.count }, geometry: { type: 'Point', coordinates: [index * 24 - 150, Math.min(55, 8 + index * 4)] } }))
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current || !locations.length) return
-    const map = new maplibregl.Map({ container: containerRef.current, style: 'https://demotiles.maplibre.org/globe.json', center: [8, 12], zoom: 1.15 })
+    if (!containerRef.current || mapRef.current) return
+    const map = new maplibregl.Map({ container: containerRef.current, style: 'https://demotiles.maplibre.org/globe.json', center: [8, 12], zoom: 1.15, attributionControl: false })
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right')
     map.on('error', () => setFailed(true))
@@ -34,7 +34,7 @@ export function PollGlobe({ locations }: { locations: Location[] }) {
   }, [locations])
 
   useEffect(() => { requestAnimationFrame(() => mapRef.current?.resize()) }, [expanded])
-  if (!locations.length || failed) return <div className="flex min-h-72 items-center justify-center rounded-xl bg-muted/40 p-6 text-center text-sm text-muted-foreground">Interactive geography is unavailable. See the location list below.</div>
+  if (failed) return <div className="flex min-h-72 items-center justify-center rounded-xl bg-muted/40 p-6 text-center text-sm text-muted-foreground">Interactive geography is unavailable. See the location list below.</div>
   return <>
     <div className={expanded ? 'fixed inset-3 z-50 rounded-2xl border border-border bg-background p-2 shadow-2xl md:inset-8' : 'relative h-[300px] overflow-hidden rounded-xl sm:h-[360px]'}>
       <div ref={containerRef} className="size-full overflow-hidden rounded-lg" aria-label="Interactive globe showing aggregated poll responses" />
