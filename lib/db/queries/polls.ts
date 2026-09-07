@@ -80,6 +80,13 @@ export async function getPollVotes(pollId: number) {
   return db.select({ optionId: pollVotes.optionId, countryCode: pollVotes.countryCode, countryName: pollVotes.countryName, region: pollVotes.region, city: pollVotes.city, deviceType: pollVotes.deviceType, votedAt: pollVotes.votedAt }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).orderBy(asc(pollVotes.votedAt))
 }
 
+function normalizeCountry(name: string, code: string | null) {
+  const aliases: Record<string, string> = { NG: 'Nigeria', GH: 'Ghana', US: 'United States', GB: 'United Kingdom', CA: 'Canada', ZA: 'South Africa' }
+  return aliases[code || ''] || name.replace(/%20/g, ' ')
+}
+
+function totalSelections(rows: Array<{ count: number }>) { return rows.reduce((sum, row) => sum + row.count, 0) }
+
 export async function getPollAnalytics(pollId: number) {
   const [{ votes }] = await db.select({ votes: sql<number>`count(distinct ${pollVotes.voterHash})::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId))
   const [{ views }] = await db.select({ views: sql<number>`count(*) filter (where ${pollViews.source} <> 'result_view')::int` }).from(pollViews).where(eq(pollViews.pollId, pollId))
@@ -89,8 +96,19 @@ export async function getPollAnalytics(pollId: number) {
   const countryOptions = await db.select({ country: sql<string>`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode}, 'Unknown')`, optionId: pollVotes.optionId, count: sql<number>`count(*)::int` }).from(pollVotes).where(and(eq(pollVotes.pollId, pollId), sql`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode}) is not null`)).groupBy(pollVotes.countryName, pollVotes.countryCode, pollVotes.optionId).orderBy(sql`coalesce(${pollVotes.countryName}, ${pollVotes.countryCode})`, desc(sql`count(*)`))
   const devices = await db.select({ device: sql<string>`coalesce(${pollVotes.deviceType}, 'Unknown')`, count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`coalesce(${pollVotes.deviceType}, 'Unknown')`).orderBy(desc(sql`count(*)`))
   const sources = await db.select({ source: sql<string>`coalesce(${pollViews.source}, 'Unknown')`, count: sql<number>`count(*)::int` }).from(pollViews).where(and(eq(pollViews.pollId, pollId), sql`${pollViews.source} <> 'result_view'`)).groupBy(sql`coalesce(${pollViews.source}, 'Unknown')`).orderBy(desc(sql`count(*)`))
-  const timeline = await db.select({ bucket: sql<string>`to_char(date_trunc('day', ${pollVotes.votedAt}), 'Mon DD')`, count: sql<number>`count(*)::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`date_trunc('day', ${pollVotes.votedAt})`).orderBy(sql`date_trunc('day', ${pollVotes.votedAt})`)
-  return { votes: votes || 0, views: views || 0, resultViews: resultViews || 0, conversion: views ? ((votes || 0) / views) * 100 : 0, optionCounts, countries, countryOptions, devices, sources, timeline }
+  const [duration] = await db.select({ first: sql<Date>`min(${pollVotes.votedAt})`, last: sql<Date>`max(${pollVotes.votedAt})` }).from(pollVotes).where(eq(pollVotes.pollId, pollId))
+  const spanDays = duration?.first && duration?.last ? (new Date(duration.last).getTime() - new Date(duration.first).getTime()) / 86400000 : 0
+  const bucket = spanDays < 1 ? 'hour' : spanDays < 32 ? 'day' : spanDays < 180 ? 'week' : 'month'
+  const timelineQuery = bucket === 'hour'
+    ? db.select({ bucket: sql<string>`to_char(date_trunc('hour', ${pollVotes.votedAt}), 'Mon DD HH24:00')`, count: sql<number>`count(*)::int`, respondents: sql<number>`count(distinct ${pollVotes.voterHash})::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`date_trunc('hour', ${pollVotes.votedAt})`).orderBy(sql`date_trunc('hour', ${pollVotes.votedAt})`)
+    : bucket === 'week'
+      ? db.select({ bucket: sql<string>`to_char(date_trunc('week', ${pollVotes.votedAt}), 'Mon DD')`, count: sql<number>`count(*)::int`, respondents: sql<number>`count(distinct ${pollVotes.voterHash})::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`date_trunc('week', ${pollVotes.votedAt})`).orderBy(sql`date_trunc('week', ${pollVotes.votedAt})`)
+      : bucket === 'month'
+        ? db.select({ bucket: sql<string>`to_char(date_trunc('month', ${pollVotes.votedAt}), 'Mon YYYY')`, count: sql<number>`count(*)::int`, respondents: sql<number>`count(distinct ${pollVotes.voterHash})::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`date_trunc('month', ${pollVotes.votedAt})`).orderBy(sql`date_trunc('month', ${pollVotes.votedAt})`)
+        : db.select({ bucket: sql<string>`to_char(date_trunc('day', ${pollVotes.votedAt}), 'Mon DD')`, count: sql<number>`count(*)::int`, respondents: sql<number>`count(distinct ${pollVotes.voterHash})::int` }).from(pollVotes).where(eq(pollVotes.pollId, pollId)).groupBy(sql`date_trunc('day', ${pollVotes.votedAt})`).orderBy(sql`date_trunc('day', ${pollVotes.votedAt})`)
+  const timeline = await timelineQuery
+  const normalizedCountries = countries.map((row) => ({ ...row, name: normalizeCountry(row.name, row.code) }))
+  return { votes: votes || 0, selections: totalSelections(optionCounts), respondents: votes || 0, views: views || 0, resultViews: resultViews || 0, conversion: views ? ((votes || 0) / views) * 100 : 0, optionCounts, countries: normalizedCountries, countryOptions, devices, sources, timeline }
 }
 
 export async function recordPollResultView(pollId: number, deviceId: string) {
