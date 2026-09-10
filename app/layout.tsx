@@ -138,7 +138,7 @@ export default function RootLayout({
         {/* Monetag */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='11348618'; s.src='https://al5sm.com/tag.min.js'; [document.documentElement, document.body].filter(Boolean).pop().appendChild(s)})(document.createElement('script'))`
+            __html: `(function(s){s.dataset.zone='11349102',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`
           }}
         />
         {/* Structured Data for SEO & AI Visibility (Supports Articles & Episodes) */}
