@@ -32,14 +32,30 @@ export function PollGlobe({ locations }: { locations: Location[] }) {
     const canvas = canvasRef.current
     const shell = shellRef.current
     if (!canvas || !shell) return
-    let frame = 0
+    let animationFrame = 0
+    let resizeFrame = 0
     let globe: Globe | null = null
-    const render = () => {
-      const size = Math.min(shell.clientWidth, shell.clientHeight || shell.clientWidth)
-      if (!size) return
+    let disposed = false
+
+    const destroy = () => {
+      if (globe) globe.destroy()
+      globe = null
+      globeRef.current = null
+      canvas.width = 0
+      canvas.height = 0
+    }
+
+    const start = () => {
+      if (disposed) return
+      const size = Math.floor(Math.min(shell.clientWidth, shell.clientHeight || shell.clientWidth))
+      if (!size) {
+        resizeFrame = requestAnimationFrame(start)
+        return
+      }
+      destroy()
       try {
         globe = createGlobe(canvas, {
-          devicePixelRatio: Math.min(window.devicePixelRatio, 2),
+          devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
           width: size * 2,
           height: size * 2,
           phi: phiRef.current,
@@ -55,33 +71,31 @@ export function PollGlobe({ locations }: { locations: Location[] }) {
         })
         globeRef.current = globe
         const animate = () => {
+          if (disposed || !globe) return
           const drag = dragRef.current
-          if (!drag.active) phiRef.current += 0.004
-          else phiRef.current += drag.velocity
+          phiRef.current += drag.active ? drag.velocity : 0.004
           drag.velocity *= 0.92
-          globe?.update({ phi: phiRef.current })
-          frame = requestAnimationFrame(animate)
+          globe.update({ phi: phiRef.current })
+          animationFrame = requestAnimationFrame(animate)
         }
         animate()
       } catch {
         setFailed(true)
       }
     }
-    frame = requestAnimationFrame(render)
+
     const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame)
-      globe?.destroy()
-      globe = null
-      globeRef.current = null
-      frame = requestAnimationFrame(render)
+      cancelAnimationFrame(resizeFrame)
+      resizeFrame = requestAnimationFrame(start)
     })
     observer.observe(shell)
+    start()
     return () => {
-      cancelAnimationFrame(frame)
+      disposed = true
+      cancelAnimationFrame(animationFrame)
+      cancelAnimationFrame(resizeFrame)
       observer.disconnect()
-      globe?.destroy()
-      globeRef.current?.destroy()
-      globeRef.current = null
+      destroy()
     }
   }, [expanded, locations, maxCount])
 
