@@ -38,7 +38,7 @@ export function Sidebar({ recent, trending, showAnnotationPanel = false }: Sideb
                   {p.title}
                 </Link>
                 <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {p.category} · {p.views.toLocaleString()} views
+                  {p.category}
                 </p>
               </div>
             </div>

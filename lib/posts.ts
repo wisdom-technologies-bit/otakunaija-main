@@ -58,6 +58,7 @@ const _getTrendingPosts = cache(
       const rows = await sql`
         SELECT * FROM posts
         WHERE trending = true
+          AND published_at >= NOW() - INTERVAL '7 days'
         ORDER BY views DESC
         LIMIT ${limit}
       `
@@ -75,6 +76,7 @@ export async function getTrendingPosts(limit = 5): Promise<Post[]> {
     SELECT *
     FROM posts
     WHERE trending = true
+      AND published_at >= NOW() - INTERVAL '7 days'
     ORDER BY views DESC, published_at DESC
     LIMIT ${limit}
   `
