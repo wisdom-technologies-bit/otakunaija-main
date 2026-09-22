@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,7 @@ type SearchBarProps = {
   compact?: boolean
 }
 
-export function SearchBar({ autoFocus, onSubmitted, defaultValue, compact }: SearchBarProps) {
+function SearchBarContent({ autoFocus, onSubmitted, defaultValue, compact }: SearchBarProps) {
   const router = useRouter()
   const params = useSearchParams()
   const [value, setValue] = useState(defaultValue ?? params.get("q") ?? "")
@@ -45,5 +45,13 @@ export function SearchBar({ autoFocus, onSubmitted, defaultValue, compact }: Sea
         Search
       </Button>
     </form>
+  )
+}
+
+export function SearchBar(props: SearchBarProps) {
+  return (
+    <Suspense fallback={null}>
+      <SearchBarContent {...props} />
+    </Suspense>
   )
 }
