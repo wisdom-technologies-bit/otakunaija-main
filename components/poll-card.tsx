@@ -57,7 +57,7 @@ export function PollCard({ poll, compact = false, onSubmitted }: { poll: Poll; c
     {poll.options.length > 5 ? <button type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)} className="mt-3 text-sm font-medium text-primary hover:underline">{expanded ? 'Show fewer options' : `Show all ${poll.options.length} options`}</button> : null}
     {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
     {submitted ? <div className="mt-4 flex items-center justify-between gap-3 rounded-lg bg-primary/10 px-3 py-3 text-sm"><span className="font-medium text-primary">Vote submitted</span><Button asChild size="sm" variant="outline"><Link href={`/polls/${poll.slug}`}>View results <ArrowRight data-icon="inline-end" /></Link></Button></div> : <Button className="mt-4 w-full" onClick={submitVote} disabled={!!ended || !!upcoming || !selected.length || isPending}>{isPending ? 'Submitting…' : ended ? 'Voting closed' : upcoming ? 'Voting starts soon' : 'Vote'} </Button>}
-    <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground"><span>{poll.totalVotes || 0} votes</span>{poll.endsAt && !ended ? <span className="inline-flex items-center gap-1"><Clock3 className="size-3" /> Ends {new Date(poll.endsAt).toLocaleDateString()}</span> : null}</div>
+    {poll.endsAt && !ended ? <div className="mt-3 flex justify-end text-xs text-muted-foreground"><span className="inline-flex items-center gap-1"><Clock3 className="size-3" /> Ends {new Date(poll.endsAt).toLocaleDateString()}</span></div> : null}
   </article>
 }
 
