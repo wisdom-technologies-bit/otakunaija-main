@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Menu, Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Mail02Icon } from "@hugeicons/core-free-icons";
 import { CATEGORIES } from "@/lib/posts";
@@ -19,11 +19,18 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [isAtTop, setIsAtTop] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
   const isEpisodesSection = pathname?.startsWith("/episodes");
   const isHome = pathname === "/";
+
+  useEffect(() => {
+    const handleScroll = () => setIsAtTop(window.scrollY < 48);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleNewsletterClick = () => {
     const target = document.getElementById("newsletter");
@@ -78,9 +85,13 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <Button variant="ghost" size="icon" aria-label={searchOpen ? "Close search" : "Open search"} onClick={() => setSearchOpen((s) => !s)} className="rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary">
-            {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-          </Button>
+          <div className={`mx-1 w-[min(42vw,22rem)] transition-[width] duration-300 sm:w-[min(38vw,24rem)] ${isAtTop ? "md:w-[min(32vw,24rem)]" : "md:w-[min(28vw,20rem)]"}`}>
+            {isEpisodesSection ? (
+              <EpisodesSearchBar compact />
+            ) : (
+              <SearchBar compact />
+            )}
+          </div>
           <Button variant="default" onClick={handleNewsletterClick} className="hidden h-9 items-center gap-1.5 rounded-full bg-primary px-4 font-semibold text-primary-foreground shadow-[0_6px_20px_-10px_hsl(var(--primary))] hover:bg-primary/90 md:inline-flex">
             <HugeiconsIcon icon={Mail02Icon} className="h-4 w-4" strokeWidth={2} /> Newsletter
           </Button>
@@ -92,18 +103,6 @@ export function SiteHeader() {
           </Button>
         </div>
       </div>
-
-      {searchOpen ? (
-        <div className="border-t border-border bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-3 md:px-6">
-            {isEpisodesSection ? (
-              <EpisodesSearchBar autoFocus />
-            ) : (
-              <SearchBar autoFocus onSubmitted={() => setSearchOpen(false)} />
-            )}
-          </div>
-        </div>
-      ) : null}
 
       {!isEpisodesSection && (
         <div className="hidden md:block border-t border-border bg-card/40">

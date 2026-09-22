@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button'
 type EpisodesSearchBarProps = {
   autoFocus?: boolean
   defaultValue?: string
+  compact?: boolean
 }
 
-export function EpisodesSearchBar({ autoFocus, defaultValue }: EpisodesSearchBarProps) {
+export function EpisodesSearchBar({ autoFocus, defaultValue, compact }: EpisodesSearchBarProps) {
   const router = useRouter()
   const [value, setValue] = useState(defaultValue ?? '')
 
@@ -31,13 +32,13 @@ export function EpisodesSearchBar({ autoFocus, defaultValue }: EpisodesSearchBar
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search episode titles, synopses, series..."
-          className="h-11 pl-10 bg-card border-border"
+          className={`${compact ? "h-9 rounded-full bg-background/70 pl-9 text-sm" : "h-11 bg-card pl-10"} border-border` }
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus={autoFocus}
           aria-label="Search episodes"
         />
       </div>
-      <Button type="submit" className="h-11 bg-primary text-primary-foreground hover:bg-primary/90">
+      <Button type="submit" className={compact ? "sr-only" : "h-11 bg-primary text-primary-foreground hover:bg-primary/90"}>
         Search
       </Button>
     </form>
