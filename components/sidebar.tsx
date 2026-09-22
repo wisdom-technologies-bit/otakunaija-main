@@ -4,14 +4,21 @@ import { CATEGORIES, type Post } from "@/lib/posts"
 import { PostCard } from "@/components/post-card"
 import { NewsletterForm } from "@/components/newsletter-form"
 import { AdSlot } from "@/components/ad-slot"
+import { PollPlacement } from "@/components/poll-placement"
 
 type SidebarProps = {
   recent: Post[]
   trending: Post[]
   showAnnotationPanel?: boolean
+  showCommunityPoll?: boolean
 }
 
-export function Sidebar({ recent, trending, showAnnotationPanel = false }: SidebarProps) {
+export async function Sidebar({
+  recent,
+  trending,
+  showAnnotationPanel = false,
+  showCommunityPoll = false,
+}: SidebarProps) {
   return (
     <aside className="space-y-8 lg:sticky lg:top-20">
       <div id="newsletter" className="scroll-mt-24">
@@ -72,6 +79,8 @@ export function Sidebar({ recent, trending, showAnnotationPanel = false }: Sideb
           ))}
         </ul>
       </section>
+
+      {showCommunityPoll ? <PollPlacement source="blog_article" /> : null}
 
       {showAnnotationPanel ? (
         <div id="comments-pin-panel" className="mt-4" aria-live="polite" />
