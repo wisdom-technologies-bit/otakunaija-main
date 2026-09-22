@@ -293,7 +293,13 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
     return null
   }
 
-  const rootCommentForActive = activeAnnotationId ? getRootCommentForAnnotation(activeAnnotationId) : null
+  // Keep an annotation comment visible in the sidebar even before its highlight
+  // enters the reading focus. The connector remains tied to the active highlight.
+  const firstAnnotationId = annotations[0]?.annotation?.id ?? null
+  const displayedAnnotationId = activeAnnotationId ?? firstAnnotationId
+  const rootCommentForDisplayed = displayedAnnotationId
+    ? getRootCommentForAnnotation(displayedAnnotationId)
+    : null
 
   // Similarly for mobile
   const mobileRootComment = mobileAnnotationId ? getRootCommentForAnnotation(mobileAnnotationId) : null
@@ -344,8 +350,8 @@ function CommentsWidgetInner({ postSlug }: CommentsWidgetProps) {
         <>
           <ConnectorLine activeAnnotationId={activeAnnotationId} />
           <PinPanel
-            activeAnnotationId={activeAnnotationId}
-            comments={rootCommentForActive ? [rootCommentForActive] : []}
+            activeAnnotationId={displayedAnnotationId}
+            comments={rootCommentForDisplayed ? [rootCommentForDisplayed] : []}
             onClose={() => setActiveAnnotationId(null)}
             onReply={handleReply}
             onLike={handleLike}

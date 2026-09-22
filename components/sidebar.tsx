@@ -20,7 +20,7 @@ export async function Sidebar({
   showCommunityPoll = false,
 }: SidebarProps) {
   return (
-    <aside className="space-y-8 lg:sticky lg:top-20">
+    <aside className="space-y-8 lg:sticky lg:top-20 lg:self-start">
       <div id="newsletter" className="scroll-mt-24">
         <NewsletterForm variant="card" />
       </div>
