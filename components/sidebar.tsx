@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Flame, Clock } from "lucide-react"
+import { ArrowRight, Flame, Clock, Vote } from "lucide-react"
 import { CATEGORIES, type Post } from "@/lib/posts"
 import { PostCard } from "@/components/post-card"
 import { NewsletterForm } from "@/components/newsletter-form"
@@ -11,6 +11,7 @@ type SidebarProps = {
   trending: Post[]
   showAnnotationPanel?: boolean
   showCommunityPoll?: boolean
+  showPollsLink?: boolean
 }
 
 export async function Sidebar({
@@ -18,6 +19,7 @@ export async function Sidebar({
   trending,
   showAnnotationPanel = false,
   showCommunityPoll = false,
+  showPollsLink = false,
 }: SidebarProps) {
   return (
     <aside className="space-y-8 lg:sticky lg:top-20 lg:self-start">
@@ -26,6 +28,29 @@ export async function Sidebar({
       </div>
 
       <AdSlot slot="sidebar" />
+
+      {showPollsLink ? (
+        <Link
+          href="/polls"
+          className="group block rounded-xl border border-primary/30 bg-primary/10 p-5 transition-colors hover:border-primary/60 hover:bg-primary/15"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 font-display text-base font-semibold text-foreground">
+                <Vote className="h-4 w-4 text-primary" />
+                Community polls
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Share your opinion and see what the community thinks.
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
+                Click to view polls
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </div>
+          </div>
+        </Link>
+      ) : null}
 
       <section className="rounded-xl border border-border bg-card p-5">
         <h3 className="flex items-center gap-2 font-display text-base font-semibold text-foreground">

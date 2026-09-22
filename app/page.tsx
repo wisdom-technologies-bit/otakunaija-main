@@ -11,18 +11,14 @@ import { getFeaturedPosts, getRecentPosts, getTrendingPosts, CATEGORIES } from "
 import { InfinitePostList } from "@/components/infinite-post-list"
 import { HeroCarousel } from "@/components/hero-carousel"
 import { HomepageLatestSection } from "@/components/homepage-latest-section"
-import { PollCard } from "@/components/poll-card"
-import { getRandomActivePolls } from "@/lib/db/queries/polls"
-import { PollImpressionTracker } from "@/components/poll-impression-tracker"
 
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const [featured, recent, trending, activePolls] = await Promise.all([
+  const [featured, recent, trending] = await Promise.all([
     getFeaturedPosts(4),
     getRecentPosts(6),
     getTrendingPosts(5),
-    getRandomActivePolls(5),
   ])
 
   const heroSlides = featured.slice(0, 4)
@@ -93,16 +89,6 @@ export default async function HomePage() {
             </div>
           </section>
 
-          {activePolls.length > 0 ? (
-            <>
-            <PollImpressionTracker pollIds={activePolls.map((poll) => poll.id)} />
-            <section className="border-b border-border py-10 md:py-14">
-              <div className="mb-6 flex items-end justify-between"><div><h2 className="font-display text-2xl font-bold md:text-3xl">Polls</h2><p className="mt-1 text-sm text-muted-foreground">Join the conversation.</p></div><Button asChild variant="ghost" className="text-primary hover:bg-primary/10"><Link href="/polls" className="gap-1">View all <ArrowRight className="size-4" /></Link></Button></div>
-              <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible xl:grid-cols-3">{activePolls.map((poll) => <div key={poll.id} className="min-w-[min(88vw,360px)] snap-start md:min-w-0"><PollCard poll={poll} compact /></div>)}</div>
-            </section>
-            </>
-          ) : null}
-
           {/* Latest + Sidebar */}
           <section className="py-10 md:py-14">
             <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
@@ -139,7 +125,7 @@ export default async function HomePage() {
                 />
               </div>
 
-              <Sidebar recent={recent.slice(0, 4)} trending={trending} />
+              <Sidebar recent={recent.slice(0, 4)} trending={trending} showPollsLink />
             </div>
           </section>
         </div>
