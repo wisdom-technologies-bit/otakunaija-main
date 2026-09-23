@@ -1,0 +1,450 @@
+# anime-sdk inspection report
+
+Repository inspected: `hexxt-git/anime-sdk`, default branch `master`. The repository was inspected only; anime-sdk was not installed, copied into OtakuNaija, or integrated.
+
+## 1. Repository overview
+
+anime-sdk is a TypeScript/Node.js 20+ ESM library built with tsup and tested with Vitest. It uses linkedom for HTML parsing and has no database or ORM requirement. Its main source areas are:
+
+```text
+src/types
+src/providers
+src/meta
+src/extractors
+src/transport
+src/server
+src/download
+src/utils
+examples
+ tests
+```
+
+The architecture is:
+
+```text
+metadata provider -> provider mapping -> content provider -> episode/content unit -> stream extractor -> normalized stream
+```
+
+It exposes an optional raw Node HTTP server. It is better suited to Railway, Render, Fly.io, or a VPS than a native long-running Vercel process. No mandatory environment variable was verified in the root package source. Optional bearer authentication and proxy signing are configured by the application.
+
+The SDK does not persist catalogue records, episodes, streams, subtitles, synchronization state, or watch analytics.
+
+## 2. Important exports
+
+The package root re-exports the major types, provider classes, metadata classes, extractors, transport helpers, server, subtitle helpers, URN helpers, and download helpers.
+
+### Core types from `src/types/index.ts`
+
+- `MediaCatalogType` — ANIME, MOVIE, TV, MANGA.
+- `Urn` — provider-qualified identifier.
+- `ContentLanguage` — `sub`, `dub`, `raw`.
+- `IMediaSearchResult` — provider search result.
+- `IContentUnit` — episode/chapter-like item.
+- `ISubtitleAvailability` — subtitle availability metadata.
+- `ISubtitleTrack` — subtitle URL, language, label, and optional format.
+- `IUnitTracks` — available subtitles and qualities.
+- `IVideoPayload` — one playable stream.
+- `ResolvedMediaStream` — video streams or manga pages.
+- `IMediaMetadata` — normalized anime metadata.
+- `IMediaMappings` — AniList, MAL, Kitsu, AniDB, TVDB, TMDB, and provider mappings.
+- `IStreamingEpisode` — metadata-provider episode enrichment.
+- `IMetaSearchResult` — metadata search result.
+- `SdkCache`, `CallOptions`, `MediaStatus`, `MediaFormat`, `MediaSeason`, and related title/image/relation/staff/recommendation types.
+
+Actual stream shape:
+
+```ts
+interface IVideoPayload {
+  sourceUrl: string;
+  isHLS: boolean;
+  quality: '1080p' | '720p' | '480p' | '360p' | 'auto';
+  language?: 'sub' | 'dub' | 'raw';
+  headers?: Record<string, string>;
+  subtitles?: ISubtitleTrack[];
+}
+
+interface ISubtitleTrack {
+  language: string;
+  label: string;
+  format?: 'vtt' | 'srt' | 'ass';
+  url: string;
+}
+
+type ResolvedMediaStream =
+  | { type: 'video'; streams: IVideoPayload[] }
+  | { type: 'manga'; pages: IMangaPayload };
+```
+
+Actual content-unit shape:
+
+```ts
+interface IContentUnit {
+  id: string;
+  title: string;
+  number: number;
+  availableLanguages?: ContentLanguage[];
+  availableSubtitles?: ISubtitleAvailability[];
+  availableQualities?: IVideoPayload['quality'][];
+  thumbnailUrl?: string;
+  description?: string;
+  airDate?: string;
+  isFiller?: boolean;
+  isRecap?: boolean;
+}
+```
+
+Important classes/functions include:
+
+- `BaseProvider` — common provider API, URNs, concurrency.
+- `AllmangaProvider`, `GogoanimeProvider`, `GoyabuProvider`, `AnikotoProvider`, `MegaPlayProvider`, `AnimeParadiseProvider` — anime providers.
+- `MangadexProvider`, `WeebcentralProvider`, `MangapillProvider` — manga providers.
+- `BaseMetadataProvider`, `AnilistMeta`, `MalMeta`, `KitsuMeta` — metadata APIs.
+- `MappingClient` — cross-provider ID resolution.
+- `HttpClient`, `FetchTransport`, `CurlFallbackTransport` — HTTP transport.
+- `RateLimiter`, `withRetry` — throttling/retries.
+- `GenericHlsExtractor`, `Mp4UploadExtractor`, `BloggerExtractor`, `VidstreamingExtractor` — stream extraction.
+- `startServer` — standalone HTTP API.
+- `normalizeSubtitleEntries`, `labelToBcp47`, `proxifySubtitleUrl` — subtitle utilities.
+- `buildUrn`, `unwrapUrn`, `strictUnwrapUrn`, `buildTypedUrn`, `parseTypedUrn` — identifier utilities.
+
+## 3. Providers
+
+| Provider | Anime/search | Episodes | Streams | Subtitles | Qualities/servers | Language |
+|---|---:|---:|---:|---:|---:|---|
+| `animeparadise` | Yes | Yes | HLS | Yes | Auto HLS / one returned stream | Sub |
+| `allmanga` | Yes | Yes | Yes | Not generally attached | Multiple source candidates | Sub/dub/raw |
+| `gogoanime` | Yes | Yes | Yes | Not attached in inspected implementation | Server candidates, limited labels | Primarily sub |
+| `goyabu` | Yes | Yes | Yes | Not verified from source | Not verified from source | pt-BR/dub |
+| `anikoto` | Yes | Yes | Yes | Yes | One resolved source | Sub/dub |
+| `megaplay` | AniList-backed | Yes | Yes | Yes | One resolved source | Sub/dub |
+| `mangadex` | Manga | Chapters | Pages | No | N/A | N/A |
+| `weebcentral` | Manga | Chapters | Pages | No | N/A | N/A |
+| `mangapill` | Manga | Chapters | Pages | No | N/A | N/A |
+
+No provider has a source-code health flag named working, broken, or experimental. Current live health was not tested and is **Not verified from source code**.
+
+## 4. GogoAnime provider
+
+Files:
+
+- `src/providers/GogoanimeProvider.ts`
+- `src/extractors/GenericHlsExtractor.ts`
+- `src/providers/BaseProvider.ts`
+
+Class: `GogoanimeProvider`. Provider ID: `gogoanime`. Default base URL: `https://anineko.to`; the option `baseUrl` is configurable. This is not the historical gogoanime domain; it scrapes AniNeko/Gogo-compatible pages.
+
+Search requests:
+
+```text
+GET {baseUrl}/browser?keyword={encoded query}
+```
+
+It parses `article.nv-anime-card`, title links, image sources, and paths such as `/watch/slug`. The public provider API wraps IDs as `gogoanime:{rawId}`.
+
+Episodes are parsed from `article.nv-info-episode-item`, `a.nv-info-episode-main`, nested `strong` episode labels, nested `span` titles, and `ep-(number)` URL values. Each unit contains an episode URL/path ID, title, numeric episode number, and sub/dub availability derived from the media ID. Units are sorted numerically.
+
+Stream resolution loads an episode page and finds `button.nv-server-btn`. It reads `data-video`, button text, and `data-tab`, then detects 1080p, 720p, and 360p labels, otherwise `auto`. It adds a Referer for the full episode URL and passes candidates sequentially to `GenericHlsExtractor`. It stops after the first extractor success; if extraction fails, it can return original server URLs.
+
+The output is:
+
+```ts
+{ type: 'video', streams: IVideoPayload[] }
+```
+
+The extractor can return MP4 or HLS/m3u8. Gogoanime itself does not attach subtitle tracks in the inspected implementation. URLs may be temporary, but no expiry timestamp is exposed or inspected; this is **Not verified from source code**. Referrer headers are returned and may need to be preserved by a player/proxy.
+
+Likely breakpoints are domain changes, CSS/attribute changes, altered server buttons, JavaScript/obfuscated embed pages, and extractor incompatibility. The configured domain does not remove those hard-coded selector dependencies.
+
+## 5. Stream response
+
+The exact normalized response is:
+
+```ts
+{
+  type: 'video',
+  streams: IVideoPayload[]
+}
+```
+
+Each stream has `sourceUrl`, `isHLS`, `quality`, optional `language`, optional request `headers`, and optional subtitle tracks. There is no standard server ID/name, expiration timestamp, codec, bitrate, audio-track array, subtitle-default flag, or stream-priority field.
+
+## 6. Episode response mapping
+
+| anime-sdk | OtakuNaija | Compatible? | Transformation |
+|---|---|---:|---|
+| `id` | `episodes.id` | No | Preserve local PK; persist provider ID separately |
+| `number` | `episodeNumber` | Yes | Numeric conversion; define special/decimal policy |
+| `title` | `title` | Yes | Clean provider prefixes if needed |
+| no canonical slug | `slug` | No | Generate local deterministic slug |
+| `description` | `description` | Yes | Copy when available |
+| `thumbnailUrl` | `thumbnailUrl` | Yes | Copy when available |
+| `airDate` | `airDate` | Yes | Normalize date |
+| no unit duration | `duration` | No | Obtain from metadata or inspection if available |
+| no permanent video URL | `videoUrl` | No | Resolve at playback time |
+| `availableSubtitles`/tracks | `subtitlesUrl` | Partial | Current single URL loses tracks/languages |
+| `availableQualities` | none | No | Requires stream model |
+| `availableLanguages` | none | No | Requires sub/dub model |
+| `isFiller`/`isRecap` | none | No | Requires fields if retained |
+
+## 7. Anime metadata mapping
+
+`IMediaMetadata` includes `id`, `providerId`, `catalogType`, title variants, description, cover images, banner, status, format, episode/chapter counts, duration, genres, tags, studios, year, season, dates, score, trailer, adult flag, synonyms, mappings, relations, characters, staff, recommendations, external links, and streaming episodes.
+
+| anime-sdk | OtakuNaija | Compatible? | Transformation |
+|---|---|---:|---|
+| `title.userPreferred`/English/romaji | `title` | Yes | Preferred fallback chain |
+| `description` | `description` | Yes | Sanitize/normalize |
+| `cover.large/medium` | `coverUrl` | Yes | Select image |
+| `banner` | none | Partial | No current field |
+| `genres` | `genres` | Yes | Preserve project representation |
+| `status` | `status` | Yes | Normalize enum |
+| `year` | `releaseYear` | Yes | Integer |
+| `startDate` | none | No | Current model stores year only |
+| `season` | none | No | Needs season representation |
+| `format` | none | No | Useful for movie/OVA/special |
+| `episodeCount` | none | No | Sync comparison only unless added |
+| `tags` | none | No | Do not merge without semantic decision |
+| `studios` | none | No | No current field |
+| `mappings` | none | No | Critical identity data missing |
+| `relations` | none | No | Needed for sequel/season relationships |
+| `streamingEpisodes` | episode records | Partial | Map episode enrichment fields |
+
+## 8. Identity and mapping
+
+Provider IDs use URNs in the form:
+
+```text
+providerId:rawId
+```
+
+Examples include `allmanga:...`, `anilist:21`, `mal:anime:21`, and `kitsu:anime:1`. Parsing must split at the first colon because raw IDs may contain additional colons or slashes.
+
+The URN is a namespace identity, not a universal global ID. `anilist:21` and `gogoanime:/watch/foo` remain different identifiers. `IMediaMappings` supports AniList, MAL, Kitsu, AniDB, TVDB, TMDB, and provider mappings. `MappingClient` uses cache, native lookup, external mapping sources, and fuzzy title/year/type matching. MegaPlay uses AniList IDs as its internal media identity.
+
+OtakuNaija cannot safely deduplicate providers using only title or slug. External/provider mappings must eventually be persisted.
+
+## 9. Seasons and episode types
+
+The metadata layer supports seasons `WINTER`, `SPRING`, `SUMMER`, and `FALL`. Formats include TV, TV_SHORT, MOVIE, SPECIAL, OVA, ONA, and MUSIC. Relations include sequel, prequel, side story, spin-off, summary, and compilation.
+
+`IContentUnit` itself has no `seasonNumber`, `seasonId`, `cour`, or `episodeType`. Specials and OVAs are represented indirectly through metadata format/relations or provider numbering. This only partially fits OtakuNaija’s current Series → Episodes model.
+
+## 10. Subtitles
+
+Actual structure:
+
+```ts
+interface ISubtitleTrack {
+  language: string;
+  label: string;
+  format?: 'vtt' | 'srt' | 'ass';
+  url: string;
+}
+```
+
+The SDK supports multiple tracks, labels, languages, VTT/SRT/ASS formats when known, URL normalization, BCP-47 conversion, proxying, and header forwarding. There is no standard default-track property. Provider support varies: MegaPlay and Anikoto read `sourcesJson.tracks`; AnimeParadise normalizes `subData`; GogoAnime and AllManga do not attach general subtitle tracks in the inspected implementations.
+
+## 11. Servers, qualities, and audio
+
+The public model supports an array of streams and quality values `1080p`, `720p`, `480p`, `360p`, and `auto`. It does not standardize server name/ID, codec, bitrate, frame rate, audio tracks, or stream expiry. Some providers inspect multiple server candidates, but the normalized response does not preserve a server field. Language supports `sub`, `dub`, and `raw` as availability/runtime values, not as a persisted track model.
+
+## 12. HTTP API
+
+`src/server/index.ts` exposes GET routes, with OPTIONS for CORS and optional bearer authentication:
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/health` | Health/configuration response |
+| GET | `/openapi.json` | OpenAPI 3.1 document |
+| GET | `/search` | Provider content search |
+| GET | `/content` | Episode/chapter listing by provider ID |
+| GET | `/stream` | Stream resolution |
+| GET | `/tracks` | Subtitle/quality lookup, where supported |
+| GET | `/meta/search` | Metadata search |
+| GET | `/meta/info` | Full metadata |
+| GET | `/meta/content` | Metadata-backed episode listing |
+| GET | `/meta/stream` | Resolve by metadata ID and episode number |
+| GET | `/meta/tracks` | Metadata-backed track lookup |
+| GET | `/meta/browse` | Trending/popular/seasonal/top catalogue browsing |
+| GET | `/download/video` | Resolve/download anime video as MP4 |
+| GET | `/download/manga/page` | Manga page download |
+| GET | `/download/manga/chapter` | Chapter ZIP download |
+| GET | `/proxy` | CORS-friendly upstream proxy, HLS rewriting, header forwarding |
+
+Exact query validation should be taken from `src/server/index.ts` and `src/server/openapi.ts` during implementation. The server supports caching, bearer auth, optional HMAC proxy signatures, host allowlists, HLS manifest rewriting, and header forwarding.
+
+## 13. Deployment
+
+The easiest deployment is a persistent Node service on Railway, Render, Fly.io, or a VPS. Vercel is possible only through wrapper route handlers or a separate service; the native raw Node server is not the natural serverless deployment shape. Node 20+, outbound network access, and optional ffmpeg for download/E2E workflows are relevant. No database is required by anime-sdk.
+
+## 14. Synchronization design
+
+### Initial import
+Use `AnilistMeta.search()` or `browse()`, then `fetchMediaInfo()`, resolve a content provider through mapping, call `fetchContentUnits()`, and persist metadata/episodes without persisting temporary stream URLs.
+
+### New anime discovery
+Schedule `AnilistMeta.browse()` or targeted provider searches and deduplicate using provider mappings rather than titles.
+
+### New episodes
+Call metadata-backed or provider `fetchContentUnits()` and compare external unit IDs and episode numbers.
+
+### Metadata refresh
+Call `fetchMediaInfo()` and merge `streamingEpisodes` fields while preserving local editorial changes.
+
+### Playback
+Call `resolveStream(metadataUrn, episodeNumber, contentProvider, language)` or `contentProvider.resolveStream(unitUrn, language)` at playback time. Treat the result as short-lived runtime data.
+
+## 15. OtakuNaija mapping
+
+### Anime
+
+- metadata URN → no current target; required for identity.
+- preferred metadata title → local series title.
+- description → local description.
+- cover image → local cover URL.
+- genres → local genres.
+- normalized status → local status.
+- year → local release year.
+- local slug → generate collision-safe slug.
+- mappings/season/format/relations → no current fields.
+
+### Episodes
+
+- content-unit URN → no current field; retain provider/raw identity separately.
+- number → episode number.
+- title → episode title.
+- generated local slug → episode slug.
+- description/thumbnail/air date → corresponding local fields.
+- stream source URL → do not treat as permanent local video URL.
+- subtitle array → cannot faithfully fit one subtitles URL.
+- language/quality/filler/recap → no current fields.
+
+### Streams and subtitles
+
+- `streams[]` → no stream table currently.
+- `sourceUrl` → runtime-only URL.
+- `isHLS` → runtime player selection.
+- `quality` → runtime selector.
+- `language` → sub/dub selector.
+- `headers` → server/proxy-side data.
+- `subtitles[]` → current single subtitles URL only as a lossy fallback.
+
+anime-sdk supplies no view, watch history, or watch-progress data; OtakuNaija analytics remain local.
+
+## 16. Required database changes
+
+No SQL or migrations are proposed.
+
+### Required
+
+- Series provider identity and external media ID with uniqueness.
+- Episode provider identity and external content-unit ID with uniqueness.
+- Metadata-provider mappings for AniList/MAL/Kitsu/provider IDs.
+- A runtime stream/server/track representation for multiple sources, qualities, languages, headers, and expiring URLs.
+- Provider sync/failure state such as last attempt, last success, error, and retry information.
+
+### Useful
+
+- Season/cour/format and episode type.
+- Subtitle tracks with language, label, format, URL, and default state.
+- Stream quality, language, source, and priority.
+- Aliases and normalized mappings.
+- Sync timestamps, payload hash/version, filler/recap flags, air date, runtime, and cache/expiry metadata.
+
+### Optional
+
+- Codec/bitrate/audio tracks.
+- Studios, tags, score, trailers, relations, characters, and staff.
+- Download job/file records.
+- Multiple metadata-provider conflict resolution.
+- Proxy audit logs.
+
+## 17. Recommended architecture
+
+```text
+OtakuNaija Next.js
+   ├── Neon: local catalogue, mappings, sync state, analytics
+   └── provider-service API
+          ├── anime-sdk metadata layer
+          │      ├── AniList / MAL / Kitsu
+          │      └── MappingClient
+          └── anime-sdk content providers
+                 ├── AllManga
+                 ├── Gogoanime/AniNeko
+                 ├── MegaPlay
+                 ├── AnimeParadise
+                 └── fallback providers
+```
+
+Do not call third-party scrapers directly from the browser and do not persist resolved temporary URLs as canonical episode metadata.
+
+OtakuNaija/Neon should own local catalogue rows, slugs, editorial content, provider mappings, sync checkpoints, deduplication, provider health, analytics, watch progress, authentication, and user-facing rate limits.
+
+The standalone provider service should own anime-sdk, provider resolution, retries, per-host throttling, caching, proxying, header forwarding, playback-time resolution, and upstream abstraction.
+
+The player should receive a short-lived normalized stream response, select HLS or MP4 from `isHLS`, and render returned subtitle tracks.
+
+Catalogue and episode lists can be cached longer than stream results. Stream caching should be short and provider-aware. Add circuit breakers, retry limits, rate limits, narrow proxy allowlists, private service authentication, and provider error observability.
+
+## 18. Compatibility report
+
+### A. anime-sdk can already do
+
+Search, content-unit/episode listing, MP4/HLS resolution, normalized quality and sub/dub/raw values, provider-dependent subtitle tracks, AniList/MAL/Kitsu metadata, cross-provider mapping, URNs, retry/rate-limit/cancellation/cache hooks, HTTP serving, proxying, HLS rewriting, and catalogue browsing.
+
+### B. OtakuNaija already does
+
+Local anime/series and episode records, local slugs and metadata, one video URL, one subtitle URL, episode duration/air date, view tracking, admin episode editing/uploads, an existing player, public series/episode pages, and local analytics.
+
+### C. Missing
+
+Provider IDs, external episode IDs, metadata mappings, seasons/cours/specials, stream/server/quality records, multiple subtitles, sub/dub persistence, expiry-aware stream resolution, watch progress, provider health, sync state, and fallback orchestration.
+
+### D. Needs to be added
+
+An isolated provider-service boundary, identity mappings, sync jobs, deduplication, playback-time stream resolution, stream/subtitle normalization, provider failure handling, retries, rate limiting, caching, and observability.
+
+### E. Should not change
+
+Do not replace local primary keys, use title/slug alone for deduplication, persist temporary stream URLs as permanent data, remove current upload/player/view functionality prematurely, assume provider feature parity, or expose an unrestricted upstream proxy.
+
+### F. First milestone
+
+Run anime-sdk as an isolated read-only provider service. Configure one metadata provider and one content provider, verify search, metadata, episode listing, stream resolution, subtitles, headers, and HLS/MP4 behavior against real responses, then place an authenticated internal HTTP boundary in front of it. Only after that define schema changes.
+
+## Exact files to inspect next
+
+```text
+src/types/index.ts
+src/providers/BaseProvider.ts
+src/meta/BaseMetadataProvider.ts
+src/meta/MappingClient.ts
+src/utils/urn.ts
+src/providers/MegaPlayProvider.ts
+src/providers/AllmangaProvider.ts
+src/providers/GogoanimeProvider.ts
+src/providers/AnimeParadiseProvider.ts
+src/providers/AnikotoProvider.ts
+src/server/index.ts
+src/server/openapi.ts
+src/utils/subtitles.ts
+src/transport/hlsUtils.ts
+src/meta/AnilistMeta.ts
+src/meta/MalMeta.ts
+src/meta/KitsuMeta.ts
+src/extractors/GenericHlsExtractor.ts
+src/extractors/Mp4UploadExtractor.ts
+src/extractors/BloggerExtractor.ts
+src/extractors/VidstreamingExtractor.ts
+src/transport/http.ts
+src/transport/retry.ts
+src/transport/rateLimiter.ts
+tests/e2e/
+tests/
+CLAUDE.md
+examples/server.mjs
+examples/cli.mjs
+package.json
+```
+
+Any live provider uptime, current upstream URL validity, stream expiry duration, or operational success rate is **Not verified from source code**.
