@@ -1,0 +1,265 @@
+OTAKUNAIJA CURRENT ANIME / STREAMING ARCHITECTURE REPORT
+==========================================================
+
+Scope
+-----
+This report describes the implementation found in the current codebase. It does not add tables, install packages, run migrations, or modify the application architecture.
+
+1. CURRENT DATABASE TABLES
+---------------------------
+The project uses Neon Postgres with Drizzle ORM. The schema source is lib/db/schema.ts and migrations are under lib/db/migrations/.
+
+anime_series
+  Purpose: Stores the anime/series catalogue entry.
+  Columns found:
+    - id: serial/integer, primary key, non-null, database-generated.
+    - title: text, non-null.
+    - slug: text, non-null, unique.
+    - description: text, nullable.
+    - thumbnailUrl: text, nullable.
+    - coverUrl: text, nullable.
+    - genres: text array, nullable/default empty array where defined by schema.
+    - status: text, nullable.
+    - releaseYear: integer, nullable.
+    - createdAt: timestamp, non-null, default current timestamp.
+    - updatedAt: timestamp, non-null, default current timestamp where defined.
+  Constraints/indexes: primary key on id; unique constraint on slug. No separate provider/external ID was found.
+
+episodes
+  Purpose: Stores individual playable episodes belonging to an anime series.
+  Columns found:
+    - id: serial/integer, primary key, non-null, database-generated.
+    - seriesId: integer, non-null, foreign key to anime_series.id.
+    - episodeNumber: integer, non-null.
+    - title: text, nullable.
+    - slug: text, non-null/unique in the episode route model.
+    - description: text, nullable.
+    - thumbnailUrl: text, nullable.
+    - videoUrl: text, nullable.
+    - subtitlesUrl: text, nullable; added by migration 0000_add_subtitles_url.sql.
+    - duration: integer, nullable.
+    - airDate: timestamp/date, nullable.
+    - createdAt: timestamp, non-null, default current timestamp.
+    - updatedAt: timestamp, non-null, default current timestamp where defined.
+  Constraints/indexes: primary key on id; foreign key seriesId -> anime_series.id. Episode lookup is by id and by series/episode slug in application queries. A separate season foreign key/table was not found.
+
+episode_views
+  Purpose: Records episode watch/view analytics.
+  Columns found:
+    - id: serial/integer, primary key, non-null.
+    - episodeId: integer, non-null, foreign key to episodes.id.
+    - viewer/session identifier fields used by the tracking implementation, where present in schema.
+    - watchedAt/createdAt timestamp, non-null/default current timestamp.
+  The exact deduplication semantics are application-level and are implemented by the watch-ping/action code rather than by a separate watch-history model.
+
+Other relevant tables
+  The inspected schema did not show normalized tables for seasons, streaming providers/servers, stream qualities, subtitles, watch progress, or external-provider mappings. Blog, comments, polls, and user/community tables exist separately but are not part of the anime streaming relationship.
+
+Database configuration
+  - drizzle.config.ts points Drizzle at the Neon DATABASE_URL/schema and migration directory.
+  - DATABASE_URL and related Neon/Postgres variables are configured in the project environment.
+  - No ORM other than Drizzle was found for the anime/video data path.
+
+2. CURRENT ANIME -> EPISODE RELATIONSHIP
+-----------------------------------------
+anime_series
+  |
+  └── episodes (episodes.seriesId -> anime_series.id)
+
+The current model is Series -> Episodes. No Series -> Season -> Episode relationship exists in the inspected schema. Season is not represented as its own table or as a confirmed episode field. Public routes use /episodes/[series-slug]/[episode-slug], which confirms series and episode slugs are the primary public URL identifiers.
+
+3. CURRENT EPISODE STRUCTURE
+-----------------------------
+Present or represented in the inspected implementation:
+  - Episode ID: yes, database primary key.
+  - Anime/series ID: yes, seriesId foreign key.
+  - Season: not found in current codebase.
+  - Episode number: yes, episodeNumber.
+  - Title: yes.
+  - Slug: yes, used by public episode routes/queries.
+  - Description: yes/nullable.
+  - Thumbnail: yes, thumbnailUrl/episode artwork field.
+  - Air/release date: yes, airDate where populated.
+  - Duration: yes, duration where populated.
+  - Filler status: not found.
+  - Sub/dub: not found as a dedicated field.
+  - Video URL: yes, videoUrl.
+  - Provider: not found as a dedicated field.
+  - Server: not found as a dedicated field.
+  - Quality: not found as a dedicated field.
+  - Subtitle URL: yes, subtitlesUrl, added through the subtitle migration.
+  - Created/updated timestamps: yes.
+  - External provider ID: not found.
+  - External anime/episode URL: not found.
+
+4. CURRENT STREAMING IMPLEMENTATION
+------------------------------------
+Storage and URL handling
+  - The episode record stores a single videoUrl value. It may point to an uploaded asset or an externally hosted video; the database does not distinguish provider, server, quality, or URL expiry.
+  - subtitlesUrl stores one subtitle resource URL. There is no subtitle table, language column, format column, or multi-track relation.
+  - The admin editor and upload components populate episode media fields through the admin actions/API and storage helpers.
+  - Cloudinary integration exists in lib/cloudinary.ts and app/api/cloudinary/sign/route.ts for signed upload support.
+  - Cloudflare R2 integration exists through the presign/upload/subtitle routes and environment variables. The inspected code uses R2 for media upload flows where configured.
+  - The codebase does not show a media abstraction that normalizes Cloudinary, R2, and external providers into separate stream records.
+
+Player
+  - Public episode pages load episode data through the database query layer and pass the episode video URL to components/episodes/video-player.tsx and video-player-client.tsx.
+  - Playback is handled by the existing client video player around the native/video-player implementation.
+  - MP4/progressive URLs are supported by the URL-based player path.
+  - HLS/m3u8 support: not conclusively implemented as a dedicated HLS integration in the inspected codebase. No hls.js dependency or provider resolver was found in the inspected package/player files; an m3u8 URL may work only if the browser/player natively supports it.
+  - Multiple servers: not supported by the current episode schema/player contract.
+  - Multiple qualities: not supported by the current episode schema/player contract.
+  - Multiple subtitle languages: not supported; one subtitlesUrl field is present.
+  - Frontend API resolution before playback: no separate external stream-resolution API was found. The player receives the stored episode URL from the server-rendered episode data.
+  - Backend dynamic stream resolution: not found.
+  - URL permanence: not guaranteed. The schema has no expiry, signed-at, provider, or refresh metadata. If a provider returns expiring URLs, current storage would not safely model their lifecycle.
+
+5. CURRENT WATCH ANALYTICS
+---------------------------
+  - The route app/api/episodes/[id]/watch-ping/route.ts accepts a watch ping for an episode.
+  - components/episodes/episode-tracker.tsx sends watch-ping requests during playback/read progress according to the client tracking behavior.
+  - lib/actions/track-view.ts contains the server-side action used to record episode views.
+  - The recording target is episode view analytics linked by episodeId.
+  - A full per-user watch-history/progress table was not found. Persisted resume position, completion percentage, last position, device, and provider/server playback fields are not present in the inspected database model.
+  - Exact anti-abuse/deduplication behavior is implemented in the route/action logic; the current model is not a provider-aware watch ledger.
+
+6. CURRENT ADMIN SYSTEM
+------------------------
+Relevant implementation:
+  - components/admin/episode-editor.tsx: admin UI for creating/editing episode metadata and media fields.
+  - components/admin/video-uploader.tsx: video upload UI.
+  - components/admin/subtitle-uploader.tsx: subtitle upload UI.
+  - app/actions/admin.ts: server actions for admin episode/series management.
+  - app/api/admin/upload/route.ts: admin upload endpoint.
+  - app/api/r2/presign/route.ts: R2 presigned upload URL endpoint.
+  - app/api/r2/subtitle/route.ts: subtitle upload/storage endpoint.
+  - app/api/cloudinary/sign/route.ts: Cloudinary signing endpoint.
+
+Current admin behavior is based on editing the existing episode row and assigning one video URL and one subtitle URL. No provider import/synchronization UI, external ID field, stream-server list, quality matrix, or season manager was found. Delete behavior is available through the admin action/query path where used by the dashboard; no bulk provider sync workflow was found.
+
+7. CURRENT API STRUCTURE
+-------------------------
+Anime/series
+  - GET / (homepage/server queries): loads series/catalogue content through server-side database queries; no dedicated anime REST route was found.
+  - Public series route: GET /episodes/[series-slug] (page route, not API): loads a series and its episodes.
+
+Episodes
+  - GET /episodes/[series-slug]/[episode-slug] (page route, not API): loads a series episode and renders the player.
+  - /api/episodes/[id]/watch-ping: watch-ping endpoint for episode analytics. Method is POST from the episode tracker. Input is episode ID from the path plus tracking payload from the client. Output is a success/error response; exact response shape is defined by the route.
+
+Streaming/media
+  - /api/admin/upload: admin media upload endpoint.
+  - /api/r2/presign: creates an R2 presigned upload operation.
+  - /api/r2/subtitle: handles subtitle upload/storage.
+  - /api/cloudinary/sign: creates Cloudinary upload/signing data.
+  - No stream-provider resolver endpoint was found.
+
+Views/watch progress
+  - /api/episodes/[id]/watch-ping: episode view/watch ping.
+  - lib/actions/track-view.ts: server action used by view tracking.
+  - No dedicated watch-history, watch-progress, resume, or continue-watching API route was found.
+
+Search
+  - Search UI/components and server query helpers exist for catalogue/blog search, but a dedicated external-anime search API route was not found in the inspected codebase. Search behavior should be confirmed from the current query implementation before provider integration.
+
+8. DATABASE DIAGRAM
+--------------------
+ anime_series
+      |
+      |  episodes.seriesId -> anime_series.id
+      v
+ episodes
+      |
+      |  episode_views.episodeId -> episodes.id
+      v
+ episode_views
+
+ Media URLs are currently scalar columns on episodes:
+ episodes.videoUrl       -> one video/media URL
+ episodes.subtitlesUrl   -> one subtitle URL
+ episodes.thumbnailUrl   -> episode thumbnail URL
+
+ Cloudinary/R2 upload endpoints write or return media URLs, but no normalized media table was found.
+
+9. EXTERNAL PROVIDER MAPPING REQUIREMENTS
+------------------------------------------
+The provider should be able to supply at least the following values so the current rows can be populated without changing the schema:
+
+External provider field              -> OtakuNaija field                  Notes
+Provider anime ID                    -> no existing field                Must be retained externally during sync; current schema has no mapping column.
+Anime title                          -> anime_series.title                Required for catalogue identity/display.
+Anime slug/normalized title           -> anime_series.slug                 Must be made stable and collision-safe.
+Synopsis/description                 -> anime_series.description           Nullable current field.
+Poster/thumbnail                     -> anime_series.thumbnailUrl          Use a durable URL or upload/copy it.
+Cover/banner                          -> anime_series.coverUrl               Use if present; otherwise not populated.
+Genres/tags                           -> anime_series.genres                Map only values supported by current text-array field.
+Status                                -> anime_series.status                Map provider status to current text value.
+Release year                          -> anime_series.releaseYear           Current field is year-level, not full date.
+Provider episode ID                  -> no existing field                Keep in a sync mapping outside current schema until schema approval.
+Episode number                        -> episodes.episodeNumber             Must be numeric and stable.
+Episode title                         -> episodes.title                     Nullable.
+Episode slug                          -> episodes.slug                      Must be unique/stable within current routing model.
+Episode synopsis                      -> episodes.description               Nullable.
+Episode image                         -> episodes.thumbnailUrl              Durable URL or copied asset preferred.
+Episode air date                      -> episodes.airDate                   Provider date may need conversion.
+Episode duration                      -> episodes.duration                  Convert to the current integer unit used by the app.
+Stream URL                            -> episodes.videoUrl                  Current model accepts only one URL.
+Subtitle URL                          -> episodes.subtitlesUrl              Current model accepts only one subtitle URL.
+Stream expiry                         -> no existing field                 Current model cannot refresh expiring URLs.
+Provider/server name                  -> no existing field                 Cannot represent multiple servers.
+Quality/codec                         -> no existing field                 Cannot represent quality variants.
+Audio language/sub-dub                -> no existing field                 No dedicated sub/dub field.
+Season number                         -> no existing field                 Current model has no season storage.
+Filler flag                           -> no existing field                 Cannot be mapped.
+
+10. MISSING FIELDS
+-------------------
+A. Required for a reliable external-provider integration
+  - External provider name and provider anime/episode IDs.
+  - A durable mapping between provider IDs and anime_series/episodes rows.
+  - Sync status/error/last-synced metadata.
+  - A strategy for provider stream URLs that expire or require runtime resolution.
+  - A defined identity rule for matching anime and episodes without creating duplicates.
+  - Provider episode ordering rules when numbers or specials differ.
+
+B. Useful
+  - Season number and season identity.
+  - Episode type (regular, special, recap, OVA/movie).
+  - Multiple stream sources/servers.
+  - Multiple qualities and codecs.
+  - Audio language/sub/dub.
+  - Multiple subtitle tracks with language, format, and URL.
+  - Full release/air timestamp and timezone.
+  - Episode runtime in a documented unit.
+  - Watch progress/resume position and completion state.
+  - Provider rate-limit/cache metadata.
+  - Poster/cover attribution and image source metadata.
+
+C. Optional
+  - Filler status.
+  - Intro/outro skip timestamps.
+  - Closed-caption metadata.
+  - DRM/license metadata, if ever required.
+  - Region availability and age-rating metadata.
+  - Provider popularity/rating/score and external links.
+  - Subtitle translation/source attribution.
+
+11. FINAL RECOMMENDATION
+-------------------------
+Do not replace the current episodes table or player immediately. First build a provider adapter/import layer that reads provider data, matches or creates the existing anime_series and episodes records, and preserves the current public slug routes and videoUrl/subtitlesUrl contract. Because the current schema has no external IDs, seasons, stream variants, or expiring-URL fields, provider IDs should be tracked in an explicit mapping design before any synchronization is enabled; otherwise duplicate anime and episodes are likely. For the first integration, prefer durable/cached media URLs compatible with the current player and keep the existing admin upload path as the fallback. Add normalized provider/stream/subtitle/watch-progress tables only after the provider contract is known and the mapping has been reviewed.
+
+Not found in current codebase
+-----------------------------
+  - A seasons table or season foreign key.
+  - External provider IDs/mapping tables.
+  - A normalized streams/providers/servers table.
+  - A normalized subtitles table or subtitle language metadata.
+  - Dedicated sub/dub fields.
+  - Quality fields or multi-quality selection.
+  - A dynamic stream resolver.
+  - A confirmed hls.js/native HLS integration.
+  - Persistent per-user watch history or resume progress.
+  - A dedicated anime-provider synchronization/import API.
+  - Provider-aware stream expiry/refresh handling.
+
+This report is based on the current source/schema inspection and intentionally makes no schema or code changes.
