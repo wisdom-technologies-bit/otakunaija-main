@@ -133,6 +133,6 @@ export const trendingEligibility = {
 
 export type { Candidate as TrendingCandidate }
 
-export function trendingScoreForTest(candidate: TrendingCandidate, now?: Date) {
+export function trendingScoreForTest(candidate: Candidate, now?: Date) {
   return scoreTrendingCandidates([candidate], now)[0]?.signals.finalScore ?? 0
 }

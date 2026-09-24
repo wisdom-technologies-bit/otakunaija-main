@@ -43,7 +43,7 @@ export function calculateTrendingScore(
   const velocity = recent / 6
   const ageHours = Math.max(0, ((population.now ?? new Date()).getTime() - new Date(signals.publishedAt).getTime()) / 3_600_000)
   const recency = Math.exp(-ageHours / 72)
-  const discovery = 1 / (1 + Math.log1p(safe(signals.lifetimeViews)))
+  const discovery = 1 / (1 + Math.log1p(safe(signals.lifetimeViews ?? 0)))
   const recentScore = normalize(logScale(recent), population.maxRecent)
   const momentumScore = normalize(momentum, population.maxMomentum)
   const engagementScore = normalize(logScale(signals.engagement), population.maxEngagement)
@@ -64,7 +64,8 @@ export function diversifyTrending<T extends { category?: string | null }>(items:
   const remaining = [...items]
   while (remaining.length && result.length < limit) {
     const nextIndex = remaining.findIndex((item) => !result.slice(-2).some((previous) => previous.category && previous.category === item.category))
-    result.push(remaining.splice(nextIndex < 0 ? 0 : nextIndex, 1)[0])
+    const [next] = remaining.splice(nextIndex < 0 ? 0 : nextIndex, 1)
+    if (next) result.push(next)
   }
   return result
 }
@@ -83,7 +84,7 @@ export function rankTrending<T extends TrendingSignals>(items: T[], limit: numbe
     maxEngagement: Math.max(...items.map((i) => logScale(i.engagement)), 1),
     maxVelocity: Math.max(...items.map((i) => logScale(i.recentActivity / 6)), 1), now,
   }) })).sort((a, b) => b.breakdown.finalScore - a.breakdown.finalScore)
-  return diversifyTrending(raw, limit)
+  return diversifyTrending(raw.map(({ item }) => item), limit)
 }
 
 export const __testing = { logScale, normalize }

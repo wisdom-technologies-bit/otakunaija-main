@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { sql } from "./db"
+import { getTrendingPosts as getScoredTrendingPosts } from "./trending"
 
 const BLOG_DYNAMIC =
   process.env.BLOG_RENDER_MODE === "dynamic"
@@ -70,17 +71,8 @@ const _getTrendingPosts = cache(
 )
 
 export async function getTrendingPosts(limit = 5): Promise<Post[]> {
-  // Trending rankings depend on mutable view counts, so serving a one-hour cached
-  // snapshot made newer high-view posts invisible until the cache expired.
-  const rows = await sql`
-    SELECT *
-    FROM posts
-    WHERE trending = true
-      AND published_at >= NOW() - INTERVAL '7 days'
-    ORDER BY views DESC, published_at DESC
-    LIMIT ${limit}
-  `
-  return rows as Post[]
+  const ranked = await getScoredTrendingPosts(limit)
+  return ranked as Post[]
 }
 
 const _getRecentPosts = cache(
