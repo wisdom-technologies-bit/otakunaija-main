@@ -53,7 +53,7 @@ export const postViews = pgTable(
     deviceId: text('device_id').notNull(),
     viewedAt: timestamp('viewed_at').defaultNow(),
   },
-  (table) => [unique('post_views_post_device_unique').on(table.postId, table.deviceId)],
+  (table) => [index('post_views_post_viewed_at_idx').on(table.postId, table.viewedAt), index('post_views_viewed_at_idx').on(table.viewedAt)],
 )
 
 export const episodeViews = pgTable(

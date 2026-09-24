@@ -731,8 +731,8 @@ export async function recordPostView(postId: number, deviceId: string) {
       .values({
         postId,
         deviceId,
+        viewedAt: new Date(),
       })
-      .onConflictDoNothing()
 
     // Increment post view count
     // This is a simplified approach - in production with actual posts table this would be more complex

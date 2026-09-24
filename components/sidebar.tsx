@@ -1,6 +1,7 @@
 import Link from "next/link"
-import { ArrowRight, Flame, Clock, Vote } from "lucide-react"
+import { ArrowRight, Flame, Clock, Vote, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { CATEGORIES, type Post } from "@/lib/posts"
+import type { TrendingPost } from "@/lib/trending"
 import { PostCard } from "@/components/post-card"
 import { NewsletterForm } from "@/components/newsletter-form"
 import { AdSlot } from "@/components/ad-slot"
@@ -8,7 +9,7 @@ import { PollPlacement } from "@/components/poll-placement"
 
 type SidebarProps = {
   recent: Post[]
-  trending: Post[]
+  trending: TrendingPost[]
   showAnnotationPanel?: boolean
   showCommunityPoll?: boolean
   showPollsLink?: boolean
@@ -69,9 +70,26 @@ export async function Sidebar({
                 >
                   {p.title}
                 </Link>
-                <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {p.category}
-                </p>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {p.category}
+                  </p>
+                  {p.trendSignals ? (
+                    p.trendSignals.growthRate > 0.2 ? (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-500" title="Trending upward">
+                        <TrendingUp className="size-3" aria-hidden="true" /> Up
+                      </span>
+                    ) : p.trendSignals.growthRate < -0.2 ? (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground" title="Cooling down">
+                        <TrendingDown className="size-3" aria-hidden="true" /> Down
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground" title="Steady trend">
+                        <Minus className="size-3" aria-hidden="true" /> Steady
+                      </span>
+                    )
+                  ) : null}
+                </div>
               </div>
             </div>
           ))}

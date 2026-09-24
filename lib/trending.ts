@@ -108,11 +108,21 @@ const _getTrendingPosts = unstable_cache(
         LEFT JOIN (
           SELECT post_slug, COUNT(*) AS comment_count FROM comments GROUP BY post_slug
         ) c ON c.post_slug = p.slug
-        WHERE p.published_at >= NOW() - INTERVAL '7 days'
-        ORDER BY p.published_at DESC
+        WHERE p.published_at IS NOT NULL
+          AND p.published_at <= NOW()
+          AND (
+            p.published_at >= NOW() - INTERVAL '7 days'
+            OR COALESCE(v.recent_24h, 0) >= 10
+            OR COALESCE(v.previous_24h, 0) >= 20
+          )
+        ORDER BY (COALESCE(v.recent_24h, 0) + COALESCE(v.previous_24h, 0)) DESC, p.published_at DESC
       `
       const scored = scoreTrendingCandidates(rows as Candidate[])
-      return scored.slice(0, limit).map(({ post, signals }) => ({ ...post, trendSignals: signals }))
+      const active = scored.filter(({ post }) =>
+        post.recent24h > 0 || post.previous24h > 0 || post.commentCount > 0,
+      )
+      const ranked = active.length > 0 ? active : scored
+      return ranked.slice(0, limit).map(({ post, signals }) => ({ ...post, trendSignals: signals }))
     } catch {
       return []
     }
