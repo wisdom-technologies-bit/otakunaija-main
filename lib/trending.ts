@@ -71,7 +71,11 @@ export function scoreTrendingCandidates(candidates: Candidate[], now = new Date(
 
       return { post: candidate, signals: { recentActivity, velocity, growthRate, momentum, engagement, recency, finalScore } }
     })
-    .sort((a, b) => b.signals.finalScore - a.signals.finalScore || b.post.published_at.localeCompare(a.post.published_at))
+    .sort(
+      (a, b) =>
+        b.signals.finalScore - a.signals.finalScore ||
+        new Date(b.post.published_at).getTime() - new Date(a.post.published_at).getTime(),
+    )
 }
 
 const _getTrendingPosts = unstable_cache(
