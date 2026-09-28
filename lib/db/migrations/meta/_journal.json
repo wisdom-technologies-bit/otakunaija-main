@@ -8,6 +8,13 @@
       "when": 1785366833909,
       "tag": "0000_add_subtitles_url",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790579558710,
+      "tag": "0001_black_mauler",
+      "breakpoints": true
     }
   ]
 }

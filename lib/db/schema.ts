@@ -23,6 +23,7 @@ export const series = pgTable('series', {
   posterImageUrl: text('poster_image_url'),
   status: text('status').default('ongoing'),
   genre: text('genre'),
+  anilistId: integer('anilist_id').unique(),
   createdAt: timestamp('created_at').defaultNow(),
 })
 
@@ -35,11 +36,12 @@ export const episodes = pgTable('episodes', {
   title: text('title').notNull(),
   slug: text('slug').notNull().unique(),
   synopsis: text('synopsis'),
-  videoPublicId: text('video_public_id').notNull(),
-  videoUrl: text('video_url').notNull(),
+  videoPublicId: text('video_public_id'),
+  videoUrl: text('video_url'),
   thumbnailUrl: text('thumbnail_url').notNull(),
   durationSeconds: integer('duration_seconds'),
   subtitlesUrl: text('subtitles_url'),
+  playId: text('play_id').unique(),
   publishedAt: timestamp('published_at').defaultNow(),
   viewCount: integer('view_count').default(0),
   totalWatchMinutes: integer('total_watch_minutes').default(0),
