@@ -2,21 +2,75 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Play } from 'lucide-react'
-import Plyr from 'plyr'
+import { Loader2, Play } from 'lucide-react'
+import * as PlyrModule from 'plyr'
+
+const Plyr = PlyrModule.default
 import 'plyr/dist/plyr.css'
 
 interface VideoPlayerProps {
-  videoUrl: string
+  videoUrl: string | null
   thumbnailUrl: string
   title: string
   subtitlesUrl?: string | null
+  playId?: string | null
 }
 
-export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: VideoPlayerProps) {
+interface ResolvedPlayback {
+  streamUrl: string
+  subtitleUrl: string | null
+}
+
+const PLAY_RESOLVE_BASE_URL = 'https://play.otakunaija.name.ng'
+
+export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playId }: VideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [resolvedPlayback, setResolvedPlayback] = useState<ResolvedPlayback | null>(null)
+  const [isResolving, setIsResolving] = useState(Boolean(playId?.trim()))
+  const [resolveFailed, setResolveFailed] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const playerRef = useRef<Plyr | null>(null)
+
+  useEffect(() => {
+    const normalizedPlayId = playId?.trim()
+    if (!normalizedPlayId) {
+      setIsResolving(false)
+      setResolvedPlayback(null)
+      setResolveFailed(false)
+      return
+    }
+
+    const controller = new AbortController()
+    setIsResolving(true)
+    setResolvedPlayback(null)
+    setResolveFailed(false)
+    setIsPlaying(false)
+
+    fetch(`${PLAY_RESOLVE_BASE_URL}/api/watch/${encodeURIComponent(normalizedPlayId)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Playback resolution failed: ${response.status}`)
+        const data = await response.json()
+        if (typeof data.streamUrl !== 'string' || !data.streamUrl) throw new Error('Missing stream URL')
+        const subtitles = Array.isArray(data.subtitles) ? data.subtitles : []
+        const subtitle = subtitles.find((track: { default?: boolean }) => track.default) ?? subtitles[0]
+        setResolvedPlayback({
+          streamUrl: data.streamUrl,
+          subtitleUrl: typeof subtitle?.url === 'string' ? subtitle.url : null,
+        })
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        console.error('Failed to resolve episode playback', error)
+        setResolveFailed(true)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsResolving(false)
+      })
+
+    return () => controller.abort()
+  }, [playId])
 
   useEffect(() => {
     // Only initialize Plyr when user clicks play
@@ -84,7 +138,28 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: Vid
     setIsPlaying(true)
   }
 
+  const hasPlayId = Boolean(playId?.trim())
+
+  if (hasPlayId && isResolving) {
+    return (
+      <div className="flex aspect-video w-full items-center justify-center bg-black" role="status">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
+      </div>
+    )
+  }
+
+  if (hasPlayId && resolveFailed) {
+    return (
+      <div className="flex aspect-video w-full items-center justify-center bg-black px-6 text-center text-sm text-white">
+        This episode is currently unavailable
+      </div>
+    )
+  }
+
   if (isPlaying) {
+    const sourceUrl = resolvedPlayback?.streamUrl ?? videoUrl
+    const trackUrl = resolvedPlayback?.subtitleUrl ?? subtitlesUrl
+
     return (
       <div className="w-full bg-black">
         <video
@@ -96,11 +171,11 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl }: Vid
           title={title}
           crossOrigin="anonymous"
         >
-          <source src={videoUrl} type="video/mp4" />
-          {subtitlesUrl && (
+          <source src={sourceUrl ?? undefined} type="video/mp4" />
+          {trackUrl && (
             <track
               kind="captions"
-              src={subtitlesUrl}
+              src={trackUrl ?? undefined}
               srcLang="en"
               label="English"
               default

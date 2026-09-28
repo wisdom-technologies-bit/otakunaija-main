@@ -209,6 +209,7 @@ export default async function WatchPage({ params }: Props) {
                 thumbnailUrl={episode.thumbnailUrl}
                 title={episode.title}
                 subtitlesUrl={episode.subtitlesUrl}
+                playId={episode.playId}
               />
             </div>
 
