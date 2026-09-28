@@ -67,7 +67,9 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
         const subtitles = Array.isArray(data.subtitles) ? data.subtitles : []
         const subtitle = subtitles.find((track: { default?: boolean }) => track.default) ?? subtitles[0]
         setResolvedPlayback({
-          streamUrl: data.streamUrl,
+          streamUrl: data.streamUrl.startsWith('http')
+            ? data.streamUrl
+            : `${PLAY_RESOLVE_BASE_URL}${data.streamUrl}`,
           subtitleUrl: typeof subtitle?.url === 'string' ? subtitle.url : null,
           type: typeof data.type === 'string' ? data.type : 'mp4',
         })
