@@ -75,11 +75,11 @@ export async function Sidebar({
                     {p.category}
                   </p>
                   {p.trendSignals ? (
-                    p.trendSignals.growthRate > 0.2 ? (
+                    p.trendSignals.growthRate > 0.05 ? (
                       <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-500" title="Trending upward">
                         <TrendingUp className="size-3" aria-hidden="true" /> Up
                       </span>
-                    ) : p.trendSignals.growthRate < -0.2 ? (
+                    ) : p.trendSignals.growthRate < -0.05 ? (
                       <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground" title="Cooling down">
                         <TrendingDown className="size-3" aria-hidden="true" /> Down
                       </span>

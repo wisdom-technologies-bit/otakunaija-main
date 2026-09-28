@@ -1,6 +1,7 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { revalidateTag } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { recordPostView, recordEpisodeView } from '@/lib/db/queries'
 import { trackPollView as recordPollView } from '@/lib/db/queries/polls'
@@ -34,6 +35,7 @@ export async function trackPostView(postId: number) {
   try {
     const deviceId = await getOrCreateDeviceId()
     await recordPostView(postId, deviceId)
+    revalidateTag('blog-trending', 'max')
   } catch (err) {
     console.error('Failed to track post view:', err)
   }
