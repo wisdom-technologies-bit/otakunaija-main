@@ -66,11 +66,16 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
         if (typeof data.streamUrl !== 'string' || !data.streamUrl) throw new Error('Missing stream URL')
         const subtitles = Array.isArray(data.subtitles) ? data.subtitles : []
         const subtitle = subtitles.find((track: { default?: boolean }) => track.default) ?? subtitles[0]
+        const rawSubtitleUrl = typeof subtitle?.url === 'string' ? subtitle.url : null
         setResolvedPlayback({
           streamUrl: data.streamUrl.startsWith('http')
             ? data.streamUrl
             : `${PLAY_RESOLVE_BASE_URL}${data.streamUrl}`,
-          subtitleUrl: typeof subtitle?.url === 'string' ? subtitle.url : null,
+          subtitleUrl: rawSubtitleUrl
+            ? rawSubtitleUrl.startsWith('http')
+              ? rawSubtitleUrl
+              : `${PLAY_RESOLVE_BASE_URL}${rawSubtitleUrl}`
+            : null,
           type: typeof data.type === 'string' ? data.type : 'mp4',
         })
       })
