@@ -39,6 +39,15 @@ async function resolveCreator(studioName: string | null) {
   }
 }
 
+function mapStatus(rawStatus: unknown): string {
+  if (typeof rawStatus !== 'string') return 'ongoing'
+  const normalized = rawStatus.trim().toLowerCase()
+  if (normalized === 'currently airing') return 'ongoing'
+  if (normalized === 'finished airing') return 'completed'
+  if (normalized === 'not yet aired') return 'ongoing'
+  return 'ongoing'
+}
+
 export async function POST(request: Request) {
   if (!hasValidPlayApiKey(request)) return unauthorizedResponse()
 
@@ -67,7 +76,7 @@ export async function POST(request: Request) {
       synopsis: body.description ?? null,
       coverImageUrl: body.bannerUrl ?? body.coverUrl ?? null,
       posterImageUrl: body.posterUrl ?? body.coverUrl ?? null,
-      status: body.status ?? 'ongoing',
+      status: mapStatus(body.status),
       genre: genres,
       anilistId: body.anilistId,
     }
