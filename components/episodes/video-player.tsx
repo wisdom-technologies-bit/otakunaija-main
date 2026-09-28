@@ -19,6 +19,15 @@ interface VideoPlayerProps {
 interface ResolvedPlayback {
   streamUrl: string
   subtitleUrl: string | null
+  type: string
+}
+
+function isHlsStream(url: string, type: string): boolean {
+  try {
+    return type === 'hls' || /\.m3u8$/i.test(new URL(url, window.location.origin).pathname)
+  } catch {
+    return type === 'hls' || /\.m3u8(?:$|[?#])/i.test(url)
+  }
 }
 
 const PLAY_RESOLVE_BASE_URL = 'https://play.otakunaija.name.ng'
@@ -30,6 +39,8 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const [resolveFailed, setResolveFailed] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const playerRef = useRef<Plyr | null>(null)
+  const hlsInstanceRef = useRef<import('hls.js').default | null>(null)
+  const [hlsMode, setHlsMode] = useState<'pending' | 'native' | 'hls' | 'fallback'>('pending')
 
   useEffect(() => {
     const normalizedPlayId = playId?.trim()
@@ -58,6 +69,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
         setResolvedPlayback({
           streamUrl: data.streamUrl,
           subtitleUrl: typeof subtitle?.url === 'string' ? subtitle.url : null,
+          type: typeof data.type === 'string' ? data.type : 'mp4',
         })
       })
       .catch((error: unknown) => {
@@ -71,6 +83,57 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
     return () => controller.abort()
   }, [playId])
+
+  const sourceUrl = resolvedPlayback?.streamUrl ?? videoUrl
+  const sourceType = resolvedPlayback?.type ?? 'mp4'
+  const sourceIsHls = Boolean(sourceUrl && isHlsStream(sourceUrl, sourceType))
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!isPlaying || !sourceUrl || !sourceIsHls || !videoRef.current) {
+      hlsInstanceRef.current?.destroy()
+      hlsInstanceRef.current = null
+      setHlsMode(sourceIsHls ? 'pending' : 'native')
+      return
+    }
+
+    const video = videoRef.current
+    const nativeHlsSupported = video.canPlayType('application/vnd.apple.mpegurl') !== ''
+    if (nativeHlsSupported) {
+      setHlsMode('native')
+      return () => {
+        hlsInstanceRef.current?.destroy()
+        hlsInstanceRef.current = null
+      }
+    }
+
+    setHlsMode('pending')
+    import('hls.js').then(({ default: Hls }) => {
+      if (cancelled) return
+      if (!Hls.isSupported()) {
+        setHlsMode('fallback')
+        return
+      }
+
+      const hls = new Hls()
+      hlsInstanceRef.current = hls
+      hls.loadSource(sourceUrl)
+      hls.attachMedia(video)
+      setHlsMode('hls')
+    }).catch((error) => {
+      if (!cancelled) {
+        console.error('Failed to initialize HLS playback', error)
+        setHlsMode('fallback')
+      }
+    })
+
+    return () => {
+      cancelled = true
+      hlsInstanceRef.current?.destroy()
+      hlsInstanceRef.current = null
+    }
+  }, [isPlaying, sourceIsHls, sourceUrl])
 
   useEffect(() => {
     // Only initialize Plyr when user clicks play
@@ -157,8 +220,8 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   }
 
   if (isPlaying) {
-    const sourceUrl = resolvedPlayback?.streamUrl ?? videoUrl
     const trackUrl = resolvedPlayback?.subtitleUrl ?? subtitlesUrl
+    const shouldRenderSource = !sourceIsHls || hlsMode === 'native' || hlsMode === 'fallback'
 
     return (
       <div className="w-full bg-black">
@@ -171,7 +234,12 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
           title={title}
           crossOrigin="anonymous"
         >
-          <source src={sourceUrl ?? undefined} type="video/mp4" />
+          {shouldRenderSource && (
+            <source
+              src={sourceUrl ?? undefined}
+              type={sourceIsHls ? undefined : 'video/mp4'}
+            />
+          )}
           {trackUrl && (
             <track
               kind="captions"
