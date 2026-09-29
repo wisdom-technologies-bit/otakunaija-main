@@ -4,13 +4,24 @@ import { Flame } from 'lucide-react'
 interface EpisodesFilterPillsProps {
   genres: string[]
   activeGenre?: string
+  activeStatus?: string
+  basePath?: string
 }
 
-export function EpisodesFilterPills({ genres, activeGenre }: EpisodesFilterPillsProps) {
+export function EpisodesFilterPills({ genres, activeGenre, activeStatus, basePath = '/episodes' }: EpisodesFilterPillsProps) {
+  const filterHref = (params: Record<string, string | undefined>) => {
+    const search = new URLSearchParams()
+    if (activeStatus) search.set('status', activeStatus)
+    if (activeGenre) search.set('genre', activeGenre)
+    Object.entries(params).forEach(([key, value]) => value ? search.set(key, value) : search.delete(key))
+    const query = search.toString()
+    return `${basePath}${query ? `?${query}` : ''}`
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Link
-        href="/episodes"
+        href={basePath}
         className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
           !activeGenre
             ? 'border border-primary bg-primary/10 text-primary'
@@ -22,7 +33,7 @@ export function EpisodesFilterPills({ genres, activeGenre }: EpisodesFilterPills
       {genres.slice(0, 4).map((g) => (
         <Link
           key={g}
-          href={`/episodes?genre=${encodeURIComponent(g)}`}
+          href={filterHref({ genre: g })}
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
             activeGenre === g
               ? 'border border-primary bg-primary/10 text-primary'
@@ -34,7 +45,7 @@ export function EpisodesFilterPills({ genres, activeGenre }: EpisodesFilterPills
       ))}
       {genres.length > 4 && (
         <Link
-          href="/episodes/browse"
+          href={basePath}
           className="rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-foreground/80 hover:border-primary hover:text-primary"
         >
           More
