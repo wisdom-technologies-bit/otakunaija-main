@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const title = typeof body.title === 'string' && body.title.trim() ? body.title : `Episode ${body.episodeNumber}`
     const thumbnailUrl = typeof body.thumbnailUrl === 'string' && body.thumbnailUrl.trim()
       ? body.thumbnailUrl
-      : seriesRow.coverImageUrl?.trim() || 'https://placehold.co/400x225?text=No+Thumbnail'
+      : seriesRow.posterImageUrl?.trim() || 'https://placehold.co/400x225?text=No+Thumbnail'
     const slug = await uniqueSlug(title, episodes, episodes.slug)
     const values: any = {
       seriesId: seriesRow.id,
