@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { db } from './index'
 import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
-import { eq, asc, desc, and, lt, gt, sql } from 'drizzle-orm'
+import { eq, asc, desc, and, lt, gt, sql, count } from 'drizzle-orm'
 
 // Get all series with all their episodes, for sitemap generation
 const _getAllSeriesWithEpisodesForSitemap = cache(
@@ -310,6 +310,41 @@ const _getAllUsedGenres = cache(
 
 export async function getAllUsedGenres() {
   return _getAllUsedGenres()
+}
+
+export async function getPaginatedSeries({
+  page = 1,
+  pageSize = 24,
+  status,
+  genre,
+  sort = 'newest',
+}: {
+  page?: number
+  pageSize?: number
+  status?: string
+  genre?: string
+  sort?: 'newest' | 'title'
+}) {
+  const filters = []
+  if (status && ['ongoing', 'completed', 'upcoming'].includes(status)) filters.push(eq(series.status, status))
+  if (genre) filters.push(sql`(',' || COALESCE(${series.genre}, '') || ',') ILIKE ${`%,${genre},%`}`)
+  const where = filters.length ? and(...filters) : undefined
+  const offset = Math.max(0, page - 1) * pageSize
+  const [items, [{ total }]] = await Promise.all([
+    db.select({ series, creator: creators }).from(series).leftJoin(creators, eq(series.creatorId, creators.id)).where(where)
+      .orderBy(sort === 'title' ? asc(series.title) : desc(series.createdAt)).limit(pageSize).offset(offset),
+    db.select({ total: count() }).from(series).where(where),
+  ])
+  return { items, total: Number(total), page, pageSize, totalPages: Math.max(1, Math.ceil(Number(total) / pageSize)) }
+}
+
+export async function getPaginatedNewEpisodes(page = 1, pageSize = 24) {
+  const offset = Math.max(0, page - 1) * pageSize
+  const [items, [{ total }]] = await Promise.all([
+    db.select({ episode: episodes, series, creator: creators }).from(episodes).leftJoin(series, eq(episodes.seriesId, series.id)).leftJoin(creators, eq(series.creatorId, creators.id)).orderBy(desc(episodes.publishedAt)).limit(pageSize).offset(offset),
+    db.select({ total: count() }).from(episodes),
+  ])
+  return { items, total: Number(total), page, pageSize, totalPages: Math.max(1, Math.ceil(Number(total) / pageSize)) }
 }
 
 // Search episodes and series by query
