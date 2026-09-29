@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     }
 
     const poster = media.coverImage?.extraLarge ?? row.posterImageUrl ?? null
-    const banner = media.bannerImage ?? row.coverImageUrl ?? null
+    const banner = media.bannerImage ?? poster ?? row.coverImageUrl ?? null
 
     await db
       .update(series)

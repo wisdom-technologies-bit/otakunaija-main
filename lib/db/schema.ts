@@ -24,6 +24,7 @@ export const series = pgTable('series', {
   status: text('status').default('ongoing'),
   genre: text('genre'),
   anilistId: integer('anilist_id').unique(),
+  titleChecked: boolean('title_checked').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow(),
 })
 
