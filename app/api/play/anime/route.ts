@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/index'
 import { creators, series } from '@/lib/db/schema'
 import { hasValidPlayApiKey, unauthorizedResponse } from '@/lib/play-auth'
@@ -65,6 +65,24 @@ export async function POST(request: Request) {
 
     const existing = await db.select({ id: series.id }).from(series).where(eq(series.anilistId, body.anilistId)).limit(1)
     if (existing[0]) return Response.json({ seriesId: existing[0].id })
+
+    const titleMatch = await db
+      .select({ id: series.id })
+      .from(series)
+      .where(sql`${isNull(series.anilistId)} AND LOWER(${series.title}) = LOWER(${body.title})`)
+      .limit(1)
+
+    if (titleMatch[0]) {
+      try {
+        await db.update(series).set({ anilistId: body.anilistId }).where(eq(series.id, titleMatch[0].id))
+        return Response.json({ seriesId: titleMatch[0].id })
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error
+        const raced = await db.select({ id: series.id }).from(series).where(eq(series.anilistId, body.anilistId)).limit(1)
+        if (!raced[0]) throw error
+        return Response.json({ seriesId: raced[0].id })
+      }
+    }
 
     const creatorId = await resolveCreator(body.studioName ?? null)
     const slug = await uniqueSlug(body.title, series, series.slug)

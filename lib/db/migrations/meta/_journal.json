@@ -15,6 +15,13 @@
       "when": 1790579558710,
       "tag": "0001_black_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790658881427,
+      "tag": "0002_colossal_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

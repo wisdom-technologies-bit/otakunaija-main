@@ -1,0 +1,1 @@
+ALTER TABLE "series" ADD COLUMN "title_checked" boolean DEFAULT false NOT NULL;
