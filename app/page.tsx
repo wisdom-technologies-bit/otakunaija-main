@@ -1,15 +1,16 @@
 import Link from "next/link"
-import { ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+import { hpDisplay } from "./home-fonts"
+import "./home-premium.css"
+import { HomeHero } from "@/components/home/home-hero"
+import { HomeIntroStrip } from "@/components/home/home-intro-strip"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { PostCard } from "@/components/post-card"
 import { Sidebar } from "@/components/sidebar"
 import { AdSlot } from "@/components/ad-slot"
-import { NewsletterForm } from "@/components/newsletter-form"
 import { Button } from "@/components/ui/button"
 import { getFeaturedPosts, getRecentPosts, getTrendingPosts, CATEGORIES } from "@/lib/posts"
-import { InfinitePostList } from "@/components/infinite-post-list"
-import { HeroCarousel } from "@/components/hero-carousel"
 import { HomepageLatestSection } from "@/components/homepage-latest-section"
 
 export const dynamic = "force-dynamic"
@@ -21,56 +22,21 @@ export default async function HomePage() {
     getTrendingPosts(5),
   ])
 
-  const heroSlides = featured.slice(0, 4)
-  const secondaryFeatured = featured.slice(4)
-
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
 
-      <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 md:px-6">
-          <div className="py-4">
+      <main className={`${hpDisplay.variable} home-premium flex-1`}>
+        <div className="py-4">
+          <div className="mx-auto max-w-7xl px-4 md:px-6">
             <AdSlot slot="header" />
           </div>
+        </div>
 
-          {/* Hero */}
-          <section className="py-8 md:py-12">
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <div className="flex items-center gap-2 text-primary mb-4">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">Featured Story</span>
-                </div>
-                <HeroCarousel posts={heroSlides} />
-              </div>
+        <HomeHero posts={featured.slice(0, 4)} />
+        <HomeIntroStrip />
 
-              <div className="rounded-xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-6 md:p-8 flex flex-col justify-between">
-                <div>
-                  <h1 className="font-display text-2xl md:text-3xl font-bold leading-tight text-balance">
-                    Anime News, Reviews &amp; Guides for <span className="text-primary">Nigerian Otakus</span>
-                  </h1>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    Reviews, news, episode breakdowns, and recommendations — written by Nigerian otakus, for the global
-                    anime community.
-                  </p>
-                </div>
-                <div className="mt-6">
-                  <NewsletterForm variant="hero" />
-                  <p className="mt-2 text-xs text-muted-foreground">Free. Unsubscribe anytime.</p>
-                </div>
-              </div>
-            </div>
-
-            {secondaryFeatured.length > 0 ? (
-              <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                {secondaryFeatured.map((p) => (
-                  <PostCard key={p.id} post={p} />
-                ))}
-              </div>
-            ) : null}
-          </section>
-
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
           {/* Categories strip */}
           <section className="py-6 border-y border-border">
             <div className="flex flex-wrap items-center gap-3">

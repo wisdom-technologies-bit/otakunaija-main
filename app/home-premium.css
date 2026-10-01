@@ -110,6 +110,70 @@
   }
 }
 
+.home-premium .home-premium-hero {
+  height: clamp(520px, 78svh, 820px);
+  isolation: isolate;
+  touch-action: pan-y;
+}
+
+.home-premium .home-premium-hero-slide {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 700ms var(--hp-ease);
+}
+
+.home-premium .home-premium-hero-slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.home-premium .home-premium-hero-image {
+  transform: scale(1);
+  transition: transform 7s linear;
+}
+
+.home-premium .home-premium-hero-slide.is-active .home-premium-hero-image {
+  transform: scale(1.06);
+}
+
+.home-premium .home-premium-hero-progress {
+  width: 4rem;
+  height: 1.5rem;
+  padding-block: 0.65rem;
+}
+
+.home-premium .home-premium-hero-progress span {
+  display: block;
+  height: 2px;
+  overflow: hidden;
+  background: oklch(1 0 0 / 0.35);
+}
+
+.home-premium .home-premium-hero-progress span::after {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--hp-accent);
+  content: "";
+}
+
+.home-premium .home-premium-hero-progress[aria-current="true"] span::after {
+  width: 100%;
+  transition: width 7s linear;
+}
+
+.home-premium .home-premium-hero-counter { font-size: 1.25rem; letter-spacing: -0.03em; }
+.home-premium .home-premium-hero-arrow { display: grid; place-items: center; border: 1px solid oklch(1 0 0 / 0.22); border-radius: 999px; color: white; width: 2.5rem; height: 2.5rem; background: oklch(0.05 0.01 280 / 0.28); backdrop-filter: blur(0.5rem); }
+.home-premium .home-premium-hero-arrow svg { width: 1rem; height: 1rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-premium .home-premium-hero-slide,
+  .home-premium .home-premium-hero-image,
+  .home-premium .home-premium-hero-progress span::after {
+    transition: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-premium *,
   .home-premium *::before,
