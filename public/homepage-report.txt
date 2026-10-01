@@ -1,0 +1,294 @@
+OTAKUNAIJA HOMEPAGE AUDIT
+Audit basis: source code in this repository, read-only inspection. No existing files were modified. The homepage route is / and is rendered by Next.js App Router.
+
+1. FILE MAP
+
+Route and root composition
+- app/page.tsx — homepage route; fetches featured, recent, and trending posts, then renders the shared header/footer plus homepage sections. Homepage-only. Imported by Next.js routing; imports components and lib/posts listed below. No other file imports the route module.
+- app/layout.tsx — root layout, metadata, fonts, analytics/Monetag scripts, theme provider, mobile bottom navigation, toaster, and global stylesheet. Shared with other pages. Imports every route through the App Router and imports components/ui/globals.css listed below.
+- app/globals.css — global Tailwind v4 imports, design tokens, dark-mode tokens, base rules, animations, typography utilities, and mobile bottom-nav body padding. Shared with other pages. Imported by app/layout.tsx.
+
+Homepage section components
+- components/hero-carousel.tsx — client carousel for the featured story; cycles every 6 seconds and renders PostCard variant=featured. Homepage-only in current usage. Imported by app/page.tsx.
+- components/homepage-latest-section.tsx — client wrapper for category filtering and the infinite post list. Homepage-only. Imported by app/page.tsx.
+- components/infinite-post-list.tsx — client-side infinite loader; renders desktop PostCard grid and mobile compact/trending rows. Shared component by implementation, but currently imported only by components/homepage-latest-section.tsx.
+- components/category-filter-pills.tsx — client All/category pill selector. Shared component by implementation, but currently imported only by components/homepage-latest-section.tsx.
+- components/mobile-trending-row.tsx — compact mobile article row used by InfinitePostList. Homepage-only in current usage. Imported by components/infinite-post-list.tsx.
+- components/post-card.tsx — article card in default, featured, and compact variants; owns image, badge, title, excerpt, author/date/read-time/view metadata. Shared with other pages: imported by homepage, sidebar, hero carousel, and other article/episode-adjacent components in the repository.
+- components/sidebar.tsx — homepage right rail: newsletter, sidebar ad, polls link, trending, recent posts, categories, and optional article-only blocks. Shared with other pages: imported by homepage and other pages.
+- components/newsletter-form.tsx — client newsletter form with card, hero, and inline variants. Shared with other pages; imported by homepage/sidebar and other routes/components.
+- components/ad-slot.tsx — client ad container and Monetag zone loader. Shared with other pages; imported by homepage, sidebar, footer, and article pages.
+- components/site-footer.tsx — shared footer, footer ad, navigation/category links, badges, and RSS links. Shared with other pages; imported by app/page.tsx and other routes.
+
+Shared boundary components used above
+- components/site-header.tsx — shared sticky header and navigation; explicitly outside this audit except for the boundary notes in section 9. Shared with other pages. Imported by app/page.tsx and other layouts/routes.
+- components/mobile-bottom-nav.tsx — shared fixed mobile navigation, hidden when footer is visible. Shared with other pages. Imported by app/layout.tsx.
+- components/theme-provider.tsx — next-themes provider using system default. Shared with other pages. Imported by app/layout.tsx.
+- components/HideV0Badge.tsx — global Vercel/v0 badge suppression. Shared with other pages. Imported by app/layout.tsx.
+- components/ui/button.tsx — shared CVA button primitive and focus styles. Shared with other pages. Imported by homepage, newsletter, header, and many routes.
+- components/ui/input.tsx — shared input primitive and focus styles. Shared with other pages. Imported by newsletter/search forms and other routes.
+- components/ui/sonner.tsx — shared toast renderer. Shared with other pages. Imported by app/layout.tsx.
+
+Data, actions, and helpers
+- lib/posts.ts — Post type, category constants, cover-image fallback, featured/recent/all/post queries, date formatting, and cache configuration. Shared with other pages. Imported by homepage components, header/footer/sidebar, blog routes, and admin code.
+- lib/trending.ts — trending candidate SQL, score calculation, 5-minute cache, and trend signals. Shared with other pages. Imported by lib/posts.ts and other analytics/article code.
+- lib/db.ts — Neon/Drizzle SQL database client used by the post/trending query modules. Shared with other pages. Imported by lib/posts.ts and lib/trending.ts.
+- lib/utils.ts — cn class-name helper used by PostCard, AdSlot, NewsletterForm, and UI primitives. Shared with other pages.
+- app/actions/load-more-posts.ts — server action used by InfinitePostList to fetch the next 10 posts. Shared by implementation but currently homepage-driven; imported by components/infinite-post-list.tsx.
+- app/actions/newsletter.ts — server action used to subscribe an email from NewsletterForm. Shared with other pages; imported by components/newsletter-form.tsx.
+
+Directly relevant shared styling/runtime dependencies
+- next/font/google in app/layout.tsx — loads Inter and Outfit with display=swap; shared.
+- next-themes — applies system/light/dark class state through ThemeProvider; shared.
+- @vercel/analytics/next and @vercel/speed-insights/next — analytics/performance components in the root layout; shared.
+- Google Analytics, Monetag vignette, and Simple Analytics scripts in app/layout.tsx — site-wide third-party scripts; shared.
+
+2. PAGE STRUCTURE, TOP TO BOTTOM
+
+Pre-content boundary
+- SiteHeader (components/site-header.tsx) sits first inside the page flex column. It is shared and intentionally not audited in depth here. On the homepage it is followed immediately by the main content. Its exact boundary behavior is described in section 9.
+
+Main wrapper
+- app/page.tsx renders <main className="flex-1"> containing a centered max-w-7xl container with px-4 md:px-6. The homepage itself declares dynamic="force-dynamic".
+
+2.1 Header ad slot
+- Component: AdSlot slot="header".
+- Content: Monetag zone if NEXT_PUBLIC_MONETAG_ZONE_HEADER exists; otherwise nothing renders.
+- Quantity: one slot.
+- Layout: wrapper py-4; AdSlot nominal height h-24 (96px) and md:h-28 (112px), full width. The component additionally applies md:hidden, and its effect collapses desktop header ads, so the desktop header slot is effectively suppressed. Mobile gets the nominal 96px slot only until content is detected or the 5-second collapse timeout fires.
+- Breakpoints: same container at mobile/tablet/desktop; desktop hidden/collapsed by component behavior.
+
+2.2 Hero / featured area
+- Component: app/page.tsx plus HeroCarousel and PostCard.
+- Data: getFeaturedPosts(4), ordered by published_at DESC, cached for 3600 seconds. heroSlides is featured.slice(0, 4), so normally up to 4 slides. secondaryFeatured is featured.slice(4), always empty when the current fetch limit is 4; the secondary card grid is therefore currently dead for normal execution.
+- Layout: section py-8 md:py-12. Inside, grid gap-6 lg:grid-cols-3. The carousel occupies lg:col-span-2. The right newsletter/brand panel occupies one column, with rounded-xl border, gradient, and p-6 md:p-8. At mobile and tablet below lg, the two columns stack in source order.
+- HeroCarousel: one active featured PostCard at a time; 6-second interval; dot buttons below with mt-4 and gap-2. The featured card is horizontal at md and above, with image md:w-1/2; below md it is stacked.
+- Right panel: h1 is the page’s only explicit homepage H1, with text “Anime News, Reviews & Guides for Nigerian Otakus”; p copy and NewsletterForm variant=hero. At all widths the form is column-oriented by default and switches to row at sm.
+- If there are no featured posts, HeroCarousel returns null but the right panel remains. There is no hero loading or error UI.
+
+2.3 Secondary featured cards
+- Component: PostCard default variant in app/page.tsx.
+- Data: featured.slice(4), max zero with current getFeaturedPosts(4) call.
+- Layout if data ever exists: mt-6, grid gap-6, sm:grid-cols-2; one column mobile, two columns at sm and above.
+
+2.4 Category strip
+- Component: inline section in app/page.tsx.
+- Content: “Browse by genre:” and CATEGORIES = Shonen, Romance, Action, Guides. Hardcoded category labels, dynamic links to /blog?category=...
+- Layout: py-6 border-y border-border; flex flex-wrap items-center gap-3 at every breakpoint. Pills are rounded-full, border, bg-card, px-3 py-1, text-sm.
+
+2.5 Latest articles plus sidebar
+- Component: app/page.tsx, PostCard, Sidebar.
+- Layout: section py-10 md:py-14; grid gap-10 lg:grid-cols-[1fr_320px]. Below lg it is one column with the sidebar after the main article column; at lg+ the main column and fixed 320px sidebar sit side by side.
+
+2.5a Latest article heading and first grid
+- Data: recent from getRecentPosts(6), ordered published_at DESC. The first four are rendered immediately using recent.slice(0, 4).
+- Layout: heading row mb-6; heading block plus View all ghost Button. Article grid gap-6 sm:grid-cols-2, so one column mobile and two columns tablet/desktop.
+- Each item: PostCard default, up to 4 cards. Heading is H2 “Latest articles”; supporting copy is “Fresh takes on what’s airing now.”
+
+2.5b Main-column footer ad
+- Component: AdSlot slot="footer" placed after the initial 4-card grid.
+- Layout: my-10 around the slot; nominal h-24 md:h-28. Despite the name, this is an in-main-column ad, not the site footer ad.
+
+2.5c Filtered/infinite latest list
+- Component: HomepageLatestSection -> CategoryFilterPills + InfinitePostList.
+- Initial data: recent.slice(4), normally 2 posts because recent fetch limit is 6. initialOffset is recent.length, normally 6. trendingIds contains the IDs returned by trending.
+- CategoryFilterPills: All plus four category buttons. Selecting a category resets the keyed InfinitePostList to no initial posts and offset 0; All restores the two initial posts and offset 6.
+- InfinitePostList: requests 10 additional records at a time through loadMorePosts server action. Desktop/tablet at sm+ use a two-column grid gap-6. Mobile uses full PostCard for posts whose ID is in trendingIds, otherwise MobileTrendingRow; rows have py-4 and border-b border-border/40. Loading indicator is a centered py-8 Loader2 spinner. When exhausted, a centered py-8 end message appears. There is no explicit empty-state message when a filtered category returns zero posts.
+- IntersectionObserver watches a sentinel with threshold 1 and triggers loading when visible. At the end there is no pagination control.
+
+2.5d Sidebar
+- Component: Sidebar, sticky at lg with lg:sticky lg:top-20 lg:self-start.
+- Order: NewsletterForm card; sidebar AdSlot; Community polls link; Trending Now; Recent Posts; Categories; optional article-only PollPlacement and annotation panel; second sidebar AdSlot. On the homepage showPollsLink=true, while showCommunityPoll/showAnnotationPanel are false.
+- Newsletter card: one form, rounded-xl border, gradient, p-5.
+- Sidebar ad: one slot before the polls link. It is h-64 (256px) when active. The second sidebar slot exists in component code but is rendered on the homepage too because it is unconditional; it follows Categories and is another h-64 slot. Its zone contract is the same NEXT_PUBLIC_MONETAG_ZONE_SIDEBAR.
+- Community polls link: one block, rounded-xl, primary/30 border, primary/10 background, p-5; static copy and /polls link.
+- Trending Now: up to 5 items from the trending query; rounded-xl border bg-card p-5; numbered 01–05 list with divider lines. Trend signals show Up, Down, or Steady where present.
+- Recent Posts: up to 4 items, recent.slice(0,4), compact PostCard rows in a rounded-xl p-5 card.
+- Categories: four links in rounded pills inside a rounded-xl p-5 card.
+
+2.6 Site footer
+- Component: SiteFooter.
+- Layout: footer mt-16 border-t bg-card/40; centered max-w-7xl px-4 md:px-6. Footer ad padding py-8, then content grid gap-10 py-12 md:grid-cols-4. At mobile one column; at md four columns with brand spanning two. Bottom legal row is border-t py-6; links/badges wrap on mobile and are row-aligned on md. RSS links are separated by another border.
+- Content: footer AdSlot slot="footer"; logo/about copy; Explore links; four category links; copyright; Privacy, Terms, Contact; Google Preferred Source images; Simple Analytics remote badge; blog and episodes RSS links.
+
+2.7 Global mobile bottom navigation
+- Component: MobileBottomNav from app/layout.tsx, outside the page’s main flex column but visible on homepage below md.
+- Fixed bottom nav uses grid-cols-5, 52px-ish content, backdrop blur and border. It hides with opacity/pointer-events when the footer intersects 5% of viewport. Body receives padding-bottom: 3.75rem under 768px in globals.css. More menu is a fixed panel above the bar.
+
+3. DATA AND CONTENT
+
+Homepage fetch sequence
+- app/page.tsx runs Promise.all([getFeaturedPosts(4), getRecentPosts(6), getTrendingPosts(5)]).
+- getFeaturedPosts: lib/posts.ts queries posts where featured=true, ORDER BY published_at DESC, LIMIT 4. It uses React cache plus unstable_cache with revalidate 3600 and tag blog-featured. Cache key array is ['featured-posts']; the limit is passed as a function argument.
+- getRecentPosts: queries all posts ORDER BY published_at DESC, LIMIT 6 OFFSET 0. With BLOG_RENDER_MODE=dynamic it runs directly; otherwise React cache plus unstable_cache revalidate 1800, tag blog-recent. Homepage route still declares force-dynamic, but the helper’s own cache path is controlled separately.
+- getTrendingPosts: lib/posts.ts delegates to lib/trending.ts, not the unused local _getTrendingPosts in lib/posts.ts. lib/trending.ts uses unstable_cache revalidate 300. It gathers posts published within 7 days or with recent view activity, joins post_views and comments, computes weighted recency/activity/momentum/engagement signals, sorts by score, and returns up to 5.
+- Infinite loading: app/actions/load-more-posts.ts calls getAllPosts with limit 10 and offset. getAllPosts filters optional exact category and/or ILIKE title/excerpt search, orders by published_at DESC, and uses the all-posts cache for non-dynamic calls with revalidate 1800/tag blog-all.
+
+Fields used by homepage article cards
+- PostCard image: cover_image through getCoverImage; title for alt; category badge; title; excerpt; author; published_at formatted relative (or full date after 7 days); read_time in minutes; featured cards additionally show views.
+- Post type also contains id, slug, content, tags, featured, trending, and created_at, but those are not displayed by the homepage card itself.
+- Sidebar trending uses title, slug, category, and trendSignals. Compact cards use title, category, and cover image. MobileTrendingRow uses cover_image presence, published_at, title, and author.
+
+Fallbacks and states
+- Missing/blank cover_image falls back to /placeholder.svg?height=...&width=...&query=anime%20{category}%20{title}. PostCard always renders an Image with that URL; MobileTrendingRow instead omits the image block entirely when cover_image is blank.
+- Hero with zero featured posts renders no carousel, without a message. No homepage server loading skeleton exists because the route is server-rendered and force-dynamic.
+- Trending SQL catches errors and returns []; sidebar then renders an empty Trending Now card with no explicit empty copy.
+- InfinitePostList catches load errors, logs to console, stops the spinner, and does not display an error message. Empty filtered results produce no empty-state text.
+- Newsletter success/error appears as Sonner toast. The server action is not audited here beyond its use contract.
+- Static content includes hero copy, labels, category names, poll link copy, card headings, end-of-list text, footer copy, and navigation labels. Article titles, images, categories, excerpts, authors, dates, read times, views, and trend statuses are dynamic.
+
+4. DESIGN SYSTEM IN USE
+
+Color tokens
+- globals.css light :root: --background oklch(0.99 0 0); --foreground oklch(0.18 0.01 280); --card oklch(0.97 0 0); --card-foreground oklch(0.18 0.01 280); --popover oklch(1 0 0); --secondary/--muted oklch(0.95 0 0); --muted-foreground oklch(0.5 0.01 280); --border oklch(0.9 0 0); --input oklch(0.93 0 0).
+- Red accent: light --primary, --accent, --ring, --chart-1 all oklch(0.65 0.22 25); --primary-foreground oklch(0.99 0 0). This is the red used by text-primary, bg-primary, borders, active pills, gradients, icons, and hover states.
+- globals.css dark: --background oklch(0.13 0.01 280); --foreground oklch(0.97 0 0); --card/--popover oklch(0.18 0.01 280); --secondary/--muted/input oklch(0.22 0.01 280); --muted-foreground oklch(0.68 0.01 280); --border oklch(0.25 0.01 280); --primary/--accent/--ring/--chart-1 oklch(0.68 0.22 25); --primary-foreground oklch(0.99 0 0).
+- Tailwind semantic tokens map these variables to bg-background, text-foreground, bg-card, text-muted-foreground, border-border, bg-primary, text-primary, etc. There are no literal hex red values in homepage code; the exact accent is represented by OKLCH.
+- Other chart tokens are chart-2 oklch(0.7 0.18 50), chart-3 oklch(0.6 0.15 280), chart-4 oklch(0.65 0.18 200), chart-5 oklch(0.75 0.15 80), not used by the homepage route.
+
+Typography
+- app/layout.tsx loads Inter as --font-inter and Outfit as --font-outfit, both latin and display=swap.
+- Tailwind font-sans maps to Inter; font-display maps to Outfit. Headings and brand marks use font-display. Body defaults to font-sans via body class.
+- Hero H1: font-display text-2xl md:text-3xl font-bold leading-tight text-balance.
+- Hero eyebrow: text-xs font-semibold uppercase tracking-wider.
+- Hero copy: text-sm leading-relaxed.
+- Section H2: font-display text-2xl md:text-3xl font-bold. Sidebar/card headings generally font-display text-base font-semibold; PostCard default title text-lg, featured text-2xl md:text-3xl, compact text-sm.
+- Card metadata: text-xs; category badges text-[11px] font-semibold uppercase tracking-wider; compact category label text-[11px].
+- There is no homepage-specific font-size CSS beyond Tailwind classes.
+
+Spacing, sizing, surfaces
+- Main max width max-w-7xl; horizontal padding px-4 md:px-6.
+- Main vertical rhythm: ad py-4, hero py-8/md:py-12, categories py-6, latest py-10/md:py-14, footer mt-16.
+- Common gaps: gap-2, gap-3, gap-6, gap-10; card padding p-5, hero panel p-6/md:p-8, featured card content md:p-7.
+- Base radius variable --radius: 0.5rem; Tailwind radius-lg is 0.5rem and radius-xl is 0.75rem. Homepage uses rounded-xl cards, rounded-lg compact rows, rounded-md images, rounded-full pills/buttons.
+- Cards use border border-border bg-card and hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5. Many panels use gradients from-card or primary/10. Header/footer shared surfaces use backdrop/opacity behavior outside homepage-specific redesign scope.
+- No custom box-shadow token; shadows are Tailwind utilities such as shadow-lg and UI button shadow-sm/shadow-xs.
+
+Controls
+- Button primitive: rounded-md text-sm font-medium, transition-all, disabled opacity 50%, focus-visible border/ring 3px. Default is bg-primary text-primary-foreground hover:bg-primary/90; ghost has hover bg accent/text. Homepage View all uses ghost plus text-primary/hover:bg-primary/10.
+- Homepage category strip links: rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-foreground/80; hover border-primary/text-primary.
+- Filter pills: rounded-full px-4 py-1.5 text-sm font-medium transition-colors; active bg-primary/text-primary-foreground, inactive border/bg-card/text-foreground/80 with hover border/text primary. Buttons do not add explicit type or aria-pressed.
+- Newsletter inputs use shared Input base: h-9, rounded-md, border, px-3, text-base, shadow-xs, focus-visible border/ring 3px; variants override h-11 or h-12 and backgrounds. Hero button h-12 px-6; card/inline buttons h-11.
+
+Dark/light handling
+- ThemeProvider uses next-themes attribute="class", defaultTheme="system", enableSystem, disableTransitionOnChange. globals.css switches all semantic tokens under .dark. Homepage utilities are token-based, so the same layout supports both modes.
+- Footer uses dark:hidden/block image variants; the homepage cards and hero use tokenized backgrounds. Viewport theme-color is fixed to #1a0d1a, which does not change with mode.
+
+Icons and images
+- Homepage uses lucide-react ArrowRight, Sparkles, Timer, ChartNoAxesColumn, User, Calendar, Flame, Clock, Vote, TrendingUp/Down, Minus, Loader2, plus Hugeicons for newsletter icons.
+- PostCard uses next/image with fill, object-cover, placeholder bg-muted, sizes based on variant, eager/priority only for active hero slide, lazy otherwise. Aspect ratio default is aspect-[16/10]; featured is stacked mobile and auto-height/half-width at md.
+- Hero active image requests getCoverImage(post, 1200, 750); default requests 800x500; compact 200x160; mobile row 200x140. Source URLs can be arbitrary cover_image values or local placeholder.svg query URLs. No explicit blurDataURL or placeholder="blur".
+- SiteHeader and SiteFooter logo use plain img, not next/image; footer badges use next/image/plain remote img as described in their shared components.
+
+5. INTERACTIONS
+
+- HeroCarousel is a client component with activeIndex state and useEffect interval. It auto-advances every 6000ms, wraps around, cleans up the timer, and exposes dot buttons with aria-label. No pause-on-hover, keyboard arrow controls, swipe handling, or reduced-motion branch is implemented.
+- Post cards link to /blog/{slug}. Card and image hover transitions scale the image to 105%; cards transition border/shadow; text changes to primary on hover.
+- Category strip links navigate to /blog?category=... server route. Homepage filter pills are client state; clicking changes active state and remounts InfinitePostList through key. It does not update the URL.
+- Infinite loading uses IntersectionObserver and the server action; it loads 10 records per request until zero or fewer than 10. It has a spinner but no visible failure/retry state. No pagination or load-more button.
+- Sidebar trending links and compact recent posts are normal links. Polls card navigates to /polls.
+- NewsletterForm is client-side; controlled email state, useTransition pending state, disabled submit, spinner, server action, success/error Sonner toast, and reset on success. It does not visibly display inline validation beyond native type=email/required behavior.
+- Sticky elements: SiteHeader is shared sticky top 0; Sidebar is sticky at lg top-20; MobileBottomNav is fixed bottom on mobile and fades near footer. Global html has scroll-behavior:smooth.
+- The notification-style popup near/over the hero is not implemented as a homepage React component in the inspected source. The root layout injects a Monetag vignette script with hardcoded zone 11349102, and AdSlot injects Monetag zone scripts; an observed popup may therefore be third-party ad behavior rather than a local component. No local popup/modal state tied to the hero was found.
+- Client components on the homepage: HeroCarousel, HomepageLatestSection, CategoryFilterPills, InfinitePostList, NewsletterForm, AdSlot, SiteHeader, MobileBottomNav, ThemeProvider, and UI toast/input/button components. app/page.tsx, Sidebar, SiteFooter, lib/posts queries, lib/trending, and the server action are server-side unless imported through a client boundary as normal module code.
+- No homepage-specific modal, popup, keyboard shortcut, or scroll restoration implementation was found in local code.
+
+6. AD SLOTS AND MONETIZATION
+
+- Header: app/page.tsx renders AdSlot slot="header" inside py-4 near the top of main. AdSlot size h-24 md:h-28; class md:hidden and effect explicitly collapses on desktop header. Zone env: NEXT_PUBLIC_MONETAG_ZONE_HEADER. Mobile script is appended dynamically to the slot container; after 5 seconds without non-script content it collapses.
+- Main-column ad: app/page.tsx renders AdSlot slot="footer" after the first four latest cards inside my-10. Size h-24 md:h-28. Zone env: NEXT_PUBLIC_MONETAG_ZONE_FOOTER. This is a footer-named zone used in the content column.
+- Sidebar first: Sidebar renders AdSlot slot="sidebar" after newsletter. Size h-64. Zone env: NEXT_PUBLIC_MONETAG_ZONE_SIDEBAR.
+- Sidebar second: Sidebar renders another unconditional AdSlot slot="sidebar" after category/potential optional blocks. Also h-64 and same env zone. On homepage both are present in source, subject to the component’s zone/collapse behavior.
+- Site footer: SiteFooter renders AdSlot slot="footer" in a py-8 block before footer navigation. Size h-24 md:h-28, same NEXT_PUBLIC_MONETAG_ZONE_FOOTER.
+- AdSlot uses no fixed max width; it is w-full and flex-centered. A redesign must preserve the slot’s containing width, nominal heights, and slot prop/zone mapping unless the ad contract is intentionally changed. Do not rename slot values or remove reserved vertical space without checking Monetag behavior.
+- In-article: AdSlot supports slot="in-article" with h-32 md:h-40 and NEXT_PUBLIC_MONETAG_ZONE_IN_ARTICLE, but app/page.tsx does not render it. It is a shared contract used elsewhere, not a homepage placement.
+- Root-layout third parties: Google Analytics gtag.js (afterInteractive, G-GYQ1098DHR), Monetag hardcoded vignette script zone 11349102, Simple Analytics latest.js, Vercel Analytics in production, and SpeedInsights is imported but not visibly rendered in the read layout code. Monetag meta content is also added to head. These are site-wide and can affect popup/overlay behavior and performance.
+
+7. SEO, PERFORMANCE AND ACCESSIBILITY
+
+SEO and semantics
+- Root metadata in app/layout.tsx sets title default/template, description, keywords, authors, creator/publisher, canonical /, OpenGraph website metadata for en_NG, Twitter summary_large_image, robots/index/follow, icons, manifest, and an OG image /og-image.jpg. It is shared metadata rather than a page-specific export.
+- Root JSON-LD graph includes Organization and WebSite with SearchAction targets for blog and episodes. No homepage-specific Article/ItemList JSON-LD was found.
+- Homepage uses semantic main, section, article, aside, header/footer from shared components, nav in shared chrome, links, buttons, and time elements. The H1 is the hero brand statement. H2 is Latest articles. Sidebar headings and footer headings are H3. The Featured Story eyebrow is a span, not a heading.
+- PostCard image alt is post.title. Compact and mobile image alt also use the title. Footer logo has alt text; header logo has alt="" with an aria-label on its link. Decorative icons use aria-hidden selectively; many icon-only controls use aria-label (hero dots, shared newsletter/menu buttons). Filter buttons have no aria-pressed state. Ad containers use aria-label.
+- Button primitive has focus-visible border/ring 3px. Link hover/focus is mostly visual via color; no homepage-specific focus-visible classes on plain category links/card links were found, though browser focus remains available.
+
+Performance observations
+- The route is force-dynamic, while featured/recent/trending helpers still use independent Next caches; this can make the page’s server rendering/database behavior harder to reason about.
+- Initial homepage query fetches SELECT * for all columns, including full post content, even though cards need only a subset.
+- Hero only loads the active Image eagerly/priority; subsequent carousel slides are not mounted until active, so they load on demand but each transition can cause image loading delay.
+- Image dimensions are supplied through fill/sizes, but arbitrary external cover_image URLs may depend on next/image remote configuration. There is no blur placeholder. Missing-image fallback is a generated query-string SVG URL and can appear visually generic.
+- MobileTrendingRow omits the image element entirely for missing cover_image, causing different row geometry from image-backed rows. PostCard keeps a fixed image area, reducing shift there.
+- Ad slots collapse after observing/timing, so the page can shift vertically when ads fail or appear. The header slot is nominally reserved only transiently on mobile.
+- Multiple third-party analytics/ad scripts load site-wide; the Monetag vignette can produce overlays/popups outside React control.
+- Fonts use display=swap, so there can be a font swap (FOIT is reduced, but text metrics may change). No font preload or local font files are defined.
+- Infinite loading has no request cancellation or retry UI; observer/loadMore callback dependencies can recreate the observer as offset/loading state changes.
+
+Accessibility concerns
+- Color tokens provide contrast-oriented foreground values, but exact WCAG contrast was not measured from computed browser colors. Primary red on light and dark backgrounds should be checked especially for small text and muted primary/opacity variants.
+- Category filter buttons lack aria-pressed and do not expose the active category to assistive technology. Dot controls have labels but no selected state.
+- The mobile bottom-nav “More” panel has no focus trap, Escape handling, or aria-expanded/aria-controls on its toggle. This is shared layout behavior.
+- Infinite loader has no aria-live status and its end message is plain text; loading failures are console-only.
+- The headline hierarchy is generally clear, but the sidebar and card titles use heading-like styling in some places without all being headings (links/paragraphs), and the homepage has no explicit heading for the Featured Story region.
+
+8. PROBLEMS AND WEAKNESSES
+
+- app/page.tsx requests exactly four featured posts and then slices featured.slice(4), making the secondary featured card section unreachable unless the fetch limit changes. This is dead/ misleading composition code.
+- The homepage has two different “latest” experiences: four immediate cards, then a filter/infinite list that starts with only two more posts. The transition is an ad plus filter controls, which can feel fragmented rather than like one coherent feed.
+- The first latest grid and the infinite grid both use the same two-column card layout, while mobile switches non-trending items to much denser compact rows. The visual hierarchy changes substantially by breakpoint.
+- Sidebar renders two sidebar AdSlots unconditionally, potentially creating a large empty/advertising-heavy rail. Both use the same zone env and identical h-64 assumptions.
+- AdSlot naming is confusing: slot="footer" is used in the main article column as well as the actual site footer. This is a contract risk for future redesigns.
+- The local unused _getTrendingPosts in lib/posts.ts duplicates the public getTrendingPosts name/intent but is never called by that exported function. This is dead data-layer code and can confuse maintenance.
+- app/actions/load-more-posts.ts imports getRecentPosts but never uses it.
+- PostCard imports formatDate but only uses formatRelativeTime. This is dead import/code at the component boundary.
+- Sidebar imports show optional article-only blocks and PollPlacement even though homepage passes both flags false. Shared flexibility is useful, but it increases homepage audit surface and can conceal unused markup paths.
+- The hero panel combines a marketing H1, newsletter form, and featured carousel in a fairly standard two-column card layout. The panel’s primary/10 gradient and many rounded bordered blocks repeat the same visual treatment used everywhere, reducing premium differentiation.
+- The design uses many rounded-xl cards, pills, borders, gradients, and primary-red hover states. Repetition of the same surface language across hero, cards, sidebar, filters, poll link, newsletter, and footer can read as template-like.
+- Typography is limited to Inter plus Outfit with mostly standard Tailwind sizes. There is little display-scale variation or editorial typographic contrast between the hero, feed, and sidebar.
+- The “Browse by genre” strip and the header’s shared Discover strip both expose the same four categories, duplicating navigation close together on desktop.
+- The mobile feed has no image fallback block for missing covers, so rows can look inconsistent and less editorially polished.
+- Empty and error handling is quiet: empty hero, empty sidebar trending, empty filters, and failed infinite loads have no user-facing explanatory state.
+- Newsletter forms rely on native email validation and toasts; there is no visible field-level validation, success state, or anti-abuse feedback in the homepage UI.
+- The footer is content-heavy for a homepage ending: ad, large four-column link grid, legal links, two badges, and RSS links create a long, utility-heavy close.
+- Shared root scripts include multiple analytics/ad vendors plus a hardcoded Monetag vignette zone, which can cause third-party overlays, network cost, and layout/attention conflicts near the hero. The notification-style popup described in the request appears to be external rather than locally designed.
+- The homepage’s metadata is inherited entirely from app/layout.tsx; there is no route-level title/description tailored specifically to current homepage sections or live content.
+- Some focus/accessibility states exist in the shared Button/Input primitive, but plain homepage links and filter controls are not consistently given visible focus or state semantics.
+
+9. REDESIGN CONSTRAINTS AND SAFE-TO-CHANGE MAP
+
+Must remain untouched unless a deliberate site-wide migration is approved
+- components/site-header.tsx: shared by homepage and other routes. It renders the sticky top header with a 0.5rem gradient strip plus a 4.25rem inner bar, so the main header content height is 4.5rem before the desktop Discover row. On non-episode pages it also renders a desktop Discover row with categories; on mobile it can expand a menu. Its sticky top-0 z-40 backdrop/border behavior, scroll-dependent search width, newsletter click behavior, and #newsletter dependency should be treated as a boundary. Homepage content depends on the header’s /#newsletter fallback and on the homepage having an element with id="newsletter" in Sidebar.
+- components/ad-slot.tsx and its contract: preserve slot values header, in-article, sidebar, footer; env mappings; nominal heights; full-width flex centering; dynamic script loading/collapse behavior. Changing it affects homepage, blog/article pages, episode pages, and SiteFooter.
+- app/layout.tsx and app/globals.css tokens/base behavior: shared metadata, fonts, dark-mode provider, mobile body bottom padding, third-party scripts, analytics, Toaster, and MobileBottomNav affect every page.
+- lib/posts.ts and lib/trending.ts data functions: changing ordering, limits, cache/revalidation, Post shape, or cover fallback affects homepage, blog listing/detail routes, search, related content, RSS/sitemap/admin surfaces, and trending displays.
+- components/post-card.tsx: shared by homepage, Sidebar, blog/listing/article-related surfaces, and potentially other content views. Changes to variants, image handling, metadata, or class names can alter multiple pages.
+- components/newsletter-form.tsx and app/actions/newsletter.ts: shared form/action contract and #newsletter target. Changes affect header newsletter action, homepage hero/sidebar, and any other newsletter placement.
+- components/site-footer.tsx: shared footer on other public pages. Homepage can only safely change it if the redesign intentionally accepts site-wide footer changes.
+- routes and links: /, /blog, /blog/{slug}, /polls, /episodes, RSS endpoints, and category query links are existing contracts.
+
+Safe to redesign freely for a homepage-only premium treatment
+- app/page.tsx section composition, section ordering, homepage-only copy, wrapper/grid choices, and homepage-only spacing classes, while preserving data calls and shared component contracts.
+- components/hero-carousel.tsx and components/homepage-latest-section.tsx if their public props/contracts remain compatible or all homepage callers are updated. These are currently homepage-only.
+- components/infinite-post-list.tsx, category-filter-pills.tsx, and mobile-trending-row.tsx can be redesigned if confirmed they have no other callers; current repository search shows homepage-only usage for these paths.
+- Homepage-specific use of Sidebar is not safe to alter globally because Sidebar is shared. Prefer a new homepage-only rail component or a prop-gated variant rather than changing default shared markup.
+- Homepage-specific layout around AdSlot can change, but keep slot names, reserved heights, and containing width assumptions.
+- Homepage-only CSS/classes can change in app/page.tsx and homepage-only components. Avoid changing global token values or base rules unless the effect on every route is intentional.
+
+Shared-component risk map
+- site-header.tsx: affects homepage, blog, episodes, polls, about, contact, privacy, terms, and any route using the shared header; exact route usage should be rechecked before edits.
+- site-footer.tsx: affects public pages that import it, including homepage and likely blog, episodes, polls, informational routes.
+- post-card.tsx: affects homepage, sidebar, blog listing/detail and other content modules importing it.
+- sidebar.tsx: affects homepage and article/listing pages using sidebar props; changing default order, ads, newsletter, or sticky behavior can alter those pages.
+- ad-slot.tsx: affects every ad placement, including article in-article placements and footer/sidebar/header placements.
+- app/layout.tsx, globals.css, theme-provider, mobile-bottom-nav, UI Button/Input: affect the whole site.
+
+Recommended safe redesign boundary
+- Preserve the data-fetching calls and Post fields first; redesign app/page.tsx composition and create/adjust homepage-only components around those contracts.
+- Preserve the header’s rendered boundary and the Sidebar newsletter id="newsletter" dependency so the shared header’s newsletter button continues to work.
+- Preserve AdSlot prop names, env variables, minimum/reserved dimensions, and footer/sidebar placement contracts until monetization is explicitly migrated.
+- Treat the local third-party vignette popup as external monetization behavior; do not attempt to reproduce or “fix” it as a homepage React modal without first deciding whether the ad provider remains.
+- Before changing any shared component, enumerate and visually regression-test its importing routes; the current map above identifies the principal affected surfaces.
+
+END OF REPORT
+The report records source-observed behavior only. Where runtime behavior depends on database contents, environment variables, third-party scripts, or browser computed styles, that dependency is stated rather than guessed.
+
