@@ -10,13 +10,22 @@ import { createPostAction, updatePostAction } from "@/app/actions/admin"
 
 type State = { ok: boolean; error?: string | null; savedAt?: number } | null
 
+export type NewsPrefill = {
+  title: string
+  excerpt: string
+  content: string
+  cover_image?: string
+  newsId: number
+}
+
 type Props = {
   mode: "create" | "edit"
   post?: Post
   justCreated?: boolean
+  newsPrefill?: NewsPrefill
 }
 
-export function PostEditor({ mode, post, justCreated }: Props) {
+export function PostEditor({ mode, post, justCreated, newsPrefill }: Props) {
   const action = mode === "create" ? createPostAction : updatePostAction
   const [state, formAction, pending] = useActionState<State, FormData>(
     async (_prev, formData) => {
@@ -41,6 +50,7 @@ export function PostEditor({ mode, post, justCreated }: Props) {
   return (
     <form action={formAction} className="space-y-6">
       {mode === "edit" && post ? <input type="hidden" name="id" value={post.id} /> : null}
+      {mode === "create" && newsPrefill ? <input type="hidden" name="newsId" value={newsPrefill.newsId} /> : null}
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -94,7 +104,7 @@ export function PostEditor({ mode, post, justCreated }: Props) {
               name="title"
               type="text"
               required
-              defaultValue={post?.title}
+              defaultValue={post?.title ?? newsPrefill?.title}
               placeholder="The next big anime release..."
               className="w-full rounded-md border border-border bg-input px-3 py-2.5 text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -106,7 +116,7 @@ export function PostEditor({ mode, post, justCreated }: Props) {
               name="excerpt"
               required
               rows={3}
-              defaultValue={post?.excerpt}
+              defaultValue={post?.excerpt ?? newsPrefill?.excerpt}
               placeholder="In one or two sentences, what's this post about?"
               className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -118,7 +128,7 @@ export function PostEditor({ mode, post, justCreated }: Props) {
               name="content"
               required
               rows={20}
-              defaultValue={post?.content}
+              defaultValue={post?.content ?? newsPrefill?.content}
               placeholder="Write your article here..."
               className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -127,7 +137,7 @@ export function PostEditor({ mode, post, justCreated }: Props) {
 
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-4">
-            <ImageUploader name="cover_image" defaultValue={post?.cover_image ?? ""} />
+            <ImageUploader name="cover_image" defaultValue={post?.cover_image ?? newsPrefill?.cover_image ?? ""} />
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 space-y-4">

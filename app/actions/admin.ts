@@ -15,6 +15,7 @@ import {
   type CreatePostInput,
   type UpdatePostInput,
 } from "@/lib/admin-queries"
+import { uploadImageBuffer } from "@/lib/cloudinary"
 import {
   createCreator,
   updateCreator,
@@ -86,10 +87,48 @@ function buildInput(formData: FormData): CreatePostInput {
 export async function createPostAction(_prev: unknown, formData: FormData) {
   await requireSession()
   const input = buildInput(formData)
+  const newsIdValue = String(formData.get("newsId") || "").trim()
+  const newsId = Number(newsIdValue)
+  const hasNewsId = newsIdValue !== "" && Number.isInteger(newsId) && newsId > 0
   if (!input.title || !input.excerpt || !input.content || !input.category) {
     return { ok: false as const, error: "Title, excerpt, content, and category are required" }
   }
+
+  if (hasNewsId && input.cover_image && !input.cover_image.includes("res.cloudinary.com")) {
+    try {
+      const imageResponse = await fetch(input.cover_image, {
+        signal: AbortSignal.timeout(15_000),
+      })
+      if (!imageResponse.ok) throw new Error(`Image fetch returned ${imageResponse.status}`)
+      const buffer = Buffer.from(await imageResponse.arrayBuffer())
+      const uploaded = await uploadImageBuffer(buffer, "otakunaija/polls")
+      input.cover_image = uploaded.url
+    } catch (error) {
+      console.error("[admin] Failed to migrate news cover image", error)
+    }
+  }
+
   const post = await createPost(input)
+
+  if (hasNewsId) {
+    try {
+      const baseUrl = process.env.NEWS_API_URL
+      const apiKey = process.env.NEWS_API_KEY
+      if (!baseUrl || !apiKey) throw new Error("News API is not configured")
+      const response = await fetch(
+        `${baseUrl.replace(/\/$/, "")}/api/news/${newsId}/mark-inserted`,
+        {
+          method: "POST",
+          headers: { "X-News-Api-Key": apiKey },
+          signal: AbortSignal.timeout(10_000),
+        },
+      )
+      if (!response.ok) throw new Error(`News API returned ${response.status}`)
+    } catch (error) {
+      console.error("[admin] Failed to mark news item as inserted", error)
+    }
+  }
+
   revalidatePath("/admin/posts")
   redirect(`/admin/posts/${post.id}/edit?created=1`)
 }
