@@ -23,20 +23,14 @@ export default async function HomePage() {
       <SiteHeader />
 
       <main className={`${hpDisplay.variable} home-premium flex-1`}>
-        <div className="py-4">
-          <div className="mx-auto max-w-7xl px-4 md:px-6">
-            <AdSlot slot="header" />
-          </div>
-        </div>
-
         <HomeHero posts={featured.slice(0, 4)} />
         <HomeIntroStrip />
 
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <section className="home-premium-feed-section">
-            <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
-              <HomeFeed initialPosts={recent} initialOffset={recent.length} inlineAd={<div className="my-8 md:my-10"><AdSlot slot="footer" /></div>} />
-              <HomeSidebar trending={trending} />
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="min-w-0"><HomeFeed initialPosts={recent} initialOffset={recent.length} inlineAd={<div className="my-8 md:my-10"><AdSlot slot="footer" /></div>} /></div>
+              <div className="min-w-0"><HomeSidebar trending={trending} /></div>
             </div>
           </section>
         </div>

@@ -1,4 +1,6 @@
 .home-premium {
+  max-width: 100%;
+  overflow-x: clip;
   --hp-bg: oklch(0.11 0.01 280);
   --hp-surface: oklch(0.15 0.012 280);
   --hp-surface-2: oklch(0.19 0.014 280);

@@ -4,7 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import { formatRelativeTime, getCoverImage, type Post } from "@/lib/posts"
+import { getCoverImage, type Post } from "@/lib/posts"
+import { RelativeTime } from "@/components/home/relative-time"
 
 type HomeHeroProps = { posts: Post[] }
 
@@ -82,7 +83,7 @@ export function HomeHero({ posts }: HomeHeroProps) {
                 <p className="hp-eyebrow">Featured · {post.category}</p>
                 <h2 className="hp-display mt-4 max-w-3xl text-white"><Link href={`/blog/${post.slug}`} className="hp-focus" tabIndex={active ? 0 : -1}>{post.title}</Link></h2>
                 <p className="mt-5 hidden max-w-2xl line-clamp-2 text-sm leading-relaxed text-white/75 md:block">{post.excerpt}</p>
-                <p className="hp-meta mt-5 text-white/70">{post.author} <span aria-hidden="true">·</span> {formatRelativeTime(post.published_at)} <span aria-hidden="true">·</span> {post.read_time} min read</p>
+                <p className="hp-meta mt-5 text-white/70">{post.author} <span aria-hidden="true">·</span> <RelativeTime date={post.published_at} /> <span aria-hidden="true">·</span> {post.read_time} min read</p>
                 <Link href={`/blog/${post.slug}`} className="hp-focus mt-6 inline-flex items-center rounded-full bg-[var(--hp-accent)] px-5 py-3 text-sm font-bold text-primary-foreground" tabIndex={active ? 0 : -1}>Read story <ArrowRight className="ml-2 size-4" aria-hidden="true" /></Link>
               </div>
             </div>

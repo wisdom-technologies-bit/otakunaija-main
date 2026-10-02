@@ -108,15 +108,17 @@ export function HomeFeed({ initialPosts, initialOffset, inlineAd }: HomeFeedProp
   const rest = posts.slice(1)
 
   return (
-    <section className="hp-section pt-10 md:pt-14" aria-labelledby="latest-articles-heading">
+    <section className="hp-section min-w-0 w-full max-w-full pt-10 md:pt-14" aria-labelledby="latest-articles-heading">
       <HomeSectionHeading eyebrow="Fresh from the feed" title="Latest articles" href="/blog" />
-      <div className="mt-7 flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter articles by genre">
+      <div className="mt-7 min-w-0 max-w-full overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter articles by genre">
+        <div className="flex w-max flex-nowrap gap-2">
         <button type="button" className={`hp-focus shrink-0 snap-start rounded-full px-4 py-2 text-sm font-semibold ${!category ? "bg-[var(--hp-accent)] text-primary-foreground" : "bg-[var(--hp-surface)] text-[var(--hp-text-dim)]"}`} aria-pressed={!category} onClick={() => selectCategory()}>All</button>
         {CATEGORIES.map((item) => <button key={item} type="button" className={`hp-focus shrink-0 snap-start rounded-full px-4 py-2 text-sm font-semibold ${category === item ? "bg-[var(--hp-accent)] text-primary-foreground" : "bg-[var(--hp-surface)] text-[var(--hp-text-dim)]"}`} aria-pressed={category === item} onClick={() => selectCategory(item)}>{item}</button>)}
+        </div>
       </div>
 
-      <div className="mt-8" aria-busy={loading}>
-        {lead ? <HomeCard post={lead} variant="wide" priority /> : null}
+      <div className="mt-8 min-w-0 max-w-full" aria-busy={loading}>
+        {lead ? <HomeCard post={lead} variant="wide" /> : null}
         <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {rest.map((post, index) => <div key={post.id} className="contents"><span className="sm:hidden"><HomeCard post={post} variant="row" /></span><span className="hidden sm:block"><HomeCard post={post} variant="poster" /></span>{index === 3 ? <span className="col-span-full my-8">{inlineAd}</span> : null}</div>)}
         </div>

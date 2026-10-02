@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
-import { formatRelativeTime, getCoverImage, type Post } from "@/lib/posts"
+import { getCoverImage, type Post } from "@/lib/posts"
+import { RelativeTime } from "@/components/home/relative-time"
 
 export type HomeCardVariant = "poster" | "wide" | "row"
 
@@ -28,7 +29,7 @@ export function HomeCard({ post, variant = "poster", priority = false }: HomeCar
         </Link>
         <div className="min-w-0 flex-1 py-0.5">
           <span className="hp-chip">{post.category}</span>
-          <h3 className="mt-2 line-clamp-2 text-sm font-bold leading-tight">
+          <h3 className="mt-2 min-w-0 break-words line-clamp-2 text-sm font-bold leading-tight">
             <Link href={`/blog/${post.slug}`} className="hp-focus">{post.title}</Link>
           </h3>
           <Meta post={post} />
@@ -38,7 +39,7 @@ export function HomeCard({ post, variant = "poster", priority = false }: HomeCar
   }
 
   return (
-    <article className={`${cardClassName} hp-card group relative overflow-hidden rounded-[var(--hp-radius-lg)] bg-[var(--hp-surface)] ${variant === "poster" ? "aspect-[3/4]" : "aspect-[16/9]"}`}>
+    <article className={`${cardClassName} hp-card group relative w-full max-w-full min-w-0 overflow-hidden rounded-[var(--hp-radius-lg)] bg-[var(--hp-surface)] ${variant === "poster" ? "aspect-[3/4]" : "aspect-[16/9]"}`}>
       {coverImage ? (
         <Image src={coverImage} alt={post.title} fill sizes={imageSizes} loading={priority ? undefined : "lazy"} priority={priority} className="hp-image object-cover" />
       ) : (
@@ -47,15 +48,15 @@ export function HomeCard({ post, variant = "poster", priority = false }: HomeCar
       <div className="hp-scrim absolute inset-0" aria-hidden="true" />
       <div className="absolute inset-x-0 bottom-0 z-10 p-5 md:p-6">
         <span className="hp-chip">{post.category}</span>
-        <h3 className="hp-title mt-3 line-clamp-3 text-white"><Link href={`/blog/${post.slug}`} className="hp-focus">{post.title}</Link></h3>
-        <Meta post={post} light />
+        <h3 className="hp-title min-w-0 mt-3 break-words line-clamp-3 text-white"><Link href={`/blog/${post.slug}`} className="hp-focus">{post.title}</Link></h3>
+        <div className="min-w-0 break-words"><Meta post={post} light /></div>
       </div>
     </article>
   )
 }
 
 function Meta({ post, light = false }: { post: Post; light?: boolean }) {
-  return <p className={`hp-meta mt-3 ${light ? "text-white/70" : ""}`}>{post.author} <span aria-hidden="true">·</span> {formatRelativeTime(post.published_at)} <span aria-hidden="true">·</span> {post.read_time} min read</p>
+  return <p className={`hp-meta mt-3 ${light ? "text-white/70" : ""}`}>{post.author} <span aria-hidden="true">·</span> <RelativeTime date={post.published_at} /> <span aria-hidden="true">·</span> {post.read_time} min read</p>
 }
 
 function FallbackPanel({ category }: { category: string }) {
