@@ -6,7 +6,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { HideV0Badge } from "@/components/HideV0Badge"
-import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import "./globals.css"
 
 const inter = Inter({
@@ -138,7 +137,7 @@ export default function RootLayout({
         {/* Monetag */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='11349102',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`
+            __html: `(function(s){s.dataset.zone='11348618',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`
           }}
         />
         {/* Structured Data for SEO & AI Visibility (Supports Articles & Episodes) */}
@@ -187,7 +186,6 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <HideV0Badge />
           {children}
-          <MobileBottomNav />
           <Toaster richColors position="top-center" />
         </ThemeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
