@@ -41,8 +41,9 @@
   font-family: var(--font-hp-display), var(--font-outfit), sans-serif;
   font-size: clamp(2.5rem, 7vw, 6.5rem);
   font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 0.92;
+  letter-spacing: 0.005em;
+  line-height: 0.98;
+  text-wrap: balance;
 }
 
 .home-premium .hp-title {
@@ -134,6 +135,20 @@
 
 .home-premium .home-premium-hero-slide.is-active .home-premium-hero-image {
   transform: scale(1.06);
+}
+
+.home-premium .home-premium-hero h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.45);
+}
+
+.home-premium .home-premium-hero .hp-meta {
+  color: rgb(255 255 255 / 0.85);
+  font-size: 0.8125rem;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.4);
 }
 
 .home-premium .home-premium-hero-progress {

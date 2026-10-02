@@ -52,7 +52,7 @@ export function HomeHero({ posts }: HomeHeroProps) {
   }
 
   if (total === 0) {
-    return <section className="home-premium-hero relative flex items-end overflow-hidden" aria-label="Featured stories"><div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,var(--hp-glow),transparent_40%),linear-gradient(145deg,var(--hp-surface-2),var(--hp-bg))]" /><div className="hp-container relative z-10 w-full pb-16 md:pb-20"><p className="hp-eyebrow">OtakuNaija</p><p className="hp-display mt-4 max-w-4xl text-white">Stories for the next generation of otakus.</p></div></section>
+    return     <section className="home-premium-hero relative flex items-end overflow-hidden" role="region" aria-roledescription="carousel" aria-label="Featured stories"><div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,var(--hp-glow),transparent_40%),linear-gradient(145deg,var(--hp-surface-2),var(--hp-bg))]" /><div className="hp-container relative z-10 w-full pb-16 md:pb-20"><p className="hp-eyebrow">OtakuNaija</p><p className="hp-display mt-4 max-w-4xl text-white">Stories for the next generation of otakus.</p></div></section>
   }
 
   return (
