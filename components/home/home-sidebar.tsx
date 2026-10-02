@@ -11,7 +11,7 @@ type HomeSidebarProps = {
 
 export function HomeSidebar({ trending }: HomeSidebarProps) {
   return (
-    <aside className="flex flex-col gap-8">
+    <aside className="min-w-0 w-full flex flex-col gap-8">
       <div id="newsletter" className="scroll-mt-32">
         <NewsletterForm variant="card" />
       </div>
