@@ -16,7 +16,7 @@ export function HomeSidebar({ trending }: HomeSidebarProps) {
         <NewsletterForm variant="card" />
       </div>
 
-      <div className="min-h-64">
+      <div className="my-6 min-h-64">
         <AdSlot slot="sidebar" />
       </div>
 
@@ -73,7 +73,7 @@ export function HomeSidebar({ trending }: HomeSidebarProps) {
         </ul>
       </section>
 
-      <div className="min-h-64">
+      <div className="my-6 min-h-64">
         <AdSlot slot="sidebar" />
       </div>
     </aside>

@@ -12,8 +12,10 @@
   --hp-radius-lg: 1.25rem;
   --hp-shadow: 0 1.25rem 3rem oklch(0.04 0.01 280 / 0.28);
   --hp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --hp-image-text: oklch(0.98 0 0);
   color: var(--hp-text);
   background: var(--hp-bg);
+  padding-bottom: 5rem;
 }
 
 .light .home-premium,
@@ -26,6 +28,7 @@
   --hp-text-dim: oklch(0.46 0.01 280);
   --hp-overlay: linear-gradient(180deg, transparent 20%, oklch(0.08 0.01 280 / 0.08) 48%, oklch(0.08 0.01 280 / 0.9) 100%);
   --hp-shadow: 0 1.25rem 3rem oklch(0.18 0.01 280 / 0.12);
+  --hp-image-text: oklch(0.98 0 0);
 }
 
 .home-premium .hp-eyebrow {
@@ -66,8 +69,8 @@
   align-items: center;
   border: 1px solid var(--hp-border);
   border-radius: 999px;
-  background: oklch(0.1 0.01 280 / 0.42);
-  color: oklch(0.98 0 0);
+  background: color-mix(in oklch, var(--hp-bg) 72%, transparent);
+  color: var(--hp-image-text);
   backdrop-filter: blur(0.5rem);
   font-size: 0.625rem;
   font-weight: 700;
@@ -155,6 +158,7 @@
 
 .home-premium .hp-feed-skeleton {
   min-height: 18rem;
+  aspect-ratio: 3 / 4;
   border-radius: var(--hp-radius-lg);
   background: linear-gradient(110deg, var(--hp-surface) 30%, var(--hp-surface-2) 45%, var(--hp-surface) 60%);
   background-size: 200% 100%;
@@ -188,6 +192,7 @@
 
 .home-premium .home-premium-hero {
   height: clamp(520px, 78svh, 820px);
+  min-height: 520px;
   isolation: isolate;
   touch-action: pan-y;
 }

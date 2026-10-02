@@ -45,7 +45,9 @@ export function HomeFeed({ initialPosts, initialOffset, inlineAd }: HomeFeedProp
       const nextPosts = replace ? result : uniquePosts([...postsRef.current, ...result])
       postsRef.current = nextPosts
       setPosts(nextPosts)
-      setOffset(nextOffset + result.length)
+      const nextOffsetValue = nextOffset + result.length
+      offsetRef.current = nextOffsetValue
+      setOffset(nextOffsetValue)
       const more = result.length === PAGE_SIZE
       hasMoreRef.current = more
       setHasMore(more)
@@ -63,6 +65,7 @@ export function HomeFeed({ initialPosts, initialOffset, inlineAd }: HomeFeedProp
   }, [])
 
   const postsRef = useRef(initialPosts)
+  const offsetRef = useRef(initialOffset)
 
   const selectCategory = (nextCategory?: string) => {
     const normalized = nextCategory || undefined
@@ -73,6 +76,7 @@ export function HomeFeed({ initialPosts, initialOffset, inlineAd }: HomeFeedProp
     if (normalized) {
       postsRef.current = []
       setPosts([])
+      offsetRef.current = 0
       setOffset(0)
       hasMoreRef.current = true
       setHasMore(true)
@@ -80,13 +84,14 @@ export function HomeFeed({ initialPosts, initialOffset, inlineAd }: HomeFeedProp
     } else {
       postsRef.current = initialPosts
       setPosts(initialPosts)
+      offsetRef.current = initialOffset
       setOffset(initialOffset)
       hasMoreRef.current = true
       setHasMore(true)
     }
   }
 
-  const retry = () => void fetchPosts(categoryRef.current, offset, false)
+  const retry = () => void fetchPosts(categoryRef.current, offsetRef.current, false)
 
   useEffect(() => {
     const sentinel = sentinelRef.current
