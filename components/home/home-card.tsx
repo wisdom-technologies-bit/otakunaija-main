@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
-import { formatRelativeTime, getCoverImage, type Post } from "@/lib/posts"
+import { getCoverImage, type Post } from "@/lib/posts"
+import { RelativeTime } from "@/components/home/relative-time"
 
 export type HomeCardVariant = "poster" | "wide" | "row"
 
@@ -55,7 +56,7 @@ export function HomeCard({ post, variant = "poster", priority = false }: HomeCar
 }
 
 function Meta({ post, light = false }: { post: Post; light?: boolean }) {
-  return <p className={`hp-meta mt-3 ${light ? "text-white/70" : ""}`}>{post.author} <span aria-hidden="true">·</span> {formatRelativeTime(post.published_at)} <span aria-hidden="true">·</span> {post.read_time} min read</p>
+  return <p className={`hp-meta mt-3 ${light ? "text-white/70" : ""}`}>{post.author} <span aria-hidden="true">·</span> <RelativeTime date={post.published_at} /> <span aria-hidden="true">·</span> {post.read_time} min read</p>
 }
 
 function FallbackPanel({ category }: { category: string }) {

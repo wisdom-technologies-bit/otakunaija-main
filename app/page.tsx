@@ -23,7 +23,7 @@ export default async function HomePage() {
       <SiteHeader />
 
       <main className={`${hpDisplay.variable} home-premium flex-1`}>
-        <div className="py-4">
+        <div className="home-premium-ad py-4 md:py-5">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
             <AdSlot slot="header" />
           </div>

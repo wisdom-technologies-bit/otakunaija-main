@@ -116,7 +116,7 @@ export function HomeFeed({ initialPosts, initialOffset, inlineAd }: HomeFeedProp
       </div>
 
       <div className="mt-8" aria-busy={loading}>
-        {lead ? <HomeCard post={lead} variant="wide" priority /> : null}
+        {lead ? <HomeCard post={lead} variant="wide" /> : null}
         <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {rest.map((post, index) => <div key={post.id} className="contents"><span className="sm:hidden"><HomeCard post={post} variant="row" /></span><span className="hidden sm:block"><HomeCard post={post} variant="poster" /></span>{index === 3 ? <span className="col-span-full my-8">{inlineAd}</span> : null}</div>)}
         </div>
