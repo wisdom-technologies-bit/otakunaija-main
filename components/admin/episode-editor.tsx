@@ -175,9 +175,9 @@ export function EpisodeEditor({ mode, episode, series, justCreated }: Props) {
             thumbnailName="thumbnail_url"
             durationName="duration_seconds"
             videoPublicIdName="video_public_id"
-            defaultVideoUrl={episode?.videoUrl}
-            defaultThumbnailUrl={episode?.thumbnailUrl}
-            defaultPublicId={episode?.videoPublicId}
+            defaultVideoUrl={episode?.videoUrl ?? undefined}
+            defaultThumbnailUrl={episode?.thumbnailUrl ?? undefined}
+            defaultPublicId={episode?.videoPublicId ?? undefined}
             onUploadComplete={setVideoData}
           />
         </div>

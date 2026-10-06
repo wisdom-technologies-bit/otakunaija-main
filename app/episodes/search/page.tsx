@@ -27,7 +27,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = sp.q?.trim() || ''
 
   type SeriesResult = InferSelectModel<typeof series> & { episodeCount?: number }
-  type EpisodeResult = { episode: InferSelectModel<typeof episodes>; series: InferSelectModel<typeof series> | null }
+  type SerializedEpisode = Omit<InferSelectModel<typeof episodes>, 'publishedAt'> & { publishedAt: string | null }
+  type EpisodeResult = { episode: SerializedEpisode; series: InferSelectModel<typeof series> | null }
   let seriesResults: SeriesResult[] = []
   let episodesResults: EpisodeResult[] = []
   let hasResults = false
@@ -35,7 +36,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (query) {
     const results = await searchEpisodesAndSeriesSmart(query)
     seriesResults = results.seriesResults
-    episodesResults = results.episodesResults
+    episodesResults = results.episodesResults.map((result) => ({
+      ...result,
+      episode: {
+        ...result.episode,
+        publishedAt: result.episode.publishedAt?.toISOString() ?? null,
+      },
+    }))
     hasResults = seriesResults.length > 0 || episodesResults.length > 0
 
     // Add episode counts to series results

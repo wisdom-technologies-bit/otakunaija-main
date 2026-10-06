@@ -3,6 +3,12 @@ import { unstable_cache } from 'next/cache'
 import { db } from './index'
 import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
 import { eq, asc, desc, and, lt, gt, sql, count } from 'drizzle-orm'
+import { normalizeGenreParam, sortGenres, splitGenres, uniqueGenres } from '../genres'
+
+function seriesGenreMatches(genre: string) {
+  const normalizedGenre = normalizeGenreParam(genre).toLowerCase()
+  return sql`lower(replace(',' || COALESCE(${series.genre}, '') || ',', ', ', ',')) LIKE ${`%,${normalizedGenre},%`}`
+}
 
 // Get all series with all their episodes, for sitemap generation
 const _getAllSeriesWithEpisodesForSitemap = cache(
@@ -250,7 +256,7 @@ const _getSeriesByGenre = cache(
         })
         .from(series)
         .leftJoin(creators, eq(series.creatorId, creators.id))
-        .where(eq(series.genre, genre))
+        .where(seriesGenreMatches(genre))
         .orderBy(desc(series.createdAt))
     },
     ['series-by-genre'],
@@ -301,7 +307,7 @@ const _getAllUsedGenres = cache(
         .from(series)
         .where(sql`${series.genre} IS NOT NULL`)
 
-      return result.map((r) => r.genre).filter((g): g is string => g !== null)
+      return sortGenres(uniqueGenres(result.flatMap((r) => splitGenres(r.genre))))
     },
     ['all-genres'],
     { revalidate: 86400, tags: ['series'] }
@@ -327,7 +333,7 @@ export async function getPaginatedSeries({
 }) {
   const filters = []
   if (status && ['ongoing', 'completed', 'upcoming'].includes(status)) filters.push(eq(series.status, status))
-  if (genre) filters.push(sql`(',' || COALESCE(${series.genre}, '') || ',') ILIKE ${`%,${genre},%`}`)
+  if (normalizeGenreParam(genre)) filters.push(seriesGenreMatches(genre!))
   const where = filters.length ? and(...filters) : undefined
   const offset = Math.max(0, page - 1) * pageSize
   const [items, [{ total }]] = await Promise.all([
