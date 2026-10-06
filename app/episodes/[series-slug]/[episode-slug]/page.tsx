@@ -11,6 +11,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 import { VideoPlayer } from '@/components/episodes/video-player-client'
+import { WatchProgressTracker } from '@/components/episodes/watch-progress-tracker'
 import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { EpisodeNavigation } from '@/components/episodes/episode-navigation'
 import { EpisodeTracker } from '@/components/episodes/episode-tracker'
@@ -210,6 +211,14 @@ export default async function WatchPage({ params }: Props) {
                 title={episode.title}
                 subtitlesUrl={episode.subtitlesUrl}
                 playId={episode.playId}
+              />
+              <WatchProgressTracker
+                seriesSlug={seriesSlug}
+                episodeSlug={episode.slug}
+                seriesTitle={series.title}
+                epNumber={episode.episodeNumber}
+                thumb={episode.thumbnailUrl || series.posterImageUrl || series.coverImageUrl || null}
+                durationSeconds={episode.durationSeconds ?? 0}
               />
             </div>
 

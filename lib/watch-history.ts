@@ -85,6 +85,7 @@ export function clearHistory(): void {
 }
 
 export function getEntry(episodeSlug: string): HistoryEntry | null {
+  if (typeof window === 'undefined') return null
   return getHistory().find((entry) => entry.episodeSlug === episodeSlug) ?? null
 }
 
