@@ -132,12 +132,31 @@ const _getTrendingPosts = unstable_cache(
           )
         ORDER BY (COALESCE(v.recent_24h, 0) + COALESCE(v.previous_24h, 0)) DESC, p.published_at DESC
       `
-      const scored = scoreTrendingCandidates(rows as Candidate[])
+      const candidates: Candidate[] = (rows as any[]).map((row) => ({
+  ...row,
+  recent30m:          Number(row.recent_30m           ?? 0),
+  recent1h:           Number(row.recent_1h            ?? 0),
+  recent3h:           Number(row.recent_3h            ?? 0),
+  recent6h:           Number(row.recent_6h            ?? 0),
+  recent24h:          Number(row.recent_24h           ?? 0),
+  previous1h:         Number(row.previous_1h          ?? 0),
+  previous6h:         Number(row.previous_6h          ?? 0),
+  previous24h:        Number(row.previous_24h         ?? 0),
+  commentCount:       Number(row.comment_count        ?? 0),
+  recentCommentCount: Number(row.recent_comment_count ?? 0),
+}))
+
+const scored = scoreTrendingCandidates(candidates)
       const active = scored.filter(({ post }) =>
-        post.recent24h >= 2 || post.previous24h >= 3 || post.commentCount > 0,
-      )
+  post.recent24h >= 2 || post.previous24h >= 3 || post.recentCommentCount > 0,
+)
       const ranked = active.length > 0 ? active : scored
-      return ranked.slice(0, limit).map(({ post, signals }) => ({ ...post, trendSignals: signals }))
+      return ranked.slice(0, limit).map(({ post, signals }) => {
+  const { recent30m, recent1h, recent3h, recent6h, recent24h,
+          previous1h, previous6h, previous24h,
+          commentCount, recentCommentCount, ...clean } = post as Candidate
+  return { ...clean, trendSignals: signals }
+})
     } catch {
       return []
     }
