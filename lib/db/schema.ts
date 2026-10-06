@@ -43,7 +43,7 @@ export const episodes = pgTable('episodes', {
   durationSeconds: integer('duration_seconds'),
   subtitlesUrl: text('subtitles_url'),
   playId: text('play_id').unique(),
-  publishedAt: timestamp('published_at').defaultNow(),
+  publishedAt: timestamp('published_at', { withTimezone: true }).defaultNow().notNull(),
   viewCount: integer('view_count').default(0),
   totalWatchMinutes: integer('total_watch_minutes').default(0),
 })

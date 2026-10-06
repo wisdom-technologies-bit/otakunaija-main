@@ -219,11 +219,14 @@ export default async function SeriesPage({ params }: Props) {
             {creator && <CreatorCredit creator={creator} />}
 
             {/* Episodes panel with tabs + sort */}
-            <SeriesEpisodesPanel
-              episodes={episodes}
-              seriesSlug={series.slug}
-              synopsis={series.synopsis}
-            />
+          <SeriesEpisodesPanel
+            episodes={episodes.map((episode) => ({
+              ...episode,
+              publishedAt: episode.publishedAt?.toISOString() ?? null,
+            }))}
+            seriesSlug={series.slug}
+            synopsis={series.synopsis}
+          />
           </div>
 
           {/* Sidebar (desktop) */}

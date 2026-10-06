@@ -5,8 +5,10 @@ import Image from 'next/image'
 import { type Episode } from '@/lib/db/schema'
 import { formatDuration, formatViewCount } from '@/lib/episode-utils'
 
+type SerializedEpisode = Omit<Episode, 'publishedAt'> & { publishedAt: string | null }
+
 interface EpisodeRowProps {
-  episode: Episode
+  episode: SerializedEpisode
   seriesSlug: string
   seriesTitle?: string
 }

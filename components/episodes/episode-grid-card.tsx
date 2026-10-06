@@ -6,8 +6,10 @@ import { type Episode } from '@/lib/db/schema'
 import { formatDuration, formatViewCount } from '@/lib/episode-utils'
 import { Play, Download } from 'lucide-react'
 
+type SerializedEpisode = Omit<Episode, 'publishedAt'> & { publishedAt: string | null }
+
 interface EpisodeGridCardProps {
-  episode: Episode
+  episode: SerializedEpisode
   seriesSlug: string
 }
 

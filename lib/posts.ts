@@ -230,10 +230,12 @@ export function formatDate(date: string | Date) {
 }
 
 export function formatRelativeTime(dateString: string): string {
-  const now = new Date()
   const then = new Date(dateString)
-  const diffMs = now.getTime() - then.getTime()
-  const diffSec = Math.floor(diffMs / 1000)
+  if (Number.isNaN(then.getTime())) return ''
+
+  const diffSec = Math.floor((Date.now() - then.getTime()) / 1000)
+  if (diffSec < 0) return 'Upcoming'
+
   const diffMin = Math.floor(diffSec / 60)
   const diffHour = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHour / 24)
