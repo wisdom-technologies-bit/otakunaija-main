@@ -6,7 +6,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { HideV0Badge } from "@/components/HideV0Badge"
-import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import "./globals.css"
 
 const inter = Inter({
@@ -187,7 +186,6 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <HideV0Badge />
           {children}
-          <MobileBottomNav />
           <Toaster richColors position="top-center" />
         </ThemeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
