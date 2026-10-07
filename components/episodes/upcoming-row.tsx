@@ -19,7 +19,6 @@ export function UpcomingRow({ items }: { items: UpcomingItem[] }) {
         </div>
         <p className="mt-2 line-clamp-1 text-sm font-medium text-foreground group-hover:text-primary">{series.title}</p>
         <p className="text-xs font-medium text-foreground"><Countdown releaseAt={episode.publishedAt || ''} /></p>
-        <p className="text-xs text-muted-foreground">{episode.publishedAt ? formatReleaseDate(episode.publishedAt) : ''}</p>
       </Link> : null)}
     </div></div>
   </section>
