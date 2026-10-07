@@ -317,6 +317,31 @@ export async function getTrendingSeries(limit = 5) {
   return _getTrendingSeries(limit)
 }
 
+const _getTopSeriesByGenre = cache((genre: string) =>
+  unstable_cache(
+    async () => {
+      return db
+        .select({
+          series,
+          latestEpisodeNumber: sql<number | null>`MAX(${episodes.episodeNumber})`.as('latest_episode_number'),
+          totalViews: sql<number>`COALESCE(SUM(${episodes.viewCount}), 0)`.as('total_views'),
+        })
+        .from(series)
+        .leftJoin(episodes, eq(series.id, episodes.seriesId))
+        .where(seriesGenreMatches(genre))
+        .groupBy(series.id)
+        .orderBy(desc(sql`total_views`), asc(series.id))
+        .limit(10)
+    },
+    ['top-series-by-genre', genre],
+    { revalidate: 60, tags: ['series', 'episodes'] }
+  )()
+)
+
+export async function getTopSeriesByGenre(genre: string) {
+  return _getTopSeriesByGenre(genre)
+}
+
 // Get every distinct genre currently in use across all series — used to build the filter pills
 // dynamically instead of hardcoding a genre list that may not match what's actually in the database
 const _getAllUsedGenres = cache(

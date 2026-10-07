@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { toISO } from '@/lib/to-iso'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getSeriesBySlugWithEpisodes } from '@/lib/db/queries'
@@ -222,7 +223,7 @@ export default async function SeriesPage({ params }: Props) {
           <SeriesEpisodesPanel
             episodes={episodes.map((episode) => ({
               ...episode,
-              publishedAt: episode.publishedAt?.toISOString() ?? null,
+              publishedAt: toISO(episode.publishedAt),
             }))}
             seriesSlug={series.slug}
             synopsis={series.synopsis}

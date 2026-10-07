@@ -21,6 +21,7 @@ import { LiveViewerWidget } from '@/components/episodes/live-viewer-widget'
 import { AboutSeriesSidebar } from '@/components/episodes/about-series-sidebar'
 import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
 import { PollPlacement } from '@/components/poll-placement'
+import { toISO } from '@/lib/to-iso'
 
 export const revalidate = 3600
 
@@ -167,7 +168,7 @@ export default async function WatchPage({ params }: Props) {
         'name': episode.title,
         'description': episode.synopsis || `Watch ${episode.title} on OtakuNaija.`,
         'thumbnailUrl': [episode.thumbnailUrl],
-        'uploadDate': episode.publishedAt ? new Date(episode.publishedAt).toISOString() : new Date().toISOString(),
+        'uploadDate': toISO(episode.publishedAt),
         'contentUrl': episode.videoUrl,
       }
     ]

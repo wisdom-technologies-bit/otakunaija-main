@@ -8,6 +8,7 @@ import { EpisodeRow } from '@/components/episodes/episode-row'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 import type { InferSelectModel } from 'drizzle-orm'
+import { toISO } from '@/lib/to-iso'
 import type { series, episodes } from '@/lib/db/schema'
 
 export const metadata: Metadata = {
@@ -40,7 +41,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       ...result,
       episode: {
         ...result.episode,
-        publishedAt: result.episode.publishedAt?.toISOString() ?? null,
+        publishedAt: toISO(result.episode.publishedAt),
       },
     }))
     hasResults = seriesResults.length > 0 || episodesResults.length > 0
