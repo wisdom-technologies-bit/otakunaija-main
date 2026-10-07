@@ -3,8 +3,6 @@
 import { useState, useMemo } from 'react'
 import { EpisodeRow } from '@/components/episodes/episode-row'
 import { EpisodeGridCard } from '@/components/episodes/episode-grid-card'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { ArrowDownWideNarrow, ArrowUpWideNarrow } from 'lucide-react'
 import type { Episode } from '@/lib/db/schema'
 
@@ -16,14 +14,12 @@ interface SeriesEpisodesPanelProps {
   synopsis?: string | null
 }
 
-type Tab = 'episodes' | 'about'
 type SortOrder = 'newest' | 'oldest'
 type Layout = 'grid' | 'list'
 
 const ITEMS_PER_PAGE = 12
 
-export function SeriesEpisodesPanel({ episodes, seriesSlug, synopsis }: SeriesEpisodesPanelProps) {
-  const [tab, setTab] = useState<Tab>('episodes')
+export function SeriesEpisodesPanel({ episodes, seriesSlug }: SeriesEpisodesPanelProps) {
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
   const [layout, setLayout] = useState<Layout>('grid')
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE)
@@ -46,92 +42,65 @@ export function SeriesEpisodesPanel({ episodes, seriesSlug, synopsis }: SeriesEp
 
   return (
     <div>
-      {/* Tabs */}
-      <div className="mb-6 flex items-center gap-6 border-b border-border">
-        <button
-          onClick={() => setTab('episodes')}
-          className={`border-b-2 pb-2 text-sm font-semibold transition-colors ${
-            tab === 'episodes' ? 'border-primary text-primary' : 'border-transparent text-foreground/60 hover:text-foreground'
-          }`}
-        >
-          Episodes ({episodes.length})
-        </button>
-        {synopsis && (
-          <button
-            onClick={() => setTab('about')}
-            className={`border-b-2 pb-2 text-sm font-semibold transition-colors ${
-              tab === 'about' ? 'border-primary text-primary' : 'border-transparent text-foreground/60 hover:text-foreground'
-            }`}
-          >
-            About
-          </button>
-        )}
+      <div id="episodes" className="mb-4 flex scroll-mt-24 items-center gap-2 border-b border-border pb-2">
+        <span className="h-5 w-1 rounded-full bg-primary" />
+        <h2 className="text-base font-bold text-foreground">Episodes ({episodes.length})</h2>
       </div>
 
-      {tab === 'episodes' && (
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-foreground/70">Sort by:</span>
+          <button
+            onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:border-primary hover:text-primary"
+          >
+            {sortOrder === 'newest' ? (
+              <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+            ) : (
+              <ArrowUpWideNarrow className="h-3.5 w-3.5" />
+            )}
+            {sortOrder === 'newest' ? 'Episode Number' : 'Oldest First'}
+          </button>
+        </div>
+        <button
+          onClick={() => setLayout((l) => (l === 'grid' ? 'list' : 'grid'))}
+          className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:border-primary hover:text-primary"
+        >
+          {layout === 'grid' ? 'List' : 'Grid'} View
+        </button>
+      </div>
+
+      {displayedEpisodes.length > 0 ? (
         <>
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-foreground/70">Sort by:</span>
-              <button
-                onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:border-primary hover:text-primary"
-              >
-                {sortOrder === 'newest' ? (
-                  <ArrowDownWideNarrow className="h-3.5 w-3.5" />
-                ) : (
-                  <ArrowUpWideNarrow className="h-3.5 w-3.5" />
-                )}
-                {sortOrder === 'newest' ? 'Episode Number' : 'Oldest First'}
-              </button>
+          {layout === 'grid' ? (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {displayedEpisodes.map((episode) => (
+                <EpisodeGridCard key={episode.id} episode={episode} seriesSlug={seriesSlug} />
+              ))}
             </div>
-            <button
-              onClick={() => setLayout((l) => (l === 'grid' ? 'list' : 'grid'))}
-              className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:border-primary hover:text-primary"
-            >
-              {layout === 'grid' ? 'List' : 'Grid'} View
-            </button>
-          </div>
-
-          {displayedEpisodes.length > 0 ? (
-            <>
-              {layout === 'grid' ? (
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {displayedEpisodes.map((episode) => (
-                    <EpisodeGridCard key={episode.id} episode={episode} seriesSlug={seriesSlug} />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {displayedEpisodes.map((episode) => (
-                    <EpisodeRow key={episode.id} episode={episode} seriesSlug={seriesSlug} />
-                  ))}
-                </div>
-              )}
-
-              {/* View More / Pagination */}
-              {hasMore && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    onClick={() => setDisplayCount((c) => c + ITEMS_PER_PAGE)}
-                    className="rounded-lg border border-primary bg-primary/10 px-6 py-2.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
-                  >
-                    View More Episodes
-                  </button>
-                </div>
-              )}
-            </>
           ) : (
-            <div className="rounded-lg border border-border/40 bg-card/40 p-8 text-center">
-              <p className="text-foreground/70">No episodes have been published yet.</p>
+            <div className="space-y-3">
+              {displayedEpisodes.map((episode) => (
+                <EpisodeRow key={episode.id} episode={episode} seriesSlug={seriesSlug} />
+              ))}
+            </div>
+          )}
+
+          {/* View More / Pagination */}
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={() => setDisplayCount((c) => c + ITEMS_PER_PAGE)}
+                className="rounded-lg border border-primary bg-primary/10 px-6 py-2.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+              >
+                View More Episodes
+              </button>
             </div>
           )}
         </>
-      )}
-
-      {tab === 'about' && synopsis && (
-        <div className="prose-anime prose prose-invert prose-sm max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{synopsis}</ReactMarkdown>
+      ) : (
+        <div className="rounded-lg border border-border/40 bg-card/40 p-8 text-center">
+          <p className="text-foreground/70">No episodes have been published yet.</p>
         </div>
       )}
     </div>
