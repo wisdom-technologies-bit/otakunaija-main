@@ -319,24 +319,28 @@ export async function getTrendingSeries(limit = 5) {
 
   export async function getTopSeriesByGenre(genre: string, limit = 10) {
   const rows = await db
-  .select({
-  id: series.id,
-  slug: series.slug,
-  title: series.title,
-  posterUrl: series.posterUrl,
-  coverImage: series.coverImage,
-  latestEpisodeNumber: sql<number | null>`MAX(${episodes.episodeNumber})`.as('latest_episode_number'),
-  totalViews: sql<number>`COALESCE(SUM(${episodes.viewCount}), 0)`.as('total_views'),
-  })
-  .from(series)
-  .leftJoin(episodes, eq(series.id, episodes.seriesId))
-  .where(seriesGenreMatches(genre))
-  .groupBy(series.id)
-  .orderBy(desc(sql`total_views`), asc(series.id))
-  .limit(limit)
-  return rows.map(({ id, slug, title, posterUrl, coverImage, latestEpisodeNumber, totalViews }) => ({ series: { id, slug, title, posterUrl, coverImage }, latestEpisodeNumber, totalViews }))
-  }
+    .select({
+      id: series.id,
+      slug: series.slug,
+      title: series.title,
+      posterImageUrl: series.posterImageUrl,
+      coverImageUrl: series.coverImageUrl,
+      latestEpisodeNumber: sql<number | null>`MAX(${episodes.episodeNumber})`.as('latest_episode_number'),
+      totalViews: sql<number>`COALESCE(SUM(${episodes.viewCount}), 0)`.as('total_views'),
+    })
+    .from(series)
+    .leftJoin(episodes, eq(series.id, episodes.seriesId))
+    .where(seriesGenreMatches(genre))
+    .groupBy(series.id)
+    .orderBy(desc(sql`total_views`), asc(series.id))
+    .limit(limit)
 
+  return rows.map(({ id, slug, title, posterImageUrl, coverImageUrl, latestEpisodeNumber, totalViews }) => ({
+    series: { id, slug, title, posterImageUrl, coverImageUrl },
+    latestEpisodeNumber,
+    totalViews,
+  }))
+}
 // Get every distinct genre currently in use across all series — used to build the filter pills
 // dynamically instead of hardcoding a genre list that may not match what's actually in the database
 const _getAllUsedGenres = cache(
