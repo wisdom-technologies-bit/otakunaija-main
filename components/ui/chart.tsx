@@ -41,7 +41,7 @@ function ChartContainer({
   config,
   ...props
 }: React.ComponentProps<'div'> & {
-  config: ChartConfig
+  config?: ChartConfig
   children: React.ComponentProps<
     typeof RechartsPrimitive.ResponsiveContainer
   >['children']
@@ -69,8 +69,9 @@ function ChartContainer({
   )
 }
 
-const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(
+const ChartStyle = ({ id, config }: { id: string; config?: ChartConfig }) => {
+  const safeConfig = config ?? {}
+  const colorConfig = Object.entries(safeConfig).filter(
     ([, config]) => config.theme || config.color,
   )
 
