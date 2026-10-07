@@ -43,7 +43,7 @@ export default async function PollsPage({ searchParams }: { searchParams: Promis
           <p className="mt-3 max-w-2xl text-muted-foreground">Have your say on the characters, moments, and stories the OtakuNaija community loves most.</p>
         </section>
 
-        <div className="my-6"><AdSlot slot="in-article" /></div>
+        <div className="my-6"><AdSlot slot="header" /></div>
 
         <section className="flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-center md:justify-between">
           <nav aria-label="Poll filters" className="flex flex-wrap gap-2">
