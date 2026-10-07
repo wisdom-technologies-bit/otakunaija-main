@@ -3,7 +3,6 @@ import {
   getRecentEpisodesAcrossAllSeries,
   getUpcomingEpisodes,
   getTrendingSeries,
-  getAllUsedGenres,
 } from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -14,8 +13,8 @@ import { GenreRow } from '@/components/episodes/genre-row'
 import { toISO } from '@/lib/to-iso'
 import { SeriesHeroCarousel } from '@/components/episodes/series-hero-carousel'
 import { ResumeWatchingRow } from '@/components/episodes/resume-watching-row'
-import { EpisodesFilterPills } from '@/components/episodes/episodes-filter-pills'
 import { NewReleasesRow } from '@/components/episodes/new-releases-row'
+import RecommendedRow from '@/components/episodes/recommended-row'
 import { UpcomingRow } from '@/components/episodes/upcoming-row'
 import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 import { PollPlacement } from '@/components/poll-placement'
@@ -49,14 +48,11 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
   let recentEpisodes: any[] = []
   let upcomingEpisodes: any[] = []
   let trendingSeries: any[] = []
-  let genres: string[] = []
-
   try {
-    ;[recentEpisodes, upcomingEpisodes, trendingSeries, genres] = await Promise.all([
+    ;[recentEpisodes, upcomingEpisodes, trendingSeries] = await Promise.all([
       getRecentEpisodesAcrossAllSeries(10),
       getUpcomingEpisodes(12),
       getTrendingSeries(5),
-      getAllUsedGenres(),
     ])
   } catch (err) {
     console.error('Error fetching episodes data:', err)
@@ -132,11 +128,11 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
         {/* Two‑column layout with safety constraints */}
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_320px]">
           <div className="space-y-10 min-w-0 overflow-hidden">
-            <EpisodesFilterPills genres={genres} activeGenre={genre} />
-
             <UpcomingRow items={serializedUpcomingEpisodes} />
 
             <NewReleasesRow items={serializedRecentEpisodes} />
+
+            <RecommendedRow />
 
             {['Action', 'Adventure', 'Fantasy', 'Romance', 'Comedy'].map((genreName) => (
               <Suspense key={genreName} fallback={<GenreRowSkeleton />}>

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { formatRelativeTime } from '@/lib/posts'
+import { SectionTitle } from '@/components/episodes/section-title'
 type ReleaseEpisode = { id: number; slug: string; title: string; episodeNumber: number; thumbnailUrl: string | null; publishedAt: string | null }
 type ReleaseSeries = { slug: string; title: string; posterImageUrl: string | null; coverImageUrl: string | null }
 
@@ -11,13 +12,8 @@ interface NewReleasesRowProps {
 export function NewReleasesRow({ items }: NewReleasesRowProps) {
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-foreground md:text-2xl">New Releases</h2>
-        <Link href="/episodes/new-releases" className="text-sm font-medium text-primary hover:underline">
-          View All
-        </Link>
-      </div>
-      <div className="flex w-full gap-4 overflow-x-auto overflow-y-hidden pb-2 touch-pan-x">
+      <SectionTitle title="New Releases" href="/episodes/new-releases" />
+      <div className="flex w-full gap-4 overflow-x-auto overflow-y-hidden pb-2 touch-pan-x no-scrollbar">
         <div className="flex gap-4 min-w-max">
           {items.map(({ episode, series: ser }) =>
             ser ? (

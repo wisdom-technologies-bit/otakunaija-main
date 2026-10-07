@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { clearHistory, getHistory, removeEntry, type HistoryEntry } from '@/lib/watch-history'
+import { SectionTitle } from '@/components/episodes/section-title'
 
 function formatTime(seconds: number): string {
   const safeSeconds = Math.max(0, Math.floor(seconds))
@@ -44,21 +45,12 @@ export function ResumeWatchingRow() {
 
   return (
     <section aria-labelledby="resume-watching-title">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 id="resume-watching-title" className="flex items-center text-base font-semibold text-foreground">
-          <span aria-hidden="true" className="mr-2 h-4 w-1 rounded-full bg-primary" />
-          Resume Watching
-        </h2>
-        <button
-          type="button"
-          onClick={clearHistory}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Clear All
-        </button>
-      </div>
+      <SectionTitle
+        title="Resume Watching"
+        action={<button type="button" onClick={clearHistory} className="text-xs text-muted-foreground transition-colors hover:text-foreground">Clear All</button>}
+      />
 
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 scrollbar-none md:-mx-6 md:px-6">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 no-scrollbar">
         {history.map((entry) => {
           const progress = progressPercent(entry)
           return (
