@@ -10,8 +10,9 @@ import { ExpandableMarkdownSynopsis } from '@/components/episodes/expandable-mar
 import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { SeriesEpisodesPanel } from '@/components/episodes/series-episodes-panel'
 import { AdSlot } from '@/components/ad-slot'
-import { Calendar, Play, Tag } from 'lucide-react'
+import { Calendar, Play } from 'lucide-react'
 import { PollPlacement } from '@/components/poll-placement'
+import { splitGenres } from '@/lib/genres'
 
 export const revalidate = 3600
 
@@ -121,47 +122,30 @@ export default async function SeriesPage({ params }: Props) {
         {series.coverImageUrl && (
           <Image src={series.coverImageUrl} alt={series.title} fill className="object-cover" priority />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-
-        <div className="absolute inset-0 flex items-end p-4 md:p-6">
-          <div className="mx-auto flex w-full max-w-7xl items-end gap-4">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        <div className="absolute inset-0 flex items-end px-4 pb-4 md:px-6 md:pb-6">
+          <div className="mx-auto flex w-full max-w-7xl items-end gap-3 md:gap-4">
             {series.posterImageUrl && (
-              <div className="relative hidden h-40 w-28 flex-shrink-0 overflow-hidden rounded-lg border-2 border-border shadow-lg sm:block md:h-52 md:w-36">
-                <Image src={series.posterImageUrl} alt={`${series.title} poster`} fill className="object-cover" />
+              <div className="relative h-32 w-[88px] flex-shrink-0 overflow-hidden rounded-lg border-2 border-border shadow-lg sm:h-40 sm:w-28 md:h-52 md:w-36">
+                <Image src={series.posterImageUrl} alt={`${series.title} poster`} fill className="object-cover" sizes="(min-width: 768px) 144px, 96px" />
               </div>
             )}
-
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-bold text-foreground md:text-3xl">{series.title}</h1>
-                {series.genre && (
-                  <span className="rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-primary-foreground">
-                    {series.genre}
-                  </span>
-                )}
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
-                    }`}
-                >
+            <div className="min-w-0 space-y-2 md:space-y-3">
+              <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl md:text-3xl">{series.title}</h1>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {splitGenres(series.genre).slice(0, 4).map((g) => (
+                  <Link key={g} href={`/episodes/browse?genre=${encodeURIComponent(g)}`}
+                    className="rounded-full bg-primary/90 px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground hover:bg-primary">
+                    {g}
+                  </Link>
+                ))}
+                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'}`}>
                   {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
                 </span>
               </div>
-
-              {/* Quick Info row — only real data */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-foreground/70">
-                {year && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" /> {year}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5">
-                  <Play className="h-3.5 w-3.5" /> {episodeCount} Episode{episodeCount !== 1 ? 's' : ''}
-                </span>
-                {series.genre && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5" /> {series.genre}
-                  </span>
-                )}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-foreground/70">
+                {year && <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {year}</span>}
+                <span className="inline-flex items-center gap-1.5"><Play className="h-3.5 w-3.5" /> {episodeCount} Episode{episodeCount !== 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
@@ -169,46 +153,8 @@ export default async function SeriesPage({ params }: Props) {
       </section>
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
-        <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-8">
-            {/* Mobile Series Header with Poster */}
-            <div className="sm:hidden space-y-4">
-              <div className="flex gap-4">
-                {series.posterImageUrl && (
-                  <div className="relative h-32 w-24 flex-shrink-0 overflow-hidden rounded border border-border/60 bg-muted" style={{ aspectRatio: '9/16' }}>
-                    <Image src={series.posterImageUrl} alt={`${series.title} poster`} fill className="object-cover" sizes="96px" />
-                  </div>
-                )}
-
-                <div className="flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-xl font-bold text-foreground">{series.title}</h1>
-                  </div>
-
-                  {/* Genre badges */}
-                  <div className="flex flex-wrap gap-2">
-                    {series.genre && (
-                      <span className="rounded-full bg-primary/90 px-2.5 py-1 text-xs font-medium text-primary-foreground">
-                        {series.genre}
-                      </span>
-                    )}
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'
-                        }`}
-                    >
-                      {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
-                    </span>
-                  </div>
-
-                  {/* Quick stats */}
-                  <div className="text-xs text-foreground/70 space-y-1">
-                    {year && <div><span className="font-medium">{year}</span> • Year</div>}
-                    <div><span className="font-medium">{episodeCount}</span> Episodes</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="min-w-0 space-y-8">
             {/* Synopsis */}
             {series.synopsis && (
               <div>
@@ -232,56 +178,17 @@ export default async function SeriesPage({ params }: Props) {
 
           {/* Sidebar (desktop) */}
           <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
-            {series.synopsis && (
-              <section className="rounded-xl border border-border bg-card p-5">
-                <h3 className="mb-2 text-base font-bold text-foreground">About {series.title}</h3>
-                <p className="line-clamp-6 text-sm leading-relaxed text-foreground/70">{series.synopsis}</p>
-              </section>
-            )}
-
-            <section className="rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-3 text-base font-bold text-foreground">Quick Info</h3>
-              <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Status</dt>
-                  <dd className="font-medium text-foreground">
-                    {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
-                  </dd>
-                </div>
-                {series.genre && (
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Genre</dt>
-                    <dd className="font-medium text-foreground">{series.genre}</dd>
-                  </div>
-                )}
-                {year && (
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Year</dt>
-                    <dd className="font-medium text-foreground">{year}</dd>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Episodes</dt>
-                  <dd className="font-medium text-foreground">{episodeCount}</dd>
-                </div>
-              </dl>
-            </section>
-
-            {/* Ad Slot - Sidebar */}
-            <AdSlot slot="sidebar" label="Advertisement" />
-
+            <PollPlacement source="series" />
             <section id="newsletter" className="scroll-mt-24 rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-2 text-base font-bold text-foreground">
-                Get weekly anime drops, straight to your inbox.
-              </h3>
+              <h3 className="mb-2 text-base font-bold text-foreground">Get weekly anime drops, straight to your inbox.</h3>
               <p className="mb-4 text-sm text-muted-foreground">
                 Subscribe to stay updated on new episodes from {creator?.name || 'your favorite creators'}.
               </p>
               <NewsletterSignup />
             </section>
+            <AdSlot slot="sidebar" label="Advertisement" />
           </aside>
         </div>
-        <PollPlacement source="series" className="mx-auto mt-14 max-w-2xl" />
       </main>
 
       <SiteFooter />
