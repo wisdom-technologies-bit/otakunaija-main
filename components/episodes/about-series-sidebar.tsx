@@ -29,40 +29,27 @@ export function AboutSeriesSidebar({ series, episodes, currentEpisodeId }: About
   return (
     <div className="space-y-6">
       {/* About Series Card */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <h2 className="text-lg font-bold text-foreground">About {series.title}</h2>
-        
-        {/* Poster Image - Smaller */}
-        <div className="relative w-24 overflow-hidden rounded border border-border/60 bg-muted" style={{ aspectRatio: '9/16' }}>
-          {series.posterImageUrl ? (
-            <Image
-              src={series.posterImageUrl}
-              alt={series.title}
-              fill
-              className="object-cover"
-              sizes="96px"
-              priority
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-              <span className="text-xs text-muted-foreground">No</span>
-            </div>
-          )}
+        <div className="flex gap-4">
+          <div className="relative aspect-[2/3] w-28 flex-shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted sm:w-32">
+            {series.posterImageUrl ? (
+              <Image src={series.posterImageUrl} alt={series.title} fill className="object-cover" sizes="128px" />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                <span className="text-xs text-muted-foreground">No image</span>
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="line-clamp-6 text-sm leading-relaxed text-foreground/80">
+              {series.synopsis || 'No synopsis available'}
+            </p>
+            <Link href={`/episodes/${series.slug}`} className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80">
+              View Series Details <span>›</span>
+            </Link>
+          </div>
         </div>
-
-        {/* Synopsis */}
-        <p className="text-sm text-foreground/80 leading-relaxed line-clamp-4">
-          {series.synopsis || 'No synopsis available'}
-        </p>
-
-        {/* View Series Details Button */}
-        <Link 
-          href={`/episodes/${series.slug}`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-        >
-          View Series Details
-          <span>›</span>
-        </Link>
       </div>
 
       {/* Episodes List Card */}
@@ -152,7 +139,7 @@ export function AboutSeriesSidebar({ series, episodes, currentEpisodeId }: About
       </div>
 
       {/* Ad Slot - Sidebar */}
-      <AdSlot slot="sidebar" label="Advertisement" />
+      <AdSlot slot="sidebar" label="sidebar" />
       
       {/* Add Placement Section */}
       <div className="rounded-lg border border-border/60 bg-card/40 p-4 space-y-3">
