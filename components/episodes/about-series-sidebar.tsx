@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { formatReleaseDate } from '@/lib/format-date'
 import { type Series, type Episode } from '@/lib/db/schema'
 import { AdSlot } from '@/components/ad-slot'
 import { formatViewCount } from '@/lib/episode-utils'
@@ -81,10 +82,7 @@ export function AboutSeriesSidebar({ series, episodes, currentEpisodeId }: About
           {upcomingEpisodes.length > 0 ? (
             upcomingEpisodes.map((episode) => {
               const isCurrentEpisode = String(episode.id) === currentEpisodeId
-              const publishedDate = new Date(episode.publishedAt || new Date()).toLocaleDateString(
-                'en-US',
-                { year: 'numeric', month: 'short', day: 'numeric' }
-              )
+  const publishedDate = episode.publishedAt ? formatReleaseDate(episode.publishedAt) : ''
 
               return (
                 <Link

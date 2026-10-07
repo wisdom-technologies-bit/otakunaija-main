@@ -8,8 +8,10 @@ import remarkGfm from 'remark-gfm'
 import { ArrowDownWideNarrow, ArrowUpWideNarrow } from 'lucide-react'
 import type { Episode } from '@/lib/db/schema'
 
+type SerializedEpisode = Omit<Episode, 'publishedAt'> & { publishedAt: string | null }
+
 interface SeriesEpisodesPanelProps {
-  episodes: Episode[]
+  episodes: SerializedEpisode[]
   seriesSlug: string
   synopsis?: string | null
 }

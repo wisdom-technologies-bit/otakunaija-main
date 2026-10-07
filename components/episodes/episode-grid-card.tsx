@@ -2,20 +2,20 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { formatReleaseDate } from '@/lib/format-date'
 import { type Episode } from '@/lib/db/schema'
 import { formatDuration, formatViewCount } from '@/lib/episode-utils'
 import { Play, Download } from 'lucide-react'
 
+type SerializedEpisode = Omit<Episode, 'publishedAt'> & { publishedAt: string | null }
+
 interface EpisodeGridCardProps {
-  episode: Episode
+  episode: SerializedEpisode
   seriesSlug: string
 }
 
 export function EpisodeGridCard({ episode, seriesSlug }: EpisodeGridCardProps) {
-  const publishedDate = new Date(episode.publishedAt || new Date()).toLocaleDateString(
-    'en-US',
-    { year: 'numeric', month: 'short', day: 'numeric' }
-  )
+  const publishedDate = episode.publishedAt ? formatReleaseDate(episode.publishedAt) : ''
 
   const durationStr = episode.durationSeconds
     ? formatDuration(episode.durationSeconds)

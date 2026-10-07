@@ -2,7 +2,13 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { db } from './index'
 import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
-import { eq, asc, desc, and, lt, gt, sql, count } from 'drizzle-orm'
+import { eq, asc, desc, and, lt, lte, gt, sql, count } from 'drizzle-orm'
+import { normalizeGenreParam, sortGenres, splitGenres, uniqueGenres } from '../genres'
+
+function seriesGenreMatches(genre: string) {
+  const normalizedGenre = normalizeGenreParam(genre).toLowerCase()
+  return sql`lower(replace(',' || COALESCE(${series.genre}, '') || ',', ', ', ',')) LIKE ${`%,${normalizedGenre},%`}`
+}
 
 // Get all series with all their episodes, for sitemap generation
 const _getAllSeriesWithEpisodesForSitemap = cache(
@@ -202,17 +208,37 @@ const _getRecentEpisodesAcrossAllSeries = cache(
         .from(episodes)
         .leftJoin(series, eq(episodes.seriesId, series.id))
         .leftJoin(creators, eq(series.creatorId, creators.id))
+        .where(lte(episodes.publishedAt, new Date()))
         .orderBy(desc(episodes.publishedAt))
         .limit(limit)
         .offset(offset)
     },
     ['recent-episodes'],
-    { revalidate: 1800, tags: ['episodes-recent'] }
+    { revalidate: 60, tags: ['episodes-recent'] }
   )
 )
 
 export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
   return _getRecentEpisodesAcrossAllSeries(limit, offset)
+}
+
+const _getUpcomingEpisodes = cache(
+  unstable_cache(
+    async (limit: number) => db
+      .select({ episode: episodes, series, creator: creators })
+      .from(episodes)
+      .leftJoin(series, eq(episodes.seriesId, series.id))
+      .leftJoin(creators, eq(series.creatorId, creators.id))
+      .where(gt(episodes.publishedAt, new Date()))
+      .orderBy(asc(episodes.publishedAt))
+      .limit(limit),
+    ['upcoming-episodes'],
+    { revalidate: 60, tags: ['episodes-upcoming'] }
+  )
+)
+
+export async function getUpcomingEpisodes(limit = 12) {
+  return _getUpcomingEpisodes(limit)
 }
 
 // Get all series with a given status ("ongoing" or "completed"), with creator context —
@@ -250,7 +276,7 @@ const _getSeriesByGenre = cache(
         })
         .from(series)
         .leftJoin(creators, eq(series.creatorId, creators.id))
-        .where(eq(series.genre, genre))
+        .where(seriesGenreMatches(genre))
         .orderBy(desc(series.createdAt))
     },
     ['series-by-genre'],
@@ -291,6 +317,31 @@ export async function getTrendingSeries(limit = 5) {
   return _getTrendingSeries(limit)
 }
 
+const _getTopSeriesByGenre = cache((genre: string) =>
+  unstable_cache(
+    async () => {
+      return db
+        .select({
+          series,
+          latestEpisodeNumber: sql<number | null>`MAX(${episodes.episodeNumber})`.as('latest_episode_number'),
+          totalViews: sql<number>`COALESCE(SUM(${episodes.viewCount}), 0)`.as('total_views'),
+        })
+        .from(series)
+        .leftJoin(episodes, eq(series.id, episodes.seriesId))
+        .where(seriesGenreMatches(genre))
+        .groupBy(series.id)
+        .orderBy(desc(sql`total_views`), asc(series.id))
+        .limit(10)
+    },
+    ['top-series-by-genre', genre],
+    { revalidate: 60, tags: ['series', 'episodes'] }
+  )()
+)
+
+export async function getTopSeriesByGenre(genre: string) {
+  return _getTopSeriesByGenre(genre)
+}
+
 // Get every distinct genre currently in use across all series — used to build the filter pills
 // dynamically instead of hardcoding a genre list that may not match what's actually in the database
 const _getAllUsedGenres = cache(
@@ -301,7 +352,7 @@ const _getAllUsedGenres = cache(
         .from(series)
         .where(sql`${series.genre} IS NOT NULL`)
 
-      return result.map((r) => r.genre).filter((g): g is string => g !== null)
+      return sortGenres(uniqueGenres(result.flatMap((r) => splitGenres(r.genre))))
     },
     ['all-genres'],
     { revalidate: 86400, tags: ['series'] }
@@ -327,7 +378,7 @@ export async function getPaginatedSeries({
 }) {
   const filters = []
   if (status && ['ongoing', 'completed', 'upcoming'].includes(status)) filters.push(eq(series.status, status))
-  if (genre) filters.push(sql`(',' || COALESCE(${series.genre}, '') || ',') ILIKE ${`%,${genre},%`}`)
+  if (normalizeGenreParam(genre)) filters.push(seriesGenreMatches(genre!))
   const where = filters.length ? and(...filters) : undefined
   const offset = Math.max(0, page - 1) * pageSize
   const [items, [{ total }]] = await Promise.all([
@@ -341,8 +392,8 @@ export async function getPaginatedSeries({
 export async function getPaginatedNewEpisodes(page = 1, pageSize = 24) {
   const offset = Math.max(0, page - 1) * pageSize
   const [items, [{ total }]] = await Promise.all([
-    db.select({ episode: episodes, series, creator: creators }).from(episodes).leftJoin(series, eq(episodes.seriesId, series.id)).leftJoin(creators, eq(series.creatorId, creators.id)).orderBy(desc(episodes.publishedAt)).limit(pageSize).offset(offset),
-    db.select({ total: count() }).from(episodes),
+    db.select({ episode: episodes, series, creator: creators }).from(episodes).leftJoin(series, eq(episodes.seriesId, series.id)).leftJoin(creators, eq(series.creatorId, creators.id)).where(lte(episodes.publishedAt, new Date())).orderBy(desc(episodes.publishedAt)).limit(pageSize).offset(offset),
+    db.select({ total: count() }).from(episodes).where(lte(episodes.publishedAt, new Date())),
   ])
   return { items, total: Number(total), page, pageSize, totalPages: Math.max(1, Math.ceil(Number(total) / pageSize)) }
 }

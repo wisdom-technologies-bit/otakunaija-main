@@ -8,6 +8,7 @@ import { EpisodeRow } from '@/components/episodes/episode-row'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 import type { InferSelectModel } from 'drizzle-orm'
+import { toISO } from '@/lib/to-iso'
 import type { series, episodes } from '@/lib/db/schema'
 
 export const metadata: Metadata = {
@@ -27,7 +28,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = sp.q?.trim() || ''
 
   type SeriesResult = InferSelectModel<typeof series> & { episodeCount?: number }
-  type EpisodeResult = { episode: InferSelectModel<typeof episodes>; series: InferSelectModel<typeof series> | null }
+  type SerializedEpisode = Omit<InferSelectModel<typeof episodes>, 'publishedAt'> & { publishedAt: string | null }
+  type EpisodeResult = { episode: SerializedEpisode; series: InferSelectModel<typeof series> | null }
   let seriesResults: SeriesResult[] = []
   let episodesResults: EpisodeResult[] = []
   let hasResults = false
@@ -35,7 +37,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (query) {
     const results = await searchEpisodesAndSeriesSmart(query)
     seriesResults = results.seriesResults
-    episodesResults = results.episodesResults
+    episodesResults = results.episodesResults.map((result) => ({
+      ...result,
+      episode: {
+        ...result.episode,
+        publishedAt: toISO(result.episode.publishedAt),
+      },
+    }))
     hasResults = seriesResults.length > 0 || episodesResults.length > 0
 
     // Add episode counts to series results

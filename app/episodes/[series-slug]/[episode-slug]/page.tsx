@@ -11,6 +11,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 import { VideoPlayer } from '@/components/episodes/video-player-client'
+import { WatchProgressTracker } from '@/components/episodes/watch-progress-tracker'
 import { CreatorCredit } from '@/components/episodes/creator-credit'
 import { EpisodeNavigation } from '@/components/episodes/episode-navigation'
 import { EpisodeTracker } from '@/components/episodes/episode-tracker'
@@ -20,6 +21,7 @@ import { LiveViewerWidget } from '@/components/episodes/live-viewer-widget'
 import { AboutSeriesSidebar } from '@/components/episodes/about-series-sidebar'
 import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
 import { PollPlacement } from '@/components/poll-placement'
+import { toISO } from '@/lib/to-iso'
 
 export const revalidate = 3600
 
@@ -166,7 +168,7 @@ export default async function WatchPage({ params }: Props) {
         'name': episode.title,
         'description': episode.synopsis || `Watch ${episode.title} on OtakuNaija.`,
         'thumbnailUrl': [episode.thumbnailUrl],
-        'uploadDate': episode.publishedAt ? new Date(episode.publishedAt).toISOString() : new Date().toISOString(),
+        'uploadDate': toISO(episode.publishedAt),
         'contentUrl': episode.videoUrl,
       }
     ]
@@ -210,6 +212,14 @@ export default async function WatchPage({ params }: Props) {
                 title={episode.title}
                 subtitlesUrl={episode.subtitlesUrl}
                 playId={episode.playId}
+              />
+              <WatchProgressTracker
+                seriesSlug={seriesSlug}
+                episodeSlug={episode.slug}
+                seriesTitle={series.title}
+                epNumber={episode.episodeNumber}
+                thumb={episode.thumbnailUrl || series.posterImageUrl || series.coverImageUrl || null}
+                durationSeconds={episode.durationSeconds ?? 0}
               />
             </div>
 

@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { toISO } from '@/lib/to-iso'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getSeriesBySlugWithEpisodes } from '@/lib/db/queries'
@@ -219,11 +220,14 @@ export default async function SeriesPage({ params }: Props) {
             {creator && <CreatorCredit creator={creator} />}
 
             {/* Episodes panel with tabs + sort */}
-            <SeriesEpisodesPanel
-              episodes={episodes}
-              seriesSlug={series.slug}
-              synopsis={series.synopsis}
-            />
+          <SeriesEpisodesPanel
+            episodes={episodes.map((episode) => ({
+              ...episode,
+              publishedAt: toISO(episode.publishedAt),
+            }))}
+            seriesSlug={series.slug}
+            synopsis={series.synopsis}
+          />
           </div>
 
           {/* Sidebar (desktop) */}

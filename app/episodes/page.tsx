@@ -1,26 +1,26 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 import {
-  getAllSeriesWithCreators,
-  getEpisodesBySeries,
   getRecentEpisodesAcrossAllSeries,
-  getSeriesByStatus,
+  getUpcomingEpisodes,
   getTrendingSeries,
   getAllUsedGenres,
-  getSeriesByGenre,
-  getLatestEpisodeNumber,
 } from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { AdSlot } from '@/components/ad-slot'
-import { SeriesCard } from '@/components/episodes/series-card'
-import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
-import { NewsletterSignup } from '@/components/newsletter-signup'
+import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
+import { GenreRow } from '@/components/episodes/genre-row'
+import { toISO } from '@/lib/to-iso'
 import { SeriesHeroCarousel } from '@/components/episodes/series-hero-carousel'
+import { ResumeWatchingRow } from '@/components/episodes/resume-watching-row'
 import { EpisodesFilterPills } from '@/components/episodes/episodes-filter-pills'
 import { NewReleasesRow } from '@/components/episodes/new-releases-row'
-import { OngoingSeriesScroll } from '@/components/episodes/ongoing-series-scroll'
+import { UpcomingRow } from '@/components/episodes/upcoming-row'
 import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 import { PollPlacement } from '@/components/poll-placement'
+
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'Episodes',
@@ -33,57 +33,44 @@ export const metadata: Metadata = {
 }
 
 interface EpisodesPageProps {
-  searchParams: Promise<{ genre?: string }>
+  searchParams: Promise<{ genre?: string; status?: string }>
+}
+
+function GenreRowSkeleton() {
+  return <div className="flex gap-4 overflow-hidden"><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /></div>
 }
 
 export default async function EpisodesPage({ searchParams }: EpisodesPageProps) {
-  const { genre } = await searchParams
+  const { genre, status } = await searchParams
+  if (genre) redirect(`/episodes/browse?genre=${encodeURIComponent(genre)}`)
+  if (status) redirect(`/episodes/browse?status=${encodeURIComponent(status)}`)
 
   let error = null
-  let allSeriesWithCreators: any[] = []
   let recentEpisodes: any[] = []
-  let ongoingSeries: any[] = []
+  let upcomingEpisodes: any[] = []
   let trendingSeries: any[] = []
   let genres: string[] = []
-  let genreFiltered: any[] | null = null
 
   try {
-    const results = await Promise.all([
-      getAllSeriesWithCreators(),
+    ;[recentEpisodes, upcomingEpisodes, trendingSeries, genres] = await Promise.all([
       getRecentEpisodesAcrossAllSeries(10),
-      getSeriesByStatus('ongoing'),
+      getUpcomingEpisodes(12),
       getTrendingSeries(5),
       getAllUsedGenres(),
-      genre ? getSeriesByGenre(genre) : Promise.resolve(null),
     ])
-      ;[
-        allSeriesWithCreators,
-        recentEpisodes,
-        ongoingSeries,
-        trendingSeries,
-        genres,
-        genreFiltered,
-      ] = results
   } catch (err) {
     console.error('Error fetching episodes data:', err)
     error = 'Failed to load episodes. Please try again later.'
   }
 
-  // Compute latest episode numbers for the full series grid
-  const seriesWithCounts = await Promise.all(
-    allSeriesWithCreators.map(async (item) => {
-      const episodeCount = await getLatestEpisodeNumber(item.series.id)
-      return {
-        ...item,
-        episodeCount,
-      }
-    })
-  )
-
-  // Hero series: use genre-filtered if active, otherwise all series (first 4)
-  const heroSeries = (genreFiltered ?? allSeriesWithCreators)
-    .slice(0, 4)
-    .map((item) => item.series)
+  const serializeEpisodes = (items: any[]) => items.map(({ episode, series, creator }) => ({
+    episode: { ...episode, publishedAt: toISO(episode.publishedAt) },
+    series,
+    creator,
+  }))
+  const serializedRecentEpisodes = serializeEpisodes(recentEpisodes)
+  const serializedUpcomingEpisodes = serializeEpisodes(upcomingEpisodes)
+  const heroSeries = trendingSeries.slice(0, 4).map((item) => item.series)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -130,9 +117,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="space-y-4">
             <SeriesHeroCarousel seriesList={heroSeries} />
-            <div className="w-full pt-2">
-              <EpisodesSearchBar />
-            </div>
+            <ResumeWatchingRow />
           </div>
         </div>
       </section>
@@ -149,9 +134,15 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
           <div className="space-y-10 min-w-0 overflow-hidden">
             <EpisodesFilterPills genres={genres} activeGenre={genre} />
 
-            <NewReleasesRow items={recentEpisodes} />
+            <UpcomingRow items={serializedUpcomingEpisodes} />
 
-            <OngoingSeriesScroll items={ongoingSeries} />
+            <NewReleasesRow items={serializedRecentEpisodes} />
+
+            {['Action', 'Adventure', 'Fantasy', 'Romance', 'Comedy'].map((genreName) => (
+              <Suspense key={genreName} fallback={<GenreRowSkeleton />}>
+                <GenreRow genre={genreName} />
+              </Suspense>
+            ))}
 
             <AdSlot slot="footer" label="footer" />
           </div>
@@ -159,48 +150,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
           <EpisodesSidebar trendingSeries={trendingSeries} />
         </div>
 
-        {/* Original full series grid – kept below the new layout */}
-        {seriesWithCounts.length > 0 ? (
-          <>
-            <div className="mt-16">
-              <h2 className="mb-6 text-2xl font-bold text-foreground">
-                All Series
-              </h2>
-              <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 xl:grid-cols-5">
-                {seriesWithCounts.map((item) => (
-                  <SeriesCard
-                    key={item.series.id}
-                    series={{
-                      ...item.series,
-                      episodeCount: item.episodeCount,
-                    }}
-                    creatorName={item.creator?.name}
-                    variant="poster"
-                  />
-                ))}
-              </div>
-            </div>
 
-            {/* Newsletter – kept from original */}
-            <div className="mt-16 rounded-lg border border-border/60 bg-card/40 p-8 md:p-12">
-              <div className="max-w-2xl">
-                <h2 className="mb-2 text-2xl font-bold text-foreground">
-                  Get weekly anime drops, straight to your inbox.
-                </h2>
-                <p className="mb-6 text-foreground/70">
-                  Subscribe to stay updated on new episodes and exclusive creator content.
-                </p>
-                <NewsletterSignup />
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="mt-16 rounded-lg border border-border/40 bg-card/40 p-12 text-center">
-            <p className="text-foreground/70">
-              {error ? 'Unable to load series.' : 'No series available yet. Check back soon!'}
-            </p>
-          </div>
-        )}
         <PollPlacement source="episodes" className="mx-auto mt-14 max-w-2xl" />
       </main>
 
