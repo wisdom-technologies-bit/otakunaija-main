@@ -105,6 +105,7 @@ export const viewport: Viewport = {
   themeColor: "#1a0d1a",
   width: "device-width",
   initialScale: 1,
+  colorScheme: "dark",
 }
 
 export default function RootLayout({
@@ -113,7 +114,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable} bg-background`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${outfit.variable} dark bg-background`} style={{ colorScheme: "dark" }}>
       <head>
         <meta name="monetag" content="3ebb044040c6a2400146260166c743ea" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
@@ -183,7 +184,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false} disableTransitionOnChange>
           <HideV0Badge />
           {children}
           <Toaster richColors position="top-center" />
