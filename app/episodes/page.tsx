@@ -16,6 +16,7 @@ import { SeriesCard } from '@/components/episodes/series-card'
 import { EpisodesSearchBar } from '@/components/episodes/episodes-search-bar'
 import { NewsletterSignup } from '@/components/newsletter-signup'
 import { SeriesHeroCarousel } from '@/components/episodes/series-hero-carousel'
+import { ResumeWatchingRow } from '@/components/episodes/resume-watching-row'
 import { EpisodesFilterPills } from '@/components/episodes/episodes-filter-pills'
 import { NewReleasesRow } from '@/components/episodes/new-releases-row'
 import { OngoingSeriesScroll } from '@/components/episodes/ongoing-series-scroll'
@@ -130,6 +131,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="space-y-4">
             <SeriesHeroCarousel seriesList={heroSeries} />
+            <ResumeWatchingRow />
             <div className="w-full pt-2">
               <EpisodesSearchBar />
             </div>
