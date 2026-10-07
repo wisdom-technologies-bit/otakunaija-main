@@ -200,11 +200,10 @@ export default async function WatchPage({ params }: Props) {
         </div>
       </div>
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_340px]">
-          {/* Main Content */}
-          <div className="space-y-8 min-w-0">
-            {/* Video Player */}
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-6 md:py-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
+          {/* Player + info */}
+          <div className="min-w-0 space-y-6 lg:col-start-1">
             <div className="overflow-hidden rounded-lg bg-black">
               <VideoPlayer
                 videoUrl={episode.videoUrl}
@@ -223,19 +222,11 @@ export default async function WatchPage({ params }: Props) {
               />
             </div>
 
-            {/* Episode Info */}
-            <div className="space-y-6">
-              {/* Title and Metadata */}
-              <div className="space-y-4">
-                <h1 className="text-xl md:text-2xl font-bold text-foreground">{episode.title}</h1>
-
-                <div className="flex flex-wrap items-center gap-4 text-xs text-foreground/70">
-                  <Link
-                    href={`/episodes/${seriesSlug}`}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {series.title}
-                  </Link>
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <h1 className="text-xl font-bold text-foreground md:text-2xl">{episode.title}</h1>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground/70">
+                  <Link href={`/episodes/${seriesSlug}`} className="font-medium text-primary hover:underline">{series.title}</Link>
                   <span>·</span>
                   <span>Episode {episode.episodeNumber}</span>
                   <span>·</span>
@@ -251,12 +242,9 @@ export default async function WatchPage({ params }: Props) {
                   <span>·</span>
                   <span>{formatPublishedDate(episode.publishedAt || new Date())}</span>
                 </div>
-                <LiveViewerWidget
-                  episodeUrl={`https://otakunaija.name.ng/episodes/${seriesSlug}/${episode.slug}`}
-                />
+                <LiveViewerWidget episodeUrl={`https://otakunaija.name.ng/episodes/${seriesSlug}/${episode.slug}`} />
               </div>
 
-              {/* Navigation Buttons */}
               <EpisodeNavigation
                 seriesSlug={seriesSlug}
                 currentEpisode={episode}
@@ -264,44 +252,27 @@ export default async function WatchPage({ params }: Props) {
                 nextEpisode={navData.next}
                 allEpisodes={allEpisodes}
               />
-
-              {/* Creator Credit */}
               {creator && <CreatorCredit creator={creator} />}
-
-              {/* Synopsis */}
               {episode.synopsis && <ExpandableSynopsis synopsis={episode.synopsis} />}
-
-              {/* Mobile About Series Section */}
-              <div className="lg:hidden">
-                <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={String(episode.id)} />
-              </div>
             </div>
+          </div>
 
-            {/* Newsletter */}
-            <div className="rounded-lg border border-border/60 bg-card/40 p-8">
+          {/* Sidebar: rendered once */}
+          <aside className="no-scrollbar min-w-0 space-y-6 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
+            <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={String(episode.id)} />
+            <PollPlacement source="episode" />
+          </aside>
+
+          {/* Newsletter + trending */}
+          <div className="min-w-0 space-y-8 lg:col-start-1">
+            <div className="rounded-lg border border-border/60 bg-card/40 p-5 md:p-6">
               <div className="max-w-2xl">
-                <h3 className="mb-2 text-xl font-bold text-foreground">
-                  Get weekly anime drops, straight to your inbox.
-                </h3>
-                <p className="mb-6 text-foreground/70">
-                  Subscribe to stay updated on new episodes and exclusive creator content.
-                </p>
+                <h3 className="mb-2 text-lg font-bold text-foreground md:text-xl">Get weekly anime drops, straight to your inbox.</h3>
+                <p className="mb-4 text-sm text-foreground/70">Subscribe to stay updated on new episodes and exclusive creator content.</p>
                 <NewsletterSignup />
               </div>
             </div>
-
-            {/* Trending Series Section */}
-            <div className="pt-4">
-              <TrendingSeriesSection trendingSeries={trendingSeriesData} />
-            </div>
-            <PollPlacement source="episode" className="mt-8 max-w-2xl" />
-          </div>
-
-          {/* Sidebar - Desktop Only */}
-          <div className="hidden lg:block">
-            <div className="sticky top-0 space-y-6">
-              <AboutSeriesSidebar series={series} episodes={allEpisodes} currentEpisodeId={String(episode.id)} />
-            </div>
+            <TrendingSeriesSection trendingSeries={trendingSeriesData} />
           </div>
         </div>
       </main>
