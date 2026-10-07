@@ -11,46 +11,9 @@
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
-}
 
-:root {
-  /* Light theme */
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.18 0.01 280);
-  --card: oklch(0.97 0 0);
-  --card-foreground: oklch(0.18 0.01 280);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 280);
-  --primary: oklch(0.65 0.22 25);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0 0);
-  --secondary-foreground: oklch(0.2 0.01 280);
-  --muted: oklch(0.95 0 0);
-  --muted-foreground: oklch(0.5 0.01 280);
-  --accent: oklch(0.65 0.22 25);
-  --accent-foreground: oklch(0.99 0 0);
-  --destructive: oklch(0.6 0.24 27);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0 0);
-  --input: oklch(0.93 0 0);
-  --ring: oklch(0.65 0.22 25);
-  --chart-1: oklch(0.65 0.22 25);
-  --chart-2: oklch(0.7 0.18 50);
-  --chart-3: oklch(0.6 0.15 280);
-  --chart-4: oklch(0.65 0.18 200);
-  --chart-5: oklch(0.75 0.15 80);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.97 0 0);
-  --sidebar-foreground: oklch(0.2 0.01 280);
-  --sidebar-primary: oklch(0.65 0.22 25);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.2 0.01 280);
-  --sidebar-border: oklch(0.9 0 0);
-  --sidebar-ring: oklch(0.65 0.22 25);
-}
 
-.dark {
+:root, .dark {.
   /* Dark anime theme */
   --background: oklch(0.13 0.01 280);
   --foreground: oklch(0.97 0 0);
@@ -84,6 +47,8 @@
   --sidebar-accent-foreground: oklch(0.97 0 0);
   --sidebar-border: oklch(0.25 0.01 280);
   --sidebar-ring: oklch(0.68 0.22 25);
+  --radius: 0.5rem;
+  color-scheme: dark;
 }
 
 @theme inline {
