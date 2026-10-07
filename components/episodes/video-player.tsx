@@ -173,30 +173,6 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       language: 'en',
     },
   } as any)
-
-          // Add custom CSS variables for theming to match dark theme
-          const style = document.createElement('style')
-          style.textContent = `
-            :root {
-      --plyr-color-main: var(--color-primary);
-      --plyr-control-radius: 0.25rem;
-      --plyr-range-track-height: 0.25rem;
-    }
-            .plyr {
-              background-color: #1a0d1a;
-            }
-            .plyr__controls {
-              background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
-            }
-            @media (max-width: 640px) {
-              .plyr__controls { flex-wrap: wrap; gap: 2px; }
-              .plyr__progress { order: -1; flex: 1 0 100%; width: 100%; margin: 0 0 6px 0; min-width: 0; }
-              .plyr__volume { display: none; }
-              .plyr__controls > button { margin: 0; padding: 6px; }
-              .plyr__time { margin: 0 2px; }
-            }
-          `
-          document.head.appendChild(style)
         }
       }, 0)
     }
