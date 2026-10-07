@@ -3,6 +3,7 @@ import {
   getAllSeriesWithCreators,
   getEpisodesBySeries,
   getRecentEpisodesAcrossAllSeries,
+  getUpcomingEpisodes,
   getSeriesByStatus,
   getTrendingSeries,
   getAllUsedGenres,
@@ -19,9 +20,12 @@ import { SeriesHeroCarousel } from '@/components/episodes/series-hero-carousel'
 import { ResumeWatchingRow } from '@/components/episodes/resume-watching-row'
 import { EpisodesFilterPills } from '@/components/episodes/episodes-filter-pills'
 import { NewReleasesRow } from '@/components/episodes/new-releases-row'
+import { UpcomingRow } from '@/components/episodes/upcoming-row'
 import { OngoingSeriesScroll } from '@/components/episodes/ongoing-series-scroll'
 import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 import { PollPlacement } from '@/components/poll-placement'
+
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'Episodes',
@@ -43,6 +47,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
   let error = null
   let allSeriesWithCreators: any[] = []
   let recentEpisodes: any[] = []
+  let upcomingEpisodes: any[] = []
   let ongoingSeries: any[] = []
   let trendingSeries: any[] = []
   let genres: string[] = []
@@ -52,6 +57,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
     const results = await Promise.all([
       getAllSeriesWithCreators(),
       getRecentEpisodesAcrossAllSeries(10),
+      getUpcomingEpisodes(12),
       getSeriesByStatus('ongoing'),
       getTrendingSeries(5),
       getAllUsedGenres(),
@@ -60,6 +66,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
       ;[
         allSeriesWithCreators,
         recentEpisodes,
+        upcomingEpisodes,
         ongoingSeries,
         trendingSeries,
         genres,
@@ -69,6 +76,21 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
     console.error('Error fetching episodes data:', err)
     error = 'Failed to load episodes. Please try again later.'
   }
+
+  const serializeEpisodes = (items: any[]) => items.map(({ episode, series, creator }) => ({
+    episode: {
+      ...episode,
+      publishedAt: episode.publishedAt
+        ? typeof episode.publishedAt === 'string'
+          ? episode.publishedAt
+          : episode.publishedAt.toISOString()
+        : null,
+    },
+    series,
+    creator,
+  }))
+  const serializedRecentEpisodes = serializeEpisodes(recentEpisodes)
+  const serializedUpcomingEpisodes = serializeEpisodes(upcomingEpisodes)
 
   // Compute latest episode numbers for the full series grid
   const seriesWithCounts = await Promise.all(
@@ -151,7 +173,9 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
           <div className="space-y-10 min-w-0 overflow-hidden">
             <EpisodesFilterPills genres={genres} activeGenre={genre} />
 
-            <NewReleasesRow items={recentEpisodes} />
+            <UpcomingRow items={serializedUpcomingEpisodes} />
+
+            <NewReleasesRow items={serializedRecentEpisodes} />
 
             <OngoingSeriesScroll items={ongoingSeries} />
 

@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { db } from './index'
 import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
-import { eq, asc, desc, and, lt, gt, sql, count } from 'drizzle-orm'
+import { eq, asc, desc, and, lt, lte, gt, sql, count } from 'drizzle-orm'
 import { normalizeGenreParam, sortGenres, splitGenres, uniqueGenres } from '../genres'
 
 function seriesGenreMatches(genre: string) {
@@ -208,17 +208,37 @@ const _getRecentEpisodesAcrossAllSeries = cache(
         .from(episodes)
         .leftJoin(series, eq(episodes.seriesId, series.id))
         .leftJoin(creators, eq(series.creatorId, creators.id))
+        .where(lte(episodes.publishedAt, new Date()))
         .orderBy(desc(episodes.publishedAt))
         .limit(limit)
         .offset(offset)
     },
     ['recent-episodes'],
-    { revalidate: 1800, tags: ['episodes-recent'] }
+    { revalidate: 60, tags: ['episodes-recent'] }
   )
 )
 
 export async function getRecentEpisodesAcrossAllSeries(limit = 10, offset = 0) {
   return _getRecentEpisodesAcrossAllSeries(limit, offset)
+}
+
+const _getUpcomingEpisodes = cache(
+  unstable_cache(
+    async (limit: number) => db
+      .select({ episode: episodes, series, creator: creators })
+      .from(episodes)
+      .leftJoin(series, eq(episodes.seriesId, series.id))
+      .leftJoin(creators, eq(series.creatorId, creators.id))
+      .where(gt(episodes.publishedAt, new Date()))
+      .orderBy(asc(episodes.publishedAt))
+      .limit(limit),
+    ['upcoming-episodes'],
+    { revalidate: 60, tags: ['episodes-upcoming'] }
+  )
+)
+
+export async function getUpcomingEpisodes(limit = 12) {
+  return _getUpcomingEpisodes(limit)
 }
 
 // Get all series with a given status ("ongoing" or "completed"), with creator context —
@@ -347,8 +367,8 @@ export async function getPaginatedSeries({
 export async function getPaginatedNewEpisodes(page = 1, pageSize = 24) {
   const offset = Math.max(0, page - 1) * pageSize
   const [items, [{ total }]] = await Promise.all([
-    db.select({ episode: episodes, series, creator: creators }).from(episodes).leftJoin(series, eq(episodes.seriesId, series.id)).leftJoin(creators, eq(series.creatorId, creators.id)).orderBy(desc(episodes.publishedAt)).limit(pageSize).offset(offset),
-    db.select({ total: count() }).from(episodes),
+    db.select({ episode: episodes, series, creator: creators }).from(episodes).leftJoin(series, eq(episodes.seriesId, series.id)).leftJoin(creators, eq(series.creatorId, creators.id)).where(lte(episodes.publishedAt, new Date())).orderBy(desc(episodes.publishedAt)).limit(pageSize).offset(offset),
+    db.select({ total: count() }).from(episodes).where(lte(episodes.publishedAt, new Date())),
   ])
   return { items, total: Number(total), page, pageSize, totalPages: Math.max(1, Math.ceil(Number(total) / pageSize)) }
 }

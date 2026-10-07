@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { formatRelativeTime } from '@/lib/posts'
-import type { episodes as Episode, series as Series } from '@/lib/db/schema'
+type ReleaseEpisode = { id: number; slug: string; title: string; episodeNumber: number; thumbnailUrl: string | null; publishedAt: string | null }
+type ReleaseSeries = { slug: string; title: string; posterImageUrl: string | null; coverImageUrl: string | null }
 
 interface NewReleasesRowProps {
-  items: { episode: typeof Episode.$inferSelect; series: typeof Series.$inferSelect | null }[]
+  items: { episode: ReleaseEpisode; series: ReleaseSeries | null }[]
 }
 
 export function NewReleasesRow({ items }: NewReleasesRowProps) {
