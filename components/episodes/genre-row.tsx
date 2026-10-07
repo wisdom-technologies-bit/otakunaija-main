@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { getTopSeriesByGenre } from '@/lib/db/queries'
+import SectionTitle from '@/components/episodes/section-title'
 
 export async function GenreRow({ genre }: { genre: string }) {
   const items = await getTopSeriesByGenre(genre)
@@ -8,11 +9,8 @@ export async function GenreRow({ genre }: { genre: string }) {
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-foreground md:text-2xl">{genre}</h2>
-        <Link href={`/episodes/browse?genre=${encodeURIComponent(genre)}`} className="text-sm font-medium text-primary hover:underline">View All</Link>
-      </div>
-      <div className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto overflow-y-hidden pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <SectionTitle title={genre} href={`/episodes/browse?genre=${encodeURIComponent(genre)}`} />
+      <div className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto no-scrollbar overflow-y-hidden pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map(({ series, latestEpisodeNumber }, index) => (
           <Link key={series.id} href={`/episodes/${series.slug}`} className="group w-[120px] shrink-0 snap-start">
             <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-muted">
