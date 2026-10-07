@@ -11,9 +11,10 @@
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
 
-
-:root, .dark {.
+:root,
+.dark {
   /* Dark anime theme */
   --background: oklch(0.13 0.01 280);
   --foreground: oklch(0.97 0 0);
