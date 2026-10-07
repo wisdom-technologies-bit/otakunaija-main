@@ -3,31 +3,75 @@ import { db } from '@/lib/db/index'
 import { series } from '@/lib/db/schema'
 import { getTopSeriesByGenre } from '@/lib/db/queries'
 import { splitGenres } from '@/lib/genres'
-import { eq } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
-  const slugs = new URL(request.url).searchParams.get('slugs')?.split(',').filter((slug) => /^[a-z0-9-]+$/i.test(slug)).filter((slug, i, all) => all.indexOf(slug) === i).slice(0, 5) ?? []
-  if (!slugs.length) return NextResponse.json({ series: [] })
+  try {
+    const raw = new URL(request.url).searchParams.get('slugs') ?? ''
+    const slugs = Array.from(
+      new Set(raw.split(',').map((s) => s.trim()).filter((s) => /^[a-z0-9-]+$/i.test(s)))
+    ).slice(0, 5)
+    if (!slugs.length) return NextResponse.json({ series: [] })
 
-  const rows = (await Promise.all(slugs.map((slug) => db.select({ slug: series.slug, id: series.id, title: series.title, genre: series.genre, posterUrl: series.posterUrl, coverImage: series.coverImage }).from(series).where(eq(series.slug, slug)).limit(1)))).flat()
-  const ordered = slugs.map((slug) => rows.find((row) => row.slug === slug)).filter((row): row is (typeof rows)[number] => Boolean(row))
-  const genres: string[] = []
-  for (const row of ordered) for (const genre of splitGenres(row.genre)) if (!genres.some((item) => item.toLowerCase() === genre.toLowerCase())) { genres.push(genre); break }
-  if (genres.length < 4) for (const row of ordered) for (const genre of splitGenres(row.genre)) if (!genres.some((item) => item.toLowerCase() === genre.toLowerCase())) { genres.push(genre); if (genres.length === 4) break }
-  const watched = new Set(ordered.map((row) => row.slug))
-  const picked = new Set<string>()
-  const result = []
-  for (const genre of genres.slice(0, 4)) {
-    let candidates: Awaited<ReturnType<typeof getTopSeriesByGenre>> = []
-    try {
-      candidates = await getTopSeriesByGenre(genre, 10)
-    } catch {
-      continue
+    const rows = await db
+      .select({ slug: series.slug, genre: series.genre })
+      .from(series)
+      .where(inArray(series.slug, slugs))
+
+    const ordered = slugs
+      .map((slug) => rows.find((r) => r.slug === slug))
+      .filter((r): r is (typeof rows)[number] => Boolean(r))
+
+    const genres: string[] = []
+    const has = (g: string) => genres.some((x) => x.toLowerCase() === g.toLowerCase())
+
+    for (const row of ordered) {
+      const first = splitGenres(row.genre).find((g) => !has(g))
+      if (first) genres.push(first)
     }
-    const candidate = candidates.find((item) => !watched.has(item.series.slug) && !picked.has(item.series.slug))
-    if (candidate) { picked.add(candidate.series.slug); result.push({ slug: candidate.series.slug, title: candidate.series.title, posterUrl: candidate.series.posterUrl ?? candidate.series.coverImage, genre, latestEpisodeNumber: candidate.latestEpisodeNumber }) }
+    for (const row of ordered) {
+      for (const g of splitGenres(row.genre)) {
+        if (genres.length >= 4) break
+        if (!has(g)) genres.push(g)
+      }
+    }
+
+    const watched = new Set(slugs)
+    const picked = new Set<string>()
+    const result: {
+      slug: string
+      title: string
+      posterUrl: string | null
+      genre: string
+      latestEpisodeNumber: number | null
+    }[] = []
+
+    for (const genre of genres.slice(0, 4)) {
+      try {
+        const candidates = await getTopSeriesByGenre(genre, 10)
+        const pick = candidates.find(
+          (c) => !watched.has(c.series.slug) && !picked.has(c.series.slug)
+        )
+        if (pick) {
+          picked.add(pick.series.slug)
+          result.push({
+            slug: pick.series.slug,
+            title: pick.series.title,
+            posterUrl: pick.series.posterImageUrl ?? pick.series.coverImageUrl ?? null,
+            genre,
+            latestEpisodeNumber: pick.latestEpisodeNumber,
+          })
+        }
+      } catch (error) {
+        console.error(`[recommendations] genre ${genre} failed`, error)
+      }
+    }
+
+    return NextResponse.json({ series: result })
+  } catch (error) {
+    console.error('[recommendations] failed', error)
+    return NextResponse.json({ series: [] }, { status: 500 })
   }
-  return NextResponse.json({ series: result })
 }
