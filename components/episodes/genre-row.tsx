@@ -4,8 +4,15 @@ import { getTopSeriesByGenre } from '@/lib/db/queries'
 import SectionTitle from '@/components/episodes/section-title'
 
 export async function GenreRow({ genre }: { genre: string }) {
-  const items = await getTopSeriesByGenre(genre)
+  let items: Awaited<ReturnType<typeof getTopSeriesByGenre>> = []
+  try {
+    items = await getTopSeriesByGenre(genre)
+  } catch (error) {
+    console.error(`[episodes] genre-row ${genre} failed`, error)
+    return null
+  }
   if (items.length < 3) return null
+  // ...the rest of your return (...) stays exactly the same
 
   return (
     <section>
