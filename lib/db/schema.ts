@@ -1,5 +1,5 @@
-import { pgTable, serial, text, timestamp, integer, boolean, unique, index } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { pgTable, serial, text, timestamp, integer, boolean, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
 
 export const creators = pgTable('creators', {
   id: serial('id').primaryKey(),
@@ -210,6 +210,17 @@ export const pollVoteSubmissions = pgTable('poll_vote_submissions', {
   voterHash: text('voter_hash').notNull(),
   submittedAt: timestamp('submitted_at').notNull().defaultNow(),
 }, (table) => [unique('poll_vote_submissions_poll_voter_unique').on(table.pollId, table.voterHash)])
+
+export const pushEvents = pgTable('push_events', {
+  id: serial('id').primaryKey(),
+  type: text('type').notNull(),
+  contentId: integer('content_id').notNull(),
+  status: text('status').notNull().default('pending'),
+  attempts: integer('attempts').notNull().default(0),
+  lastError: text('last_error'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+}, (table) => [uniqueIndex('push_events_type_content_unique').on(table.type, table.contentId).where(sql`type <> 'suggestion'`)])
 
 // Relations
 export const creatorsRelations = relations(creators, ({ many }) => ({
