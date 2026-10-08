@@ -13,6 +13,7 @@ import { AdSlot } from '@/components/ad-slot'
 import { Calendar, Play } from 'lucide-react'
 import { PollPlacement } from '@/components/poll-placement'
 import { splitGenres } from '@/lib/genres'
+import { GenreTagger } from '@/components/push/genre-tagger'
 
 export const revalidate = 3600
 
@@ -70,6 +71,7 @@ export default async function SeriesPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <GenreTagger genre={series.genre} />
       <SiteHeader />
 
       {/* JSON-LD for BreadcrumbList and TVSeries */}
