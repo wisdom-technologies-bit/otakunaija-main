@@ -1,0 +1,141 @@
+OTAKUNAIJA WEB PUSH / ONESIGNAL READ-ONLY AUDIT
+Audit date: 2026-10-08
+
+Scope: source audit only. The only file changed by this audit is this report.
+
+1. PROJECT BASICS
+
+- Framework: Next.js 16.2.4, React 19.2.4 (`package.json`, dependencies). App Router is used: routes are under `app/`, including `app/layout.tsx`, `app/sitemap.ts`, and `app/api/.../route.ts`.
+- Package manager: no `packageManager` field is present in `package.json`; the repository includes a lockfile policy outside this report context, but the manifest itself does not declare one. Scripts are npm-compatible (`dev`, `build`, `start`, `lint`, `test`, Drizzle scripts).
+- OneSignal: no `react-onesignal`, `onesignal`, or `OneSignal` application code exists. No OneSignal dependency is in `package.json`.
+- `next.config.mjs` (entire file):
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  images: {
+    unoptimized: true,
+  },
+}
+
+export default nextConfig
+```
+There are no headers, redirects, CSP, or rewrites configured.
+- There is no `middleware.ts`; the equivalent current Next.js 16 file is `proxy.ts`. Full `proxy.ts`:
+```ts
+import { NextResponse, type NextRequest } from "next/server"
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth"
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  if (pathname === "/admin/login") return NextResponse.next()
+  if (pathname.startsWith("/admin")) {
+    const token = request.cookies.get(SESSION_COOKIE)?.value
+    const session = await verifySessionToken(token)
+    if (!session) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/admin/login"
+      url.searchParams.set("from", pathname)
+      return NextResponse.redirect(url)
+    }
+  }
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: ["/admin/:path*"],
+}
+```
+The matcher protects only `/admin/:path*`; API ingestion routes are not protected by proxy and use their own API-key checks.
+
+2. DATABASE
+
+- Neon client: `@neondatabase/serverless`. The legacy SQL client is created in `lib/db.ts` (`const url = process.env.DATABASE_URL`; `neon(url)` inside `getSql()`). The Drizzle client is created in `lib/db/index.ts`: `const pool = new Pool({ connectionString: process.env.DATABASE_URL })` and `export const db = drizzle(pool, { schema })`.
+- Drizzle schema is `lib/db/schema.ts`.
+
+Posts are not defined in the Drizzle schema; they are accessed through raw SQL in `lib/posts.ts` and `lib/admin-queries.ts`. The selected post shape in `lib/posts.ts:10-25` is: `id number`, `slug string`, `title string`, `excerpt string`, `content string`, `cover_image string|null`, `category string`, `author string`, `tags string[]|null`, `featured boolean`, `trending boolean`, `views number`, `read_time number`, `published_at string`, `created_at string`. Queries use `SELECT * FROM posts`; insert is `lib/admin-queries.ts:119-130` into `slug, title, excerpt, content, cover_image, category, author, tags, featured, trending, read_time`. No explicit post status/draft column is shown in application code. Posts are ordered/filtered by `published_at`; the app treats inserted posts as immediately publishable/live.
+
+Exact Drizzle tables:
+- `lib/db/schema.ts:4-13`, `creators`: `id serial PK`, `name text NOT NULL`, `slug text NOT NULL UNIQUE`, `bio text`, `avatar_url text`, `facebook_url text`, `created_at timestamp defaultNow`.
+- `lib/db/schema.ts:15-28`, `series`: `id serial PK`, `creator_id integer NOT NULL FK creators.id`, `title text NOT NULL`, `slug text NOT NULL UNIQUE`, `synopsis text`, `cover_image_url text`, `poster_image_url text`, `status text default 'ongoing'`, `genre text`, `anilist_id integer UNIQUE`, `title_checked boolean NOT NULL default false`, `created_at timestamp defaultNow`.
+- `lib/db/schema.ts:30-48`, `episodes`: `id serial PK`, `series_id integer NOT NULL FK series.id`, `episode_number integer NOT NULL`, `title text NOT NULL`, `slug text NOT NULL UNIQUE`, `synopsis text`, `video_public_id text`, `video_url text`, `thumbnail_url text NOT NULL`, `duration_seconds integer`, `subtitles_url text`, `play_id text UNIQUE`, `published_at timestamptz NOT NULL defaultNow`, `view_count integer default 0`, `total_watch_minutes integer default 0`.
+- `lib/db/schema.ts:50-62`, `post_views`: `id serial PK`, `post_id integer NOT NULL`, `device_id text NOT NULL`, `viewed_at timestamp defaultNow`; indexes on post/time.
+- `lib/db/schema.ts:64-76`, `episode_views`: `id serial PK`, `episode_id integer NOT NULL FK`, `device_id text NOT NULL`, `viewed_at timestamp defaultNow`; unique `(episode_id, device_id)`.
+- `lib/db/schema.ts:78-91`, `episode_watch_pings`: `id serial PK`, `episode_id integer NOT NULL FK`, `device_id text NOT NULL`, `minutes_watched integer NOT NULL default 1`, `last_ping_at timestamp defaultNow`; unique `(episode_id, device_id)`.
+- Genres are denormalized in `series.genre` as a text string (AniList importer joins genres with `', '`). There is no tags table for anime series; blog tags are a `posts.tags` SQL column. There is no separate user watch-history table: watch history is cookie/device based and uses `episode_views` and `episode_watch_pings`.
+
+3. WHERE CONTENT GETS CREATED
+
+BLOG POST
+
+A. Admin form/server action: `app/actions/admin.ts:42-153`, function `createPostAction`. It validates the admin session, builds `CreatePostInput`, optionally fetches a news item and migrates a cover image, then calls `const post = await createPost(input)` at `app/actions/admin.ts:111`. The actual SQL insert is `lib/admin-queries.ts:115-133`, function `createPost`: `INSERT INTO posts (slug, title, excerpt, content, cover_image, category, author, tags, featured, trending, read_time) VALUES (...) RETURNING *`. Immediately after the insert, the action optionally POSTs `${NEWS_API_URL}/api/news/${newsId}/mark-inserted` at `app/actions/admin.ts:118-121`, then `revalidatePath('/blog')`, `revalidatePath('/admin/posts')`, and redirects to the admin post page (see remaining action body). There is no draft-first field or publish action in this path; the insert is effectively publish-now.
+B. News importer path: the admin form `app/admin/posts/new/page.tsx:16-22` fetches the external news item, but it does not insert into the local DB itself; it submits to `createPostAction`, above. No other `INSERT INTO posts` or `createPost` caller was found.
+
+NEW SERIES
+
+A. Admin server action: `app/actions/admin.ts:210-229`, function `createSeriesAction`; after validation it calls `const series = await createSeries(input)` at line 226, then immediately `revalidatePath('/admin/series')` and redirects to `/admin/series/${series.id}/edit?created=1` at lines 227-228. The actual insert is `lib/db/queries.ts:667-682`, function `createSeries`: `.insert(series).values({ creatorId, title, slug, synopsis, coverImageUrl, posterImageUrl, status, genre }).returning()`. `status` defaults to `ongoing`; there is no draft status/publish action in this path.
+B. AniList/Play ingest: `app/api/play/anime/route.ts:51-104`, `POST`, authenticated by `hasValidPlayApiKey(request)` at line 52. It first deduplicates by `anilistId` and exact title; then builds `values` including creator, title, slug, synopsis, banner/cover, poster, mapped status, joined genres, and `anilistId`. The exact insert is line 100: `await db.insert(series).values(values).returning({ id: series.id })`. Immediately after it returns HTTP 201 JSON `{ seriesId }` at line 101. Unique races are caught and converted to an existing-series response. This is a second live insert path and can create series without admin UI. It is not a draft path.
+C. No other series inserts, bulk importer, scraper, or cron route was found. `app/api/play/fill/route.ts` and `app/api/play/fix-titles/route.ts` are maintenance endpoints; the direct content creation endpoint is `/api/play/anime`.
+
+NEW EPISODE
+
+A. Admin server action: `app/actions/admin.ts:267-315`, function `createEpisodeAction`; after validating the admin session and uploaded video/thumbnail fields, it calls `const episode = await createEpisode(input)` at line 308. Immediately after: `revalidatePath('/admin/episodes')` and redirect to `/admin/episodes/${episode.id}/edit?created=1` at lines 309-310. The actual insert is `lib/db/queries.ts:764-781`, function `createEpisode`: `.insert(episodes).values({ seriesId, episodeNumber, title, slug, synopsis, videoPublicId, videoUrl, thumbnailUrl, durationSeconds, subtitlesUrl }).returning()`. `publishedAt` defaults immediately to now; there is no draft flag or publish-later action.
+B. Play/AniList ingest: `app/api/play/episodes/route.ts:11-77`, `POST`, authenticated by `hasValidPlayApiKey(request)` at line 12. It resolves the series by `anilistId`, deduplicates by `playId`, builds episode values, optionally sets `publishedAt` from `airDate`, and inserts at line 68: `await db.insert(episodes).values(values).returning({ id: episodes.id })`. Immediately after it returns HTTP 201 JSON `{ episodeId, seriesId }` at line 69. Existing `playId` records are updated instead of inserted at lines 25-30. Unique races return the raced row. This is not a draft path.
+C. No other episode insert, scraper, bulk importer, or cron insert was found. `/api/play/fill` is a caller/maintenance route and `/api/play/episodes` is the actual insert endpoint.
+
+4. URL PATTERNS
+
+- Blog: `app/blog/[slug]/page.tsx` consumes the post slug; public URL is `/blog/${post.slug}`. Slugs are generated/uniquified from title in `lib/admin-queries.ts` (`ensureUniqueSlug` and `createPost`).
+- Series: `app/episodes/[slug]/page.tsx`; public URL is `/episodes/${series.slug}`. Slugs are generated from title by `lib/db/queries.ts:650-664` for admin creation and by `uniqueSlug` in `app/api/play/anime/route.ts` for ingest.
+- Episode: `app/episodes/[slug]/[episodeSlug]/page.tsx`; public URL is `/episodes/${series.slug}/${episode.slug}`. Episode slugs come from title via `ensureUniqueEpisodeSlug` or `uniqueSlug` in Play ingest.
+- Sitemap: `app/sitemap.ts:30-61` emits `/blog/${slug}`, `/episodes/${series.slug}`, and `/episodes/${series.slug}/${episode.slug}`. Blog uses `getAllSlugs`; anime routes use `getAllSeriesWithEpisodes`.
+- RSS: `app/rss.xml/route.ts:1-27` emits up to 30 recent blog posts at `/blog/${post.slug}`. `app/episodes-rss.xml/route.ts` is the episode feed and builds episode links from the series and episode slugs.
+
+5. LAYOUT AND SCRIPTS
+
+`app/layout.tsx` is the root layout. It mounts fonts, metadata/manifest, `ThemeProvider`, `HideV0Badge`, `{children}`, `Toaster`, production-only `@vercel/analytics/next` (`<Analytics />`), and `@vercel/speed-insights/next` is imported but not rendered in the current file. Third-party scripts in the file:
+- Google Tag Manager/Analytics: `https://www.googletagmanager.com/gtag/js?id=G-GYQ1098DHR` plus inline `gtag` config at `app/layout.tsx:123-138`.
+- Monetag: inline loader at `app/layout.tsx:140-145`, zone `11348618`, loading `https://al5sm.com/tag.min.js`.
+- Simple Analytics: `https://scripts.simpleanalyticscdn.com/latest.js` at `app/layout.tsx:193`.
+- Vercel Analytics is a package provider rendered at line 192 in production.
+- `components/episodes/live-viewer-widget.tsx:71-74` loads `https://otakunaija-live.vercel.app/widget.js` lazily.
+- Ad slots use Monetag zone env vars in `components/ad-slot.tsx:20-23`; inspect that component before adding any push client script because it may create additional ad script tags per placement.
+- `public/sw.js` already exists and is not an app-owned push worker. Its relevant code is `importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')` (`public/sw.js:1-6`); this is an existing service worker registration risk/conflict for a root OneSignal worker. No other service-worker file was found.
+- Manifest: `public/site.webmanifest` exists and is referenced as `manifest: '/site.webmanifest'` in `app/layout.tsx:101`. Other relevant public assets are icons `android-chrome-192x192.png`, `android-chrome-512x512.png`, `apple-touch-icon.png`, and favicons. No `manifest.json` was found.
+
+6. SUGGESTION DATA
+
+- Series genres: `series.genre` text, populated by admin input or AniList `body.genres.join(', ')` in `app/api/play/anime/route.ts:88-89`; `getAllUsedGenres` in `lib/db/queries.ts` derives browse filters from this field.
+- Episode views: `episodes.viewCount` is incremented by `recordEpisodeView` in `lib/db/queries.ts:830-849` after a unique `(episode_id, device_id)` insert into `episode_views`. Post views are recorded in `post_views` by `recordPostView` (`lib/db/queries.ts:811-827`), but the comment says the post count increment is not implemented there; blog `posts.views` is incremented by `lib/posts.ts:186-188` via `incrementPostViews`.
+- Trending Now: `lib/trending.ts` computes a scored ranking from recent episode views and watch-time data; `lib/posts.ts:45-56` also has a legacy `posts.trending = true` and last-seven-days/views query, but `getTrendingPosts` delegates to `getScoredTrendingPosts`. There is no rating column/table in the inspected anime schema. Poll votes are separate and are not anime ratings.
+- Visitor identity: there is no general account system for visitors. Admin uses a signed session cookie (`lib/auth.ts`). Anonymous content analytics use device IDs/cookies: `otakunaija_device_id` in `app/api/episodes/[id]/watch-ping/route.ts` and related tracking code; poll visitors use `otakunaija_poll_visitor` and hashed visitor data in `lib/poll-utils.ts`/poll tables. These are not OneSignal subscription IDs and should not be assumed to identify push subscribers.
+
+7. EXISTING CRON AND ENVIRONMENT
+
+- No `app/api/cron/*` routes were found. Existing automated/ingest-style endpoints are `/api/play/anime`, `/api/play/episodes`, `/api/play/fill`, and `/api/play/fix-titles`; Play endpoints authenticate with the `x-play-api-key` header checked by `lib/play-auth.ts:3-8` (`PLAY_API_KEY`). Admin routes/actions use the admin session; the admin proxy matcher covers `/admin` only.
+- Environment variable names referenced in source: `DATABASE_URL`, `BLOG_RENDER_MODE`, `NEWS_API_URL`, `NEWS_API_KEY`, `SESSION_SECRET`, `PLAY_API_KEY`, `NODE_ENV`, `SECURE_COOKIES`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `NEXT_PUBLIC_ADSENSE_CLIENT`, `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`, `NEXT_PUBLIC_MONETAG_ZONE_HEADER`, `NEXT_PUBLIC_MONETAG_ZONE_IN_ARTICLE`, `NEXT_PUBLIC_MONETAG_ZONE_SIDEBAR`, and `NEXT_PUBLIC_MONETAG_ZONE_FOOTER`. No OneSignal env names are currently referenced.
+
+8. RISKS
+
+- `public/sw.js` is already a root-level service worker and imports an external ad service worker. OneSignal also expects root-scope worker behavior; blindly replacing or duplicating `/sw.js` can break the existing ad integration or cause registration collisions. Inspect the ad provider’s required worker path/scope before adding OneSignal.
+- A client-side OneSignal component must be mounted from `app/layout.tsx` or another shared client boundary, but this audit request explicitly prohibits changing the header/shared layout; build instructions should decide whether a separate provider boundary is acceptable.
+- There are four relevant insert paths: admin post, admin series, admin episode, AniList/Play series, and AniList/Play episode. Hooking only admin actions will miss API ingestion; hooking only shared `createSeries`/`createEpisode` will miss direct Drizzle inserts in Play routes.
+- The admin series/episode inserts and Play inserts have no draft state. `episodes.publishedAt` defaults to now, and posts have no visible draft/status field. A notification trigger should therefore be based on successful insert plus a clear publication policy, not merely on function invocation.
+- Play ingest is idempotent/deduplicated but may receive retries and concurrent unique races. Push calls must be idempotent or queued after a confirmed new row, never sent in both the try path and unique-race path.
+- Bulk behavior: `/api/play/fill` can process multiple anime/episodes and may call the ingest endpoints repeatedly. Sending synchronously after each insert could create notification storms and slow/fail ingestion.
+- Server-side push calls must remain Node/server-only; do not import OneSignal server credentials into client components or edge routes. Current R2 routes explicitly use Node runtime, while most routes do not declare a runtime; choose Node for any server push endpoint/client.
+- Existing ad/service-worker scripts, CSP absence, caching (`unstable_cache`), and revalidation mean a push payload can be sent before all public pages/cache entries visibly update unless the insert path also revalidates the relevant public route/cache tags.
+- Admin auth is cookie/session based and proxy matcher does not protect `/api/play/*`; those routes rely exclusively on `PLAY_API_KEY`, so protect the key and do not expose push credentials to callers.
+
+FINAL RECOMMENDATION / TRIGGER LOCATIONS
+
+There are three requested content trigger categories, with multiple physical creation points:
+1. Blog post: add the post-created trigger immediately after `const post = await createPost(input)` in `app/actions/admin.ts:111` (after the optional news mark-inserted operation is preferable, before revalidation/redirect). There is one discovered local post insert path.
+2. New series: add a shared trigger after `await db.insert(series).values(values).returning(...)` succeeds in `app/api/play/anime/route.ts:100-101`, and after `const series = await createSeries(input)` in `app/actions/admin.ts:226` (or centralize both through a notification service). Do not notify on title-match updates or unique-race responses.
+3. New episode: add a shared trigger after `await db.insert(episodes).values(values).returning(...)` succeeds in `app/api/play/episodes/route.ts:68-69`, and after `const episode = await createEpisode(input)` in `app/actions/admin.ts:308`. Do not notify on existing `playId` updates or unique-race responses.
+
+Recommended bulk-import approach: do not call OneSignal synchronously per row. Record an outbox/event row transactionally with each genuinely new post/series/episode (including an import/batch ID), then have a protected Node cron/worker drain the outbox, deduplicate by content ID and event type, group a bulk run into one summary notification or bounded batches, retry failures with backoff, and mark events delivered. If an outbox migration is not yet desired, accumulate newly inserted IDs during `/api/play/fill` and send one bounded batch after the import completes, with a hard cap and deduplication; never notify from duplicate/update responses.
+
+END OF REPORT
