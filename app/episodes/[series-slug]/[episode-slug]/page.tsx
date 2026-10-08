@@ -22,6 +22,7 @@ import { AboutSeriesSidebar } from '@/components/episodes/about-series-sidebar'
 import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
 import { PollPlacement } from '@/components/poll-placement'
 import { toISO } from '@/lib/to-iso'
+import { GenreTagger } from '@/components/push/genre-tagger'
 
 export const revalidate = 3600
 
@@ -183,6 +184,7 @@ export default async function WatchPage({ params }: Props) {
       />
 
       <SiteHeader />
+      <GenreTagger genre={series.genre} />
       <EpisodeTracker episodeId={episode.id} />
 
       {/* Breadcrumb */}
