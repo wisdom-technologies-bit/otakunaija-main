@@ -6,6 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { HideV0Badge } from "@/components/HideV0Badge"
+import { OneSignalInit } from "@/components/push/onesignal-init"
 import "./globals.css"
 
 const inter = Inter({
@@ -191,6 +192,7 @@ export default function RootLayout({
         </ThemeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
+        <OneSignalInit />
       </body>
     </html>
   )
