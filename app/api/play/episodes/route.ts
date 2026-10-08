@@ -3,6 +3,7 @@ import { db } from '@/lib/db/index'
 import { episodes, series } from '@/lib/db/schema'
 import { hasValidPlayApiKey, unauthorizedResponse } from '@/lib/play-auth'
 import { uniqueSlug } from '@/lib/play-slugs'
+import { enqueuePushEvent } from '@/lib/push'
 
 function isUniqueViolation(error: unknown) {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === '23505'
@@ -61,6 +62,10 @@ export async function POST(request: Request) {
 
     try {
       const inserted = await db.insert(episodes).values(values).returning({ id: episodes.id })
+      const publishedAt = values.publishedAt as Date | undefined
+      if (publishedAt && publishedAt >= new Date(Date.now() - 48 * 60 * 60 * 1000)) {
+        void enqueuePushEvent("episode", inserted[0].id).catch(() => {})
+      }
       return Response.json({ episodeId: inserted[0].id, seriesId: seriesRow.id }, { status: 201 })
     } catch (error) {
       if (!isUniqueViolation(error)) throw error

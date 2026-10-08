@@ -16,6 +16,7 @@ import {
   type UpdatePostInput,
 } from "@/lib/admin-queries"
 import { uploadImageBuffer } from "@/lib/cloudinary"
+import { enqueuePushEvent } from "@/lib/push"
 import {
   createCreator,
   updateCreator,
@@ -129,6 +130,7 @@ export async function createPostAction(_prev: unknown, formData: FormData) {
     }
   }
 
+  void enqueuePushEvent("post", post.id).catch(() => {})
   revalidatePath("/admin/posts")
   redirect(`/admin/posts/${post.id}/edit?created=1`)
 }
@@ -224,6 +226,7 @@ export async function createSeriesAction(_prev: unknown, formData: FormData) {
   }
 
   const series = await createSeries(input)
+  void enqueuePushEvent("series", series.id).catch(() => {})
   revalidatePath("/admin/series")
   redirect(`/admin/series/${series.id}/edit?created=1`)
 }
@@ -306,6 +309,7 @@ export async function createEpisodeAction(_prev: unknown, formData: FormData) {
 
   try {
     const episode = await createEpisode(input)
+    void enqueuePushEvent("episode", episode.id).catch(() => {})
     revalidatePath("/admin/episodes")
     redirect(`/admin/episodes/${episode.id}/edit?created=1`)
   } catch (error) {
