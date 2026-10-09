@@ -25,7 +25,7 @@ export function OneSignalInit() {
         await new Promise((resolve) => setTimeout(resolve, 20_000))
 
         if (OneSignal.Notifications.permission === false) {
-          await OneSignal.Slidedown.promptPush()
+          await OneSignal.Notifications.requestPermission()
         }
       } catch {
         // Push setup is optional and must never affect rendering.

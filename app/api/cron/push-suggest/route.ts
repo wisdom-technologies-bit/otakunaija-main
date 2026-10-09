@@ -84,7 +84,13 @@ async function handle(request: NextRequest) {
 
   if (dry) return NextResponse.json({ sent: false, dry: true, notification })
 
-  const result = await sendPush(notification)
+  let result = await sendPush(notification)
+  let fallback = false
+  if (!result.ok && notification.filters && result.error?.includes('not subscribed')) {
+    fallback = true
+    const { filters: _filters, ...fallbackNotification } = notification
+    result = await sendPush(fallbackNotification)
+  }
   const [event] = await db.insert(pushEvents).values({ type: 'suggestion', contentId: candidate.id, status: result.ok && result.id ? 'sent' : 'failed', lastError: result.ok ? null : result.error }).returning({ id: pushEvents.id })
-  return NextResponse.json({ sent: Boolean(result.ok && result.id), eventId: event?.id, notification, result })
+  return NextResponse.json({ sent: Boolean(result.ok && result.id), eventId: event?.id, notification, result, ...(fallback ? { fallback: true } : {}) })
 }
