@@ -24,6 +24,7 @@ export function OneSignalInit() {
 
         await OneSignal.init({
           appId,
+          serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
           serviceWorkerUpdaterPath: "push/onesignal/OneSignalSDKUpdaterWorker.js",
           serviceWorkerParam: { scope: "/push/onesignal/" },
           allowLocalhostAsSecureOrigin: true,
@@ -40,14 +41,6 @@ export function OneSignalInit() {
           })
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 20_000))
-
-        if (
-          OneSignal.Notifications.permission === false &&
-          notifPermission() === "default"
-        ) {
-          await OneSignal.Notifications.requestPermission()
-        }
       } catch {
         // Push setup is optional and must never affect rendering.
       }

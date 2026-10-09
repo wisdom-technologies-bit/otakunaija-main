@@ -30,23 +30,20 @@ export function EnableNotifications() {
     }
 
     let cancelled = false
-    const checkPermission = () => {
-      if (cancelled) return
-      const browserPermission = notifPermission()
-      const optedIn = OneSignal.User.PushSubscription.optedIn
-      setVisible(browserPermission === "default" || (browserPermission === "granted" && optedIn === false))
-    }
-
-    let interval: number | undefined
     const timeout = window.setTimeout(() => {
-      checkPermission()
-      interval = window.setInterval(checkPermission, 500)
+      if (cancelled) return
+      try {
+        const browserPermission = notifPermission()
+        const optedIn = OneSignal.User.PushSubscription.optedIn
+        setVisible(browserPermission === "default" || (browserPermission === "granted" && optedIn === false))
+      } catch {
+        // OneSignal not ready; stay hidden.
+      }
     }, 5_000)
 
     return () => {
       cancelled = true
       window.clearTimeout(timeout)
-      if (interval !== undefined) window.clearInterval(interval)
     }
   }, [])
 
