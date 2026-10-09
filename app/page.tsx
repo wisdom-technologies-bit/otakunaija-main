@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { HomeSidebar } from "@/components/home/home-sidebar"
 import { AdSlot } from "@/components/ad-slot"
+import { EnableNotifications } from "@/components/push/enable-notifications"
 import { getFeaturedPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
 
 export const dynamic = "force-dynamic"
@@ -33,6 +34,7 @@ export default async function HomePage() {
               <div className="min-w-0"><HomeSidebar trending={trending} /></div>
             </div>
           </section>
+          <EnableNotifications />
         </div>
       </main>
 

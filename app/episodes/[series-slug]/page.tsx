@@ -14,6 +14,7 @@ import { Calendar, Play } from 'lucide-react'
 import { PollPlacement } from '@/components/poll-placement'
 import { splitGenres } from '@/lib/genres'
 import { GenreTagger } from '@/components/push/genre-tagger'
+import { EnableNotifications } from '@/components/push/enable-notifications'
 
 export const revalidate = 3600
 
@@ -191,6 +192,7 @@ export default async function SeriesPage({ params }: Props) {
             <AdSlot slot="sidebar" label="Advertisement" />
           </aside>
         </div>
+        <EnableNotifications />
       </main>
 
       <SiteFooter />
