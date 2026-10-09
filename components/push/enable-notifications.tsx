@@ -6,10 +6,14 @@ import OneSignal from "react-onesignal"
 const DISMISSED_KEY = "push-notifications-dismissed"
 const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000
 
+const notifSupported = () => typeof window !== "undefined" && "Notification" in window
+const notifPermission = () => (notifSupported() ? window.Notification.permission : "unsupported")
+
 export function EnableNotifications() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    if (!notifSupported()) return
     if (
       window.location.pathname.startsWith("/admin") ||
       (/(iPhone|iPad|iPod)/i.test(navigator.userAgent) &&
@@ -28,16 +32,21 @@ export function EnableNotifications() {
     let cancelled = false
     const checkPermission = () => {
       if (cancelled) return
-      const browserPermission = Notification.permission
+      const browserPermission = notifPermission()
       const optedIn = OneSignal.User.PushSubscription.optedIn
       setVisible(browserPermission === "default" || (browserPermission === "granted" && optedIn === false))
     }
 
-    const interval = window.setInterval(checkPermission, 500)
-    checkPermission()
+    let interval: number | undefined
+    const timeout = window.setTimeout(() => {
+      checkPermission()
+      interval = window.setInterval(checkPermission, 500)
+    }, 5_000)
+
     return () => {
       cancelled = true
-      window.clearInterval(interval)
+      window.clearTimeout(timeout)
+      if (interval !== undefined) window.clearInterval(interval)
     }
   }, [])
 
@@ -47,7 +56,7 @@ export function EnableNotifications() {
     setVisible(false)
     try {
       await OneSignal.Notifications.requestPermission()
-      if (Notification.permission === "granted") {
+      if (notifPermission() === "granted") {
         await OneSignal.User.PushSubscription.optIn()
       }
     } catch {
@@ -65,7 +74,10 @@ export function EnableNotifications() {
   }
 
   return (
-    <aside className="mx-auto mt-8 flex max-w-xl items-center gap-4 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm" aria-label="Enable notifications">
+    <aside
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-sm items-center gap-4 rounded-2xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-card-foreground shadow-xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 md:left-auto md:right-4 md:mx-0"
+      aria-label="Enable notifications"
+    >
       <p className="min-w-0 flex-1 text-sm font-medium">Get alerts for new episodes and posts</p>
       <button type="button" onClick={handleEnable} className="shrink-0 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
         Enable
