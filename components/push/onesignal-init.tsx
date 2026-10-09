@@ -20,11 +20,15 @@ export function OneSignalInit() {
           serviceWorkerUpdaterPath: "push/onesignal/OneSignalSDKUpdaterWorker.js",
           serviceWorkerParam: { scope: "/push/onesignal/" },
           allowLocalhostAsSecureOrigin: true,
+          promptOptions: { slidedown: { prompts: [] } },
         })
 
         await new Promise((resolve) => setTimeout(resolve, 20_000))
 
-        if (OneSignal.Notifications.permission === false) {
+        if (
+          OneSignal.Notifications.permission === false &&
+          Notification.permission === "default"
+        ) {
           await OneSignal.Notifications.requestPermission()
         }
       } catch {
