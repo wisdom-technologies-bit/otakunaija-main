@@ -3,31 +3,182 @@ import { db } from "@/lib/db/index"
 import { sql } from "drizzle-orm"
 
 const QUERY = `query ($search: String) { Media(search: $search, type: ANIME) { id title { romaji english } } }`
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-export function slugify(input: string) { return input.toLowerCase().trim().replace(/[\'\"]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 200) }
+
+const wait = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms))
+
+export function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[\'\"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 200)
+}
+
 async function find(title: string) {
-  const request = () => fetch("https://graphql.anilist.co", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: QUERY, variables: { search: title } }), signal: AbortSignal.timeout(10_000) })
-  let response = await request(); if (response.status === 429) { await wait(3000); response = await request() }
+  const request = () =>
+    fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        query: QUERY,
+        variables: { search: title },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    })
+
+  let response = await request()
+
+  if (response.status === 429) {
+    await wait(3000)
+    response = await request()
+  }
+
   if (!response.ok) return null
-  const body = await response.json() as { data?: { Media?: { id: number; title?: { english?: string; romaji?: string } } } }
+
+  const body = (await response.json()) as {
+    data?: {
+      Media?: {
+        id: number
+        title?: {
+          english?: string
+          romaji?: string
+        }
+      }
+    }
+  }
+
   return body.data?.Media ?? null
 }
-export type BackfillSummary = { seriesChecked: number; autoApplied: number; flaggedForReview: number; skipped: number }
+
+export type BackfillSummary = {
+  seriesChecked: number
+  autoApplied: number
+  flaggedForReview: number
+  skipped: number
+}
+
 export async function runAniListBackfill(): Promise<BackfillSummary> {
-  const rows = await sql`SELECT id, title, slug FROM series WHERE anilist_id IS NULL ORDER BY id ASC LIMIT 20`
-  const all = await sql`SELECT id, title, slug, anilist_id AS "anilistId" FROM series`
-  const out = { seriesChecked: 0, autoApplied: 0, flaggedForReview: 0, skipped: 0 }
-  for (const item of rows as Array<{ id: number; title: string; slug: string }>) {
-    if (out.seriesChecked) await wait(700); out.seriesChecked++
-    let media: Awaited<ReturnType<typeof find>> = null; try { media = await find(item.title) } catch { media = null }
-    if (!media) { out.skipped++; continue }
-    const exact = (all as Array<{ id: number; title: string; slug: string; anilistId: number | null }>).find((x) => x.id !== item.id && x.anilistId === media!.id)
-    const soft = exact ? undefined : (all as Array<{ id: number; title: string; slug: string; anilistId: number | null }>).find((x) => x.id !== item.id && (slugify(x.title) === slugify(item.title) || slugify(x.slug) === slugify(item.title)))
-    const conflict = exact || soft; const candidateTitle = media.title?.english || media.title?.romaji || item.title
-    if (!conflict) { await sql`UPDATE series SET anilist_id = ${media.id} WHERE id = ${item.id} AND anilist_id IS NULL`; out.autoApplied++; continue }
-    await sql`INSERT INTO anime_match_candidates (series_id, candidate_anilist_id, candidate_title, conflict_series_id, conflict_reason, status) VALUES (${item.id}, ${media.id}, ${candidateTitle}, ${conflict.id}, ${exact ? "exact anilistId collision" : "near-identical title/slug"}, 'pending') ON CONFLICT (series_id) DO UPDATE SET candidate_anilist_id = EXCLUDED.candidate_anilist_id, candidate_title = EXCLUDED.candidate_title, conflict_series_id = EXCLUDED.conflict_series_id, conflict_reason = EXCLUDED.conflict_reason, status = 'pending'`
+  const rowsResult = await db.execute(sql`
+    SELECT id, title, slug
+    FROM series
+    WHERE anilist_id IS NULL
+    ORDER BY id ASC
+    LIMIT 20
+  `)
+
+  const allResult = await db.execute(sql`
+    SELECT id, title, slug, anilist_id AS "anilistId"
+    FROM series
+  `)
+
+  const rows = rowsResult.rows as Array<{
+    id: number
+    title: string
+    slug: string
+  }>
+
+  const all = allResult.rows as Array<{
+    id: number
+    title: string
+    slug: string
+    anilistId: number | null
+  }>
+
+  const out: BackfillSummary = {
+    seriesChecked: 0,
+    autoApplied: 0,
+    flaggedForReview: 0,
+    skipped: 0,
+  }
+
+  for (const item of rows) {
+    if (out.seriesChecked > 0) {
+      await wait(700)
+    }
+
+    out.seriesChecked++
+
+    let media: Awaited<ReturnType<typeof find>> = null
+
+    try {
+      media = await find(item.title)
+    } catch {
+      media = null
+    }
+
+    if (!media) {
+      out.skipped++
+      continue
+    }
+
+    const exact = all.find(
+      (x) => x.id !== item.id && x.anilistId === media!.id
+    )
+
+    const soft = exact
+      ? undefined
+      : all.find(
+          (x) =>
+            x.id !== item.id &&
+            (slugify(x.title) === slugify(item.title) ||
+              slugify(x.slug) === slugify(item.title))
+        )
+
+    const conflict = exact || soft
+    const candidateTitle =
+      media.title?.english || media.title?.romaji || item.title
+
+    if (!conflict) {
+      const updateResult = await db.execute(sql`
+        UPDATE series
+        SET anilist_id = ${media.id}
+        WHERE id = ${item.id}
+          AND anilist_id IS NULL
+        RETURNING id
+      `)
+
+      if (updateResult.rows.length > 0) {
+        out.autoApplied++
+      } else {
+        out.skipped++
+      }
+
+      continue
+    }
+
+    await db.execute(sql`
+      INSERT INTO anime_match_candidates (
+        series_id,
+        candidate_anilist_id,
+        candidate_title,
+        conflict_series_id,
+        conflict_reason,
+        status
+      )
+      VALUES (
+        ${item.id},
+        ${media.id},
+        ${candidateTitle},
+        ${conflict.id},
+        ${exact ? "exact anilistId collision" : "near-identical title/slug"},
+        'pending'
+      )
+      ON CONFLICT (series_id)
+      DO UPDATE SET
+        candidate_anilist_id = EXCLUDED.candidate_anilist_id,
+        candidate_title = EXCLUDED.candidate_title,
+        conflict_series_id = EXCLUDED.conflict_series_id,
+        conflict_reason = EXCLUDED.conflict_reason,
+        status = 'pending'
+    `)
+
     out.flaggedForReview++
-  } return out
+  }
+
+  return out
 }
 
 export async function getPendingAniListMatches() {
@@ -66,14 +217,13 @@ export async function getPendingAniListMatches() {
   return result.rows
 }
 
-
-
-
 export async function mergeAniListMatch(
   id: number,
   keep: number,
   discard: number
 ) {
+  if (keep === discard) return "invalid-pair" as const
+
   return db.transaction(async (tx) => {
     const candidateResult = await tx.execute(sql`
       SELECT series_id, conflict_series_id, candidate_anilist_id
@@ -143,7 +293,6 @@ export async function mergeAniListMatch(
       WHERE series_id = ${discard}
     `)
 
-    // Release the candidate ID from the discarded record, if it owns it.
     await tx.execute(sql`
       UPDATE series
       SET anilist_id = NULL
@@ -151,17 +300,17 @@ export async function mergeAniListMatch(
         AND anilist_id = ${candidateAniListId}
     `)
 
-    
-    // Resolve other pending candidates that reference the discarded series.
+    // Reject other pending candidates that refer to the discarded series.
     await tx.execute(sql`
       UPDATE anime_match_candidates
-      SET status = 'rejected'
+      SET status = 'rejected',
+          conflict_series_id = NULL
       WHERE conflict_series_id = ${discard}
         AND id <> ${id}
         AND status = 'pending'
     `)
 
-    // Remove references to the discarded series from candidate records.
+    // Clear any remaining conflict references to the discarded series.
     await tx.execute(sql`
       UPDATE anime_match_candidates
       SET conflict_series_id = NULL
@@ -169,37 +318,20 @@ export async function mergeAniListMatch(
         AND id <> ${id}
     `)
 
-    const references = await tx.execute(sql`
-  SELECT id, series_id, conflict_series_id, status
-  FROM anime_match_candidates
-  WHERE conflict_series_id = ${discard}
-`)
-
-
-    // Clear every candidate's foreign-key reference to the discarded series.
-    // Also move the current candidate's series_id to the kept record when needed.
+    // Update the current candidate before deleting either series record.
     await tx.execute(sql`
       UPDATE anime_match_candidates
-      SET
-        series_id = CASE
-          WHEN series_id = ${discard} THEN ${keep}
-          ELSE series_id
-        END,
-        conflict_series_id = CASE
-          WHEN conflict_series_id = ${discard} THEN NULL
-          ELSE conflict_series_id
-        END
-      WHERE series_id = ${discard}
-         OR conflict_series_id = ${discard}
+      SET series_id = ${keep},
+          conflict_series_id = NULL
+      WHERE id = ${id}
+        AND status = 'pending'
     `)
 
-    // The discarded series is no longer referenced by these candidate fields.
     await tx.execute(sql`
       DELETE FROM series
       WHERE id = ${discard}
     `)
 
-    // Preserve the kept record's AniList ID if it already has one.
     await tx.execute(sql`
       UPDATE series
       SET anilist_id = ${candidateAniListId}
@@ -222,4 +354,15 @@ export async function mergeAniListMatch(
     return { merged: true, keptSeriesId: keep }
   })
 }
-export async function rejectAniListMatch(id: number) { const result = await sql`UPDATE anime_match_candidates SET status = 'rejected' WHERE id = ${id} AND status = 'pending' RETURNING id`; return result.length > 0 }
+
+export async function rejectAniListMatch(id: number) {
+  const result = await db.execute(sql`
+    UPDATE anime_match_candidates
+    SET status = 'rejected'
+    WHERE id = ${id}
+      AND status = 'pending'
+    RETURNING id
+  `)
+
+  return result.rows.length > 0
+}
