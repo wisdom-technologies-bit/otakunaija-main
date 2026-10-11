@@ -1,4 +1,6 @@
-import { db, sql } from "@/lib/db/index"
+
+import { db } from "@/lib/db/index"
+import { sql } from "drizzle-orm"
 
 const QUERY = `query ($search: String) { Media(search: $search, type: ANIME) { id title { romaji english } } }`
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
