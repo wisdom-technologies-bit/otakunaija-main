@@ -175,11 +175,25 @@ export async function mergeAniListMatch(
   WHERE conflict_series_id = ${discard}
 `)
 
-console.log(
-  "[AniList merge] References to discarded series:",
-  JSON.stringify(references.rows)
-)
-    // Delete the duplicate record selected for removal.
+
+    // Clear every candidate's foreign-key reference to the discarded series.
+    // Also move the current candidate's series_id to the kept record when needed.
+    await tx.execute(sql`
+      UPDATE anime_match_candidates
+      SET
+        series_id = CASE
+          WHEN series_id = ${discard} THEN ${keep}
+          ELSE series_id
+        END,
+        conflict_series_id = CASE
+          WHEN conflict_series_id = ${discard} THEN NULL
+          ELSE conflict_series_id
+        END
+      WHERE series_id = ${discard}
+         OR conflict_series_id = ${discard}
+    `)
+
+    // The discarded series is no longer referenced by these candidate fields.
     await tx.execute(sql`
       DELETE FROM series
       WHERE id = ${discard}
