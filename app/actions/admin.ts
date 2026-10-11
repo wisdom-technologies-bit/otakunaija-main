@@ -33,7 +33,29 @@ import {
   type UpdateSeriesInput,
   type CreateEpisodeInput,
   type UpdateEpisodeInput,
+  createVideo,
+  updateVideo,
+  deleteVideo,
+  type VideoInput,
 } from "@/lib/db/queries"
+
+export async function createVideoAction(_prev: unknown, formData: FormData) {
+  await requireSession()
+  try {
+    const row = await createVideo({
+      title: String(formData.get("title") || "").trim(), slug: String(formData.get("slug") || "").trim() || undefined,
+      content_type: String(formData.get("content_type") || "movie") as VideoInput["content_type"],
+      synopsis: String(formData.get("synopsis") || "") || null, poster_image_url: String(formData.get("poster_image_url") || "") || null,
+      cover_image_url: String(formData.get("cover_image_url") || "") || null, thumbnail_url: String(formData.get("thumbnail_url") || "") || "",
+      creator_id: Number(formData.get("creator_id")) || null, parent_series_id: Number(formData.get("parent_series_id")) || null,
+      genre: String(formData.get("genre") || "") || null, status: String(formData.get("status") || "published") || null,
+      duration_seconds: Number(formData.get("duration_seconds")) || null, video_public_id: String(formData.get("video_public_id") || "") || null,
+      video_url: String(formData.get("video_url") || "") || null, subtitles_url: String(formData.get("subtitles_url") || "") || null,
+      play_id: String(formData.get("play_id") || "") || null,
+    })
+    revalidatePath("/episodes/movies/browse"); revalidatePath("/episodes"); redirect(`/admin/videos/${row.id}/edit`)
+  } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Unable to save video" } }
+}
 
 export async function loginAction(_prev: unknown, formData: FormData) {
   const email = String(formData.get("email") || "")

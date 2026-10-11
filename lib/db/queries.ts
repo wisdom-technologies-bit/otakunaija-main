@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { db } from './index'
-import { creators, series, episodes, postViews, episodeViews, episodeWatchPings } from './schema'
+import { creators, series, episodes, videos, postViews, episodeViews, episodeWatchPings } from './schema'
 import { eq, asc, desc, and, lt, lte, gt, sql, count } from 'drizzle-orm'
 import { normalizeGenreParam, sortGenres, splitGenres, uniqueGenres } from '../genres'
 
@@ -711,6 +711,60 @@ export async function deleteSeries(id: number) {
   }
   await db.delete(series).where(eq(series.id, id))
 }
+
+// Videos
+export async function getAllVideosForAdmin() {
+  return db.select({ video: videos, creator: creators, parentSeries: series })
+    .from(videos)
+    .leftJoin(creators, eq(videos.creatorId, creators.id))
+    .leftJoin(series, eq(videos.parentSeriesId, series.id))
+    .orderBy(desc(videos.publishedAt))
+}
+
+export async function getVideoById(id: number) {
+  const result = await db.select().from(videos).where(eq(videos.id, id)).limit(1)
+  return result[0] || null
+}
+
+export async function getVideoBySlug(slug: string) {
+  const result = await db.select({ video: videos, creator: creators, parentSeries: series })
+    .from(videos).leftJoin(creators, eq(videos.creatorId, creators.id)).leftJoin(series, eq(videos.parentSeriesId, series.id))
+    .where(eq(videos.slug, slug)).limit(1)
+  return result[0] || null
+}
+
+export async function getRecentVideos(limit = 12) {
+  return db.select({ video: videos, creator: creators }).from(videos)
+    .leftJoin(creators, eq(videos.creatorId, creators.id)).orderBy(desc(videos.publishedAt)).limit(limit)
+}
+
+export async function getPaginatedVideos({ page = 1, pageSize = 24, contentType, genre, status }: { page?: number; pageSize?: number; contentType?: string; genre?: string; status?: string }) {
+  const filters = []
+  if (contentType && ['movie', 'ova', 'special'].includes(contentType)) filters.push(eq(videos.contentType, contentType))
+  if (genre) filters.push(sql`lower(${videos.genre}) LIKE ${`%${genre.toLowerCase()}%`}`)
+  if (status) filters.push(eq(videos.status, status))
+  const where = filters.length ? and(...filters) : undefined
+  const offset = Math.max(0, page - 1) * pageSize
+  const [items, totals] = await Promise.all([
+    db.select({ video: videos, creator: creators }).from(videos).leftJoin(creators, eq(videos.creatorId, creators.id)).where(where).orderBy(desc(videos.publishedAt)).limit(pageSize).offset(offset),
+    db.select({ total: count() }).from(videos).where(where),
+  ])
+  return { items, total: Number(totals[0]?.total ?? 0), page, pageSize }
+}
+
+export async function ensureUniqueVideoSlug(base: string, excludeId?: number) {
+  let slug = slugify(base) || `video-${Date.now()}`; let n = 1
+  while (true) {
+    const result = await db.select().from(videos).where(excludeId ? and(eq(videos.slug, slug), sql`${videos.id} <> ${excludeId}`) : eq(videos.slug, slug)).limit(1)
+    if (!result.length) return slug
+    slug = `${slugify(base)}-${++n}`
+  }
+}
+
+export type VideoInput = { title: string; slug?: string; content_type: 'movie' | 'ova' | 'special'; synopsis?: string | null; poster_image_url?: string | null; cover_image_url?: string | null; thumbnail_url: string; creator_id?: number | null; parent_series_id?: number | null; genre?: string | null; status?: string | null; duration_seconds?: number | null; video_public_id?: string | null; video_url?: string | null; subtitles_url?: string | null; play_id?: string | null }
+export async function createVideo(input: VideoInput) { const slug = await ensureUniqueVideoSlug(input.slug || input.title); const [row] = await db.insert(videos).values({ title: input.title, slug, contentType: input.content_type, synopsis: input.synopsis || null, posterImageUrl: input.poster_image_url || null, coverImageUrl: input.cover_image_url || null, thumbnailUrl: input.thumbnail_url, creatorId: input.creator_id || null, parentSeriesId: input.parent_series_id || null, genre: input.genre || null, status: input.status || 'published', durationSeconds: input.duration_seconds || null, videoPublicId: input.video_public_id || null, videoUrl: input.video_url || null, subtitlesUrl: input.subtitles_url || null, playId: input.play_id || null }).returning(); return row }
+export async function updateVideo(input: VideoInput & { id: number }) { const slug = input.slug ? await ensureUniqueVideoSlug(input.slug, input.id) : undefined; const [row] = await db.update(videos).set({ title: input.title, slug: slug || input.slug, contentType: input.content_type, synopsis: input.synopsis || null, posterImageUrl: input.poster_image_url || null, coverImageUrl: input.cover_image_url || null, thumbnailUrl: input.thumbnail_url, creatorId: input.creator_id || null, parentSeriesId: input.parent_series_id || null, genre: input.genre || null, status: input.status || null, durationSeconds: input.duration_seconds || null, videoPublicId: input.video_public_id || null, videoUrl: input.video_url || null, subtitlesUrl: input.subtitles_url || null, playId: input.play_id || null }).where(eq(videos.id, input.id)).returning(); return row }
+export async function deleteVideo(id: number) { await db.delete(videos).where(eq(videos.id, id)) }
 
 // Episodes
 export async function getAllEpisodesForAdmin() {

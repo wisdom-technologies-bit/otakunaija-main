@@ -15,6 +15,7 @@ const NAV = [
   { href: "/admin/creators", label: "Creators", icon: User },
   { href: "/admin/series", label: "Series", icon: Folder },
   { href: "/admin/episodes", label: "Episodes", icon: Film },
+  { href: "/admin/videos", label: "Movies & Specials", icon: Film },
   { href: "/admin/subscribers", label: "Subscribers", icon: Users },
   { href: "/admin/messages", label: "Messages", icon: Mail },
   { href: "/admin/anilist-backfill", label: "AniList Matches", icon: GitMerge },
