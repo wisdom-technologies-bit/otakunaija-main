@@ -151,6 +151,24 @@ export async function mergeAniListMatch(
         AND anilist_id = ${candidateAniListId}
     `)
 
+    
+    // Resolve other pending candidates that reference the discarded series.
+    await tx.execute(sql`
+      UPDATE anime_match_candidates
+      SET status = 'rejected'
+      WHERE conflict_series_id = ${discard}
+        AND id <> ${id}
+        AND status = 'pending'
+    `)
+
+    // Remove references to the discarded series from candidate records.
+    await tx.execute(sql`
+      UPDATE anime_match_candidates
+      SET conflict_series_id = NULL
+      WHERE conflict_series_id = ${discard}
+        AND id <> ${id}
+    `)
+
     // Delete the duplicate record selected for removal.
     await tx.execute(sql`
       DELETE FROM series
