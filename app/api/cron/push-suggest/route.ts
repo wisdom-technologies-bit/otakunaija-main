@@ -89,6 +89,7 @@ async function handle(request: NextRequest) {
   if (!result.ok && notification.filters && result.error?.includes('not subscribed')) {
     fallback = true
     const { filters: _filters, ...fallbackNotification } = notification
+    // Optional env var ONESIGNAL_SEGMENT is applied by sendPush for this fallback.
     result = await sendPush(fallbackNotification)
   }
   if (!result.ok && result.error?.includes('not subscribed')) {

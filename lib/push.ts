@@ -34,7 +34,8 @@ export async function sendPush({ title, message, path, image, filters }: { title
       contents: { en: message },
       web_url: `${BASE_URL}${path}`,
       ...(image ? { chrome_web_image: image } : {}),
-      ...(filters ? { filters } : { included_segments: ["Subscribed Users"] }),
+      // Optional env var: ONESIGNAL_SEGMENT
+      ...(filters ? { filters } : { included_segments: [process.env.ONESIGNAL_SEGMENT || "All Subscribers"] }),
     }
     const response = await fetch("https://api.onesignal.com/notifications?c=push", {
       method: "POST",
