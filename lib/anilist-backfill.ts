@@ -126,15 +126,15 @@ export async function mergeAniListMatch(
     `)
 
     await tx.execute(sql`
-      UPDATE series
-      SET anilist_id = ${candidate.candidate_anilist_id}
-      WHERE id = ${keep} AND anilist_id IS NULL
-    `)
+  DELETE FROM series
+  WHERE id = ${discard}
+`)
 
-    await tx.execute(sql`
-      DELETE FROM series
-      WHERE id = ${discard}
-    `)
+await tx.execute(sql`
+  UPDATE series
+  SET anilist_id = ${candidate.candidate_anilist_id}
+  WHERE id = ${keep} AND anilist_id IS NULL
+`)
 
     await tx.execute(sql`
       UPDATE anime_match_candidates
