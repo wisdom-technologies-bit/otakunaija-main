@@ -67,64 +67,82 @@ export async function getPendingAniListMatches() {
 }
 
 
+
 export async function mergeAniListMatch(
   id: number,
   keep: number,
   discard: number
 ) {
-  const candidateResult = await db.execute(sql`
-    SELECT series_id, conflict_series_id, candidate_anilist_id
-    FROM anime_match_candidates
-    WHERE id = ${id} AND status = 'pending'
-  `)
+  return db.transaction(async (tx) => {
+    const candidateResult = await tx.execute(sql`
+      SELECT series_id, conflict_series_id, candidate_anilist_id
+      FROM anime_match_candidates
+      WHERE id = ${id} AND status = 'pending'
+      FOR UPDATE
+    `)
 
-  const [candidate] = candidateResult.rows as Array<{
-    series_id: number
-    conflict_series_id: number | null
-    candidate_anilist_id: number
-  }>
+    const [candidate] = candidateResult.rows as Array<{
+      series_id: number
+      conflict_series_id: number | null
+      candidate_anilist_id: number
+    }>
 
-  if (!candidate) return null
+    if (!candidate) return null
 
-  if (
-    !(
-      (candidate.series_id === keep &&
-        candidate.conflict_series_id === discard) ||
-      (candidate.series_id === discard &&
-        candidate.conflict_series_id === keep)
-    )
-  ) {
-    return "invalid-pair" as const
-  }
+    if (
+      !(
+        (candidate.series_id === keep &&
+          candidate.conflict_series_id === discard) ||
+        (candidate.series_id === discard &&
+          candidate.conflict_series_id === keep)
+      )
+    ) {
+      return "invalid-pair" as const
+    }
 
-  const keptResult = await db.execute(sql`
-    SELECT id, anilist_id
-    FROM series
-    WHERE id = ${keep}
-  `)
+    const keptResult = await tx.execute(sql`
+      SELECT id
+      FROM series
+      WHERE id = ${keep}
+      FOR UPDATE
+    `)
 
-  const goneResult = await db.execute(sql`
-    SELECT id
-    FROM series
-    WHERE id = ${discard}
-  `)
+    const goneResult = await tx.execute(sql`
+      SELECT id
+      FROM series
+      WHERE id = ${discard}
+      FOR UPDATE
+    `)
 
-  const [kept] = keptResult.rows
-  const [gone] = goneResult.rows
+    const [kept] = keptResult.rows
+    const [gone] = goneResult.rows
 
-  if (!kept || !gone) return "invalid-pair" as const
+    if (!kept || !gone) return "invalid-pair" as const
 
-  await db.batch([
-    sql`UPDATE episodes SET series_id = ${keep} WHERE series_id = ${discard}`,
-    sql`UPDATE series
-        SET anilist_id = ${candidate.candidate_anilist_id}
-        WHERE id = ${keep} AND anilist_id IS NULL`,
-    sql`DELETE FROM series WHERE id = ${discard}`,
-    sql`UPDATE anime_match_candidates
-        SET status = 'resolved'
-        WHERE id = ${id} AND status = 'pending'`
-  ])
+    await tx.execute(sql`
+      UPDATE episodes
+      SET series_id = ${keep}
+      WHERE series_id = ${discard}
+    `)
 
-  return { merged: true, keptSeriesId: keep }
+    await tx.execute(sql`
+      UPDATE series
+      SET anilist_id = ${candidate.candidate_anilist_id}
+      WHERE id = ${keep} AND anilist_id IS NULL
+    `)
+
+    await tx.execute(sql`
+      DELETE FROM series
+      WHERE id = ${discard}
+    `)
+
+    await tx.execute(sql`
+      UPDATE anime_match_candidates
+      SET status = 'resolved'
+      WHERE id = ${id} AND status = 'pending'
+    `)
+
+    return { merged: true, keptSeriesId: keep }
+  })
 }
 export async function rejectAniListMatch(id: number) { const result = await sql`UPDATE anime_match_candidates SET status = 'rejected' WHERE id = ${id} AND status = 'pending' RETURNING id`; return result.length > 0 }
