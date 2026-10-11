@@ -5,5 +5,5 @@ export const metadata = { title: "AniList Backfill" }
 
 export default async function AniListBackfillPage() {
   const matches = await getPendingAniListMatches()
-  return <AniListBackfillClient initialMatches={matches as any} />
+return <AniListBackfillClient initialMatches={matches} />
 }
