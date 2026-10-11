@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, FileText, Mail, Users, LogOut, Plus, ExternalLink, User, Folder, Film, Newspaper } from "lucide-react"
+import { LayoutDashboard, FileText, Mail, Users, LogOut, Plus, ExternalLink, User, Folder, Film, Newspaper, GitMerge } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { logoutAction } from "@/app/actions/admin"
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/admin/episodes", label: "Episodes", icon: Film },
   { href: "/admin/subscribers", label: "Subscribers", icon: Users },
   { href: "/admin/messages", label: "Messages", icon: Mail },
+  { href: "/admin/anilist-backfill", label: "AniList Matches", icon: GitMerge },
 ]
 
 export function AdminShell({ children, email }: { children: React.ReactNode; email: string }) {

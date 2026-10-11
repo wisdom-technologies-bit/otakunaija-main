@@ -211,6 +211,19 @@ export const pollVoteSubmissions = pgTable('poll_vote_submissions', {
   submittedAt: timestamp('submitted_at').notNull().defaultNow(),
 }, (table) => [unique('poll_vote_submissions_poll_voter_unique').on(table.pollId, table.voterHash)])
 
+export const animeMatchCandidates = pgTable('anime_match_candidates', {
+  id: serial('id').primaryKey(),
+  seriesId: integer('series_id').notNull().references(() => series.id),
+  candidateAnilistId: integer('candidate_anilist_id').notNull(),
+  candidateTitle: text('candidate_title').notNull(),
+  conflictSeriesId: integer('conflict_series_id').references(() => series.id),
+  conflictReason: text('conflict_reason'),
+  status: text('status').notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  unique('anime_match_candidates_series_id_unique').on(table.seriesId),
+])
+
 export const pushEvents = pgTable('push_events', {
   id: serial('id').primaryKey(),
   type: text('type').notNull(),
@@ -255,3 +268,5 @@ export type EpisodeView = typeof episodeViews.$inferSelect
 export type EpisodeViewInsert = typeof episodeViews.$inferInsert
 export type EpisodeWatchPing = typeof episodeWatchPings.$inferSelect
 export type EpisodeWatchPingInsert = typeof episodeWatchPings.$inferInsert
+export type AnimeMatchCandidate = typeof animeMatchCandidates.$inferSelect
+export type AnimeMatchCandidateInsert = typeof animeMatchCandidates.$inferInsert
