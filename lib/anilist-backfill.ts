@@ -29,7 +29,43 @@ export async function runAniListBackfill(): Promise<BackfillSummary> {
     out.flaggedForReview++
   } return out
 }
-export async function getPendingAniListMatches() { return sql`SELECT c.id, c.candidate_anilist_id AS "candidateAnilistId", c.candidate_title AS "candidateTitle", c.conflict_reason AS "conflictReason", json_build_object('id', s.id, 'title', s.title, 'slug', s.slug, 'anilistId', s.anilist_id, 'coverImageUrl', s.cover_image_url, 'posterImageUrl', s.poster_image_url) AS series, CASE WHEN o.id IS NULL THEN NULL ELSE json_build_object('id', o.id, 'title', o.title, 'slug', o.slug, 'anilistId', o.anilist_id, 'coverImageUrl', o.cover_image_url, 'posterImageUrl', o.poster_image_url) END AS "conflictSeries" FROM anime_match_candidates c JOIN series s ON s.id = c.series_id LEFT JOIN series o ON o.id = c.conflict_series_id WHERE c.status = 'pending' ORDER BY c.id ASC` }
+
+export async function getPendingAniListMatches() {
+  const result = await db.execute(sql`
+    SELECT
+      c.id,
+      c.candidate_anilist_id AS "candidateAnilistId",
+      c.candidate_title AS "candidateTitle",
+      c.conflict_reason AS "conflictReason",
+      json_build_object(
+        'id', s.id,
+        'title', s.title,
+        'slug', s.slug,
+        'anilistId', s.anilist_id,
+        'coverImageUrl', s.cover_image_url,
+        'posterImageUrl', s.poster_image_url
+      ) AS series,
+      CASE
+        WHEN o.id IS NULL THEN NULL
+        ELSE json_build_object(
+          'id', o.id,
+          'title', o.title,
+          'slug', o.slug,
+          'anilistId', o.anilist_id,
+          'coverImageUrl', o.cover_image_url,
+          'posterImageUrl', o.poster_image_url
+        )
+      END AS "conflictSeries"
+    FROM anime_match_candidates c
+    JOIN series s ON s.id = c.series_id
+    LEFT JOIN series o ON o.id = c.conflict_series_id
+    WHERE c.status = 'pending'
+    ORDER BY c.id ASC
+  `)
+
+  return result.rows
+}
+
 export async function mergeAniListMatch(id: number, keep: number, discard: number) {
   const [candidate] = await sql`SELECT series_id, conflict_series_id, candidate_anilist_id FROM anime_match_candidates WHERE id = ${id} AND status = 'pending'`
   if (!candidate) return null
