@@ -68,6 +68,7 @@ export async function getPendingAniListMatches() {
 
 
 
+
 export async function mergeAniListMatch(
   id: number,
   keep: number,
@@ -89,35 +90,52 @@ export async function mergeAniListMatch(
 
     if (!candidate) return null
 
-    if (
-      !(
-        (candidate.series_id === keep &&
-          candidate.conflict_series_id === discard) ||
-        (candidate.series_id === discard &&
-          candidate.conflict_series_id === keep)
-      )
-    ) {
+    const validPair =
+      (candidate.series_id === keep &&
+        candidate.conflict_series_id === discard) ||
+      (candidate.series_id === discard &&
+        candidate.conflict_series_id === keep)
+
+    if (!validPair) return "invalid-pair" as const
+
+    const seriesResult = await tx.execute(sql`
+      SELECT id, anilist_id
+      FROM series
+      WHERE id IN (${keep}, ${discard})
+      FOR UPDATE
+    `)
+
+    const seriesRows = seriesResult.rows as Array<{
+      id: number
+      anilist_id: number | null
+    }>
+
+    const kept = seriesRows.find((row) => row.id === keep)
+    const gone = seriesRows.find((row) => row.id === discard)
+
+    if (!kept || !gone) return "invalid-pair" as const
+
+    const candidateAniListId = candidate.candidate_anilist_id
+
+    const ownerResult = await tx.execute(sql`
+      SELECT id
+      FROM series
+      WHERE anilist_id = ${candidateAniListId}
+        AND id NOT IN (${keep}, ${discard})
+      LIMIT 1
+    `)
+
+    if (ownerResult.rows.length > 0) {
       return "invalid-pair" as const
     }
 
-    const keptResult = await tx.execute(sql`
-      SELECT id
-      FROM series
-      WHERE id = ${keep}
-      FOR UPDATE
-    `)
-
-    const goneResult = await tx.execute(sql`
-      SELECT id
-      FROM series
-      WHERE id = ${discard}
-      FOR UPDATE
-    `)
-
-    const [kept] = keptResult.rows
-    const [gone] = goneResult.rows
-
-    if (!kept || !gone) return "invalid-pair" as const
+    if (
+      kept.anilist_id !== null &&
+      gone.anilist_id !== null &&
+      kept.anilist_id !== gone.anilist_id
+    ) {
+      return "invalid-pair" as const
+    }
 
     await tx.execute(sql`
       UPDATE episodes
@@ -125,22 +143,39 @@ export async function mergeAniListMatch(
       WHERE series_id = ${discard}
     `)
 
+    // Release the candidate ID from the discarded record, if it owns it.
     await tx.execute(sql`
-  DELETE FROM series
-  WHERE id = ${discard}
-`)
+      UPDATE series
+      SET anilist_id = NULL
+      WHERE id = ${discard}
+        AND anilist_id = ${candidateAniListId}
+    `)
 
-await tx.execute(sql`
-  UPDATE series
-  SET anilist_id = ${candidate.candidate_anilist_id}
-  WHERE id = ${keep} AND anilist_id IS NULL
-`)
-
+    // Delete the duplicate record selected for removal.
     await tx.execute(sql`
+      DELETE FROM series
+      WHERE id = ${discard}
+    `)
+
+    // Preserve the kept record's AniList ID if it already has one.
+    await tx.execute(sql`
+      UPDATE series
+      SET anilist_id = ${candidateAniListId}
+      WHERE id = ${keep}
+        AND anilist_id IS NULL
+    `)
+
+    const resolvedResult = await tx.execute(sql`
       UPDATE anime_match_candidates
       SET status = 'resolved'
-      WHERE id = ${id} AND status = 'pending'
+      WHERE id = ${id}
+        AND status = 'pending'
+      RETURNING id
     `)
+
+    if (resolvedResult.rows.length === 0) {
+      throw new Error("Candidate could not be marked as resolved")
+    }
 
     return { merged: true, keptSeriesId: keep }
   })
