@@ -28,6 +28,31 @@ export const series = pgTable('series', {
   createdAt: timestamp('created_at').defaultNow(),
 })
 
+export const videos = pgTable('videos', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
+  contentType: text('content_type').notNull(),
+  synopsis: text('synopsis'),
+  posterImageUrl: text('poster_image_url'),
+  coverImageUrl: text('cover_image_url'),
+  thumbnailUrl: text('thumbnail_url').notNull(),
+  creatorId: integer('creator_id').references(() => creators.id),
+  parentSeriesId: integer('parent_series_id').references(() => series.id),
+  genre: text('genre'),
+  status: text('status'),
+  durationSeconds: integer('duration_seconds'),
+  videoPublicId: text('video_public_id'),
+  videoUrl: text('video_url'),
+  subtitlesUrl: text('subtitles_url'),
+  playId: text('play_id').unique(),
+  anilistId: integer('anilist_id').unique(),
+  malId: integer('mal_id'),
+  publishedAt: timestamp('published_at', { withTimezone: true }).defaultNow().notNull(),
+  viewCount: integer('view_count').default(0),
+  totalWatchMinutes: integer('total_watch_minutes').default(0),
+})
+
 export const episodes = pgTable('episodes', {
   id: serial('id').primaryKey(),
   seriesId: integer('series_id')
@@ -238,6 +263,7 @@ export const pushEvents = pgTable('push_events', {
 // Relations
 export const creatorsRelations = relations(creators, ({ many }) => ({
   series: many(series),
+  videos: many(videos),
 }))
 
 export const seriesRelations = relations(series, ({ one, many }) => ({
@@ -246,6 +272,11 @@ export const seriesRelations = relations(series, ({ one, many }) => ({
     references: [creators.id],
   }),
   episodes: many(episodes),
+}))
+
+export const videosRelations = relations(videos, ({ one }) => ({
+  creator: one(creators, { fields: [videos.creatorId], references: [creators.id] }),
+  parentSeries: one(series, { fields: [videos.parentSeriesId], references: [series.id] }),
 }))
 
 export const episodesRelations = relations(episodes, ({ one }) => ({
@@ -262,6 +293,8 @@ export type Series = typeof series.$inferSelect
 export type SeriesInsert = typeof series.$inferInsert
 export type Episode = typeof episodes.$inferSelect
 export type EpisodeInsert = typeof episodes.$inferInsert
+export type Video = typeof videos.$inferSelect
+export type VideoInsert = typeof videos.$inferInsert
 export type PostView = typeof postViews.$inferSelect
 export type PostViewInsert = typeof postViews.$inferInsert
 export type EpisodeView = typeof episodeViews.$inferSelect

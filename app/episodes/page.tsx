@@ -18,6 +18,7 @@ import RecommendedRow from '@/components/episodes/recommended-row'
 import { UpcomingRow } from '@/components/episodes/upcoming-row'
 import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 import { PollPlacement } from '@/components/poll-placement'
+import { MoviesRow } from '@/components/episodes/movies-row'
 
 export const revalidate = 60
 
@@ -131,6 +132,8 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
             <UpcomingRow items={serializedUpcomingEpisodes} />
 
             <NewReleasesRow items={serializedRecentEpisodes} />
+
+            <MoviesRow />
 
             <RecommendedRow />
 
