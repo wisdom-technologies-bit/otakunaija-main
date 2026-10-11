@@ -169,6 +169,16 @@ export async function mergeAniListMatch(
         AND id <> ${id}
     `)
 
+    const references = await tx.execute(sql`
+  SELECT id, series_id, conflict_series_id, status
+  FROM anime_match_candidates
+  WHERE conflict_series_id = ${discard}
+`)
+
+console.log(
+  "[AniList merge] References to discarded series:",
+  JSON.stringify(references.rows)
+)
     // Delete the duplicate record selected for removal.
     await tx.execute(sql`
       DELETE FROM series
