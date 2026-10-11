@@ -119,6 +119,8 @@ export default async function WatchPage({ params }: Props) {
   // Get trending series for the main content area
   const trendingSeriesData = await getTrendingSeries(12)
 
+  const episodeCanonicalUrl = `https://otakunaija.name.ng/episodes/${seriesSlug}/${episode.slug}`
+
   // 1. Generate Schema for TVEpisode, VideoObject, and Breadcrumbs via @graph
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -170,7 +172,9 @@ export default async function WatchPage({ params }: Props) {
         'description': episode.synopsis || `Watch ${episode.title} on OtakuNaija.`,
         'thumbnailUrl': [episode.thumbnailUrl],
         'uploadDate': toISO(episode.publishedAt),
-        'contentUrl': episode.videoUrl,
+        ...(episode.videoUrl?.trim()
+          ? { contentUrl: episode.videoUrl }
+          : { embedUrl: episodeCanonicalUrl }),
       }
     ]
   }
