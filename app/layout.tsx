@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { HideV0Badge } from "@/components/HideV0Badge"
 import { OneSignalInit } from "@/components/push/onesignal-init"
+import { ScrollToTop } from "@/components/ScrollToTop"
 import "./globals.css"
 
 const inter = Inter({
@@ -186,10 +187,11 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased min-h-dvh bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false} disableTransitionOnChange>
-          <HideV0Badge />
-          {children}
-          <Toaster richColors position="top-center" />
-        </ThemeProvider>
+  <HideV0Badge />
+  <ScrollToTop />
+  {children}
+  <Toaster richColors position="top-center" />
+</ThemeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
         <Script src="https://scripts.simpleanalyticscdn.com/latest.js" />
         <OneSignalInit />
