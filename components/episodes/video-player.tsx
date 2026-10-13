@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Loader2, Play } from 'lucide-react'
 import * as PlyrModule from 'plyr'
 
@@ -14,6 +15,12 @@ interface VideoPlayerProps {
   title: string
   subtitlesUrl?: string | null
   playId?: string | null
+  nextEpisode?: {
+    slug: string
+    seriesSlug: string
+    episodeNumber: number
+    title: string
+  } | null
 }
 
 interface ResolvedPlayback {
@@ -35,8 +42,11 @@ function isHlsStream(url: string, type: string): boolean {
 const PLAY_RESOLVE_BASE_URL = 'https://play.otakunaija.name.ng'
 const MAX_RETRY_ATTEMPTS = 4
 
-export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playId }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playId, nextEpisode = null }: VideoPlayerProps) {
+  const router = useRouter()
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showNextEpisodeOverlay, setShowNextEpisodeOverlay] = useState(false)
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(10)
   const [resolvedPlayback, setResolvedPlayback] = useState<ResolvedPlayback | null>(null)
   const [isResolving, setIsResolving] = useState(Boolean(playId?.trim()))
   const [resolveFailed, setResolveFailed] = useState(false)
@@ -49,6 +59,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const retryStatusRef = useRef(retryStatus)
   const playbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const plyrInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const nextEpisodeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const sourceGenerationRef = useRef(0)
   const [hlsMode, setHlsMode] = useState<'pending' | 'native' | 'hls' | 'fallback'>('pending')
 
@@ -72,6 +83,44 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   useEffect(() => {
     retryStatusRef.current = retryStatus
   }, [retryStatus])
+
+  const clearNextEpisodeInterval = useCallback(() => {
+    if (nextEpisodeIntervalRef.current) {
+      clearInterval(nextEpisodeIntervalRef.current)
+      nextEpisodeIntervalRef.current = null
+    }
+  }, [])
+
+  const navigateToNextEpisode = useCallback(() => {
+    if (!nextEpisode) return
+    clearNextEpisodeInterval()
+    setShowNextEpisodeOverlay(false)
+    router.push(`/episodes/${nextEpisode.seriesSlug}/${nextEpisode.slug}`)
+  }, [clearNextEpisodeInterval, nextEpisode, router])
+
+  useEffect(() => {
+    clearNextEpisodeInterval()
+    setShowNextEpisodeOverlay(false)
+    setNextEpisodeCountdown(10)
+
+    return clearNextEpisodeInterval
+  }, [clearNextEpisodeInterval, nextEpisode])
+
+  const handleVideoEnded = () => {
+    if (!nextEpisode) return
+    clearNextEpisodeInterval()
+    setNextEpisodeCountdown(10)
+    setShowNextEpisodeOverlay(true)
+    nextEpisodeIntervalRef.current = setInterval(() => {
+      setNextEpisodeCountdown((countdown) => {
+        if (countdown <= 1) {
+          navigateToNextEpisode()
+          return 0
+        }
+        return countdown - 1
+      })
+    }, 1000)
+  }
 
   const resolvePlayback = useCallback(async (excludeList: string[]) => {
     const normalizedPlayId = playId?.trim()
@@ -251,6 +300,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       'play',
       'progress',
       'current-time',
+      'duration',
       'mute',
       'volume',
       'captions',
@@ -305,7 +355,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     const shouldRenderSource = !sourceIsHls || hlsMode === 'native' || hlsMode === 'fallback'
 
     return (
-      <div className="w-full bg-black">
+      <div className="relative w-full bg-black">
         <video
           ref={videoRef}
           preload="metadata"
@@ -315,6 +365,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
           title={title}
           crossOrigin="anonymous"
           onError={handlePlaybackFailure}
+          onEnded={handleVideoEnded}
         >
           {shouldRenderSource && (
             <source
@@ -333,6 +384,35 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
           )}
           Your browser does not support the video tag.
         </video>
+        {showNextEpisodeOverlay && nextEpisode && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center text-white">
+            <div className="space-y-4">
+              <div>
+                <p className="text-lg font-semibold">Episode {nextEpisode.episodeNumber} will play in {nextEpisodeCountdown}s</p>
+                <p className="mt-1 text-sm text-white/80">{nextEpisode.title}</p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  className="rounded-md border border-white/40 px-4 py-2 text-sm font-medium hover:bg-white/10"
+                  onClick={() => {
+                    clearNextEpisodeInterval()
+                    setShowNextEpisodeOverlay(false)
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  onClick={navigateToNextEpisode}
+                >
+                  Play Now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
