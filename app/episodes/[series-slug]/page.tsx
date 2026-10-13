@@ -155,6 +155,12 @@ export default async function SeriesPage({ params }: Props) {
           <Image src={series.coverImageUrl} alt={series.title} fill className="object-cover" priority />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+          {info?.posterColor && /^\d{1,3} \d{1,3} \d{1,3}$/.test(info.posterColor) && (
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(to right, rgb(${info.posterColor} / 0.45), transparent 70%)` }}
+          />
+        )}
         <div className="absolute inset-0 flex items-end px-4 pb-4 md:px-6 md:pb-6">
           <div className="mx-auto flex w-full max-w-7xl items-end gap-3 md:gap-4">
             {series.posterImageUrl && (
@@ -173,6 +179,11 @@ export default async function SeriesPage({ params }: Props) {
                 ))}
                 <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'}`}>
                   {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
+                  {info?.stats && (
+                  <span className="rounded-full bg-black/50 px-2.5 py-0.5 text-[11px] font-medium text-white">
+                    ★ {info.stats.score.toFixed(1)}
+                  </span>
+                )}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-foreground/70">
@@ -205,7 +216,9 @@ export default async function SeriesPage({ params }: Props) {
 
           {/* Sidebar (desktop) */}
           <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
-            <PollPlacement source="series" />
+              <div className="hidden lg:block">
+              <PollPlacement source="series" />
+            </div>
             <section id="newsletter" className="scroll-mt-24 rounded-xl border border-border bg-card p-5">
               <h3 className="mb-2 text-base font-bold text-foreground">Get weekly anime drops, straight to your inbox.</h3>
               <p className="mb-4 text-sm text-muted-foreground">
