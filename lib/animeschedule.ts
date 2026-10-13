@@ -118,11 +118,42 @@ export async function getAnimeScheduleInfo(slug: string): Promise<AnimeScheduleI
   try {
     const res = await fetch(`${BASE}/anime/${encodeURIComponent(slug)}`, {
       headers: { Authorization: `Bearer ${token}` },
-      next: { revalidate: 21600 },
+      cache: 'no-store',
     })
     if (!res.ok) return null
     return normalize(await res.json())
   } catch {
     return null
+  }
+}
+
+export interface AsSearchHit {
+  route: string
+  title: string
+  english: string | null
+  romaji: string | null
+  aniListId: number | null
+}
+
+export async function searchAnimeSchedule(q: string): Promise<AsSearchHit[]> {
+  const token = process.env.ANIMESCHEDULE_TOKEN
+  if (!token) return []
+  try {
+    const res = await fetch(`${BASE}/anime?q=${encodeURIComponent(q)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return []
+    const json = await res.json()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (json.anime ?? []).map((a: any) => ({
+      route: a.route,
+      title: a.title,
+      english: a.names?.english ?? null,
+      romaji: a.names?.romaji ?? null,
+      aniListId: Number(/anime\/(\d+)/.exec(a.websites?.aniList ?? '')?.[1]) || null,
+    }))
+  } catch {
+    return []
   }
 }
