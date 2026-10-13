@@ -217,6 +217,12 @@ export default async function WatchPage({ params }: Props) {
                 title={episode.title}
                 subtitlesUrl={episode.subtitlesUrl}
                 playId={episode.playId}
+                nextEpisode={navData.next ? {
+                  slug: navData.next.slug,
+                  seriesSlug,
+                  episodeNumber: navData.next.episodeNumber,
+                  title: navData.next.title,
+                } : null}
               />
               <WatchProgressTracker
                 seriesSlug={seriesSlug}
