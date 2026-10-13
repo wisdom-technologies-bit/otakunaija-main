@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { and, eq, isNotNull, isNull, lt, or } from 'drizzle-orm'
-import { db } from '@/lib/db'
+import { db } from '@/lib/db/index'
 import { series } from '@/lib/db/schema'
 import { getAnimeScheduleInfo, searchAnimeSchedule } from '@/lib/animeschedule'
 
