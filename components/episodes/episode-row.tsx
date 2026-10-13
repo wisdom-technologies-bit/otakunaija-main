@@ -25,14 +25,14 @@ export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps
     <Link href={`/episodes/${seriesSlug}/${episode.slug}`}>
       <div className="group flex items-center gap-3 rounded-lg border border-border/40 p-2.5 transition-all hover:border-primary/40 hover:bg-card/60">
         {/* Thumbnail */}
-        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded bg-muted">
+         <div className="relative h-14 w-24 flex-shrink-0 overflow-hidden rounded bg-muted">
           {episode.thumbnailUrl ? (
             <Image
               src={episode.thumbnailUrl}
               alt={`Episode ${episode.episodeNumber}`}
               fill
               className="object-cover transition-transform group-hover:scale-105"
-              sizes="56px"
+              sizes="96px"
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
@@ -42,22 +42,27 @@ export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 items-center gap-2 min-w-0">
+        <div className="flex flex-1 flex-col items-start gap-1 min-w-0 sm:flex-row sm:items-center sm:gap-2">
           <span className="flex-shrink-0 rounded bg-primary/90 px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
             EP {episode.episodeNumber.toString().padStart(2, '0')}
           </span>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 w-full flex-1">
             <h3 className="line-clamp-1 text-sm font-bold text-foreground group-hover:text-primary transition-colors">
               {episode.title}
             </h3>
             {seriesTitle && (
               <p className="line-clamp-1 text-xs text-foreground/60">{seriesTitle}</p>
             )}
+              <p className="mt-0.5 text-[11px] text-foreground/60 sm:hidden">
+              {publishedDate}
+              {publishedDate && durationStr !== 'Unknown' ? ' · ' : ''}
+              {durationStr !== 'Unknown' ? durationStr : ''}
+            </p>
           </div>
         </div>
 
         {/* Metadata column */}
-        <div className="flex flex-shrink-0 flex-col items-end gap-0.5 text-xs text-foreground/60">
+        <div className="hidden flex-shrink-0 flex-col items-end gap-0.5 text-xs text-foreground/60 sm:flex">
           <span>{durationStr}</span>
           <span>{formatViewCount(episode.viewCount ?? 0)} views</span>
           <span>{publishedDate}</span>
