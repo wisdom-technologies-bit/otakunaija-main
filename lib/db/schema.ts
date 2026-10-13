@@ -1,4 +1,5 @@
-import { pgTable, serial, text, timestamp, integer, boolean, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, timestamp, integer, boolean, jsonb, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import type { AnimeScheduleInfo } from '@/lib/animeschedule'
 import { relations, sql } from 'drizzle-orm'
 
 export const creators = pgTable('creators', {
@@ -25,6 +26,9 @@ export const series = pgTable('series', {
   genre: text('genre'),
   anilistId: integer('anilist_id').unique(),
   titleChecked: boolean('title_checked').notNull().default(false),
+  animescheduleSlug: text('animeschedule_slug').unique(),
+  animescheduleData: jsonb('animeschedule_data').$type<AnimeScheduleInfo>(),
+  animescheduleSyncedAt: timestamp('animeschedule_synced_at', { withTimezone: true }),
   createdAt: timestamp('created_at').defaultNow(),
 })
 
