@@ -79,8 +79,11 @@ export async function POST(req: NextRequest) {
 }
 
 // Cron: refresh ongoing series that already have a slug and are >23h stale
-export async function GET() {
+export async function GET(req: NextRequest) {
   const cutoff = new Date(Date.now() - 23 * 60 * 60 * 1000)
+  const sp = req.nextUrl.searchParams
+  const backfill = sp.get('backfill') === '1'
+  const offset = Math.max(0, parseInt(sp.get('offset') ?? '0', 10) || 0)
 
   const rows = await db
     .select({
@@ -92,18 +95,27 @@ export async function GET() {
     })
     .from(series)
     .where(
-      and(
-        isNotNull(series.animescheduleSlug),
-        eq(series.status, 'ongoing'),
-        or(isNull(series.animescheduleSyncedAt), lt(series.animescheduleSyncedAt, cutoff)),
-      ),
+      backfill
+        ? isNull(series.animescheduleSlug)
+        : and(
+            isNotNull(series.animescheduleSlug),
+            eq(series.status, 'ongoing'),
+            or(isNull(series.animescheduleSyncedAt), lt(series.animescheduleSyncedAt, cutoff)),
+          ),
     )
+    .orderBy(series.id)
     .limit(10)
+    .offset(backfill ? offset : 0)
 
   const results = []
   for (const row of rows) {
     results.push(await syncOne(row))
     await sleep(1000)
   }
-  return NextResponse.json({ processed: results.length, results })
+  const failed = results.filter((r) => !r.ok).length
+  return NextResponse.json({
+    processed: results.length,
+    nextOffset: backfill && rows.length === 10 ? offset + failed : null,
+    results,
+  })
 }
