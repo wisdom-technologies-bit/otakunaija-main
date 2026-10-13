@@ -17,6 +17,7 @@ import { GenreTagger } from '@/components/push/genre-tagger'
 import { EnableNotifications } from '@/components/push/enable-notifications'
 import type { AnimeScheduleInfo } from '@/lib/animeschedule'
 import { SeriesDetails } from '@/components/episodes/series-details'
+import { SeriesTabs, type SeriesTab } from '@/components/episodes/series-tabs'
 
 export const revalidate = 3600
 
@@ -74,6 +75,28 @@ export default async function SeriesPage({ params }: Props) {
   const episodeCount = info?.totalEpisodes ?? (latestEp || episodes.length)
   const year = info?.year ?? (series.createdAt ? new Date(series.createdAt).getFullYear() : null)
   const genres = info?.genres.length ? info.genres.map((g) => g.name) : splitGenres(series.genre)
+  const hasWatch = !!info && (info.streams.length > 0 || !!info.jpnTime || !!info.subTime || !!info.dubTime)
+  const tabs: SeriesTab[] = [
+    {
+      id: 'episodes',
+      label: 'Episodes',
+      content: (
+        <SeriesEpisodesPanel
+          episodes={episodes.map((episode) => ({
+            ...episode,
+            publishedAt: toISO(episode.publishedAt),
+          }))}
+          seriesSlug={series.slug}
+          synopsis={series.synopsis}
+        />
+      ),
+    },
+    ...(info ? [{ id: 'about', label: 'About', content: <SeriesDetails info={info} section="about" /> }] : []),
+    ...(hasWatch ? [{ id: 'watch', label: 'Watch', content: <SeriesDetails info={info!} section="watch" /> }] : []),
+    ...(info && info.related.length > 0
+      ? [{ id: 'related', label: 'Related', content: <SeriesDetails info={info} section="related" /> }]
+      : []),
+  ]
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -171,20 +194,13 @@ export default async function SeriesPage({ params }: Props) {
               </div>
             )}
 
-            {info && <SeriesDetails info={info} />}
+            {info && <SeriesDetails info={info} section="banner" />}
 
             {/* Creator Credit */}
             {creator && <CreatorCredit creator={creator} />}
 
             {/* Episodes panel with tabs + sort */}
-          <SeriesEpisodesPanel
-            episodes={episodes.map((episode) => ({
-              ...episode,
-              publishedAt: toISO(episode.publishedAt),
-            }))}
-            seriesSlug={series.slug}
-            synopsis={series.synopsis}
-          />
+            <SeriesTabs tabs={tabs} />
           </div>
 
           {/* Sidebar (desktop) */}
