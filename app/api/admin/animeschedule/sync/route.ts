@@ -6,9 +6,14 @@ import { series } from '@/lib/db/schema'
 import { getAnimeScheduleInfo, searchAnimeSchedule } from '@/lib/animeschedule'
 
 export const maxDuration = 60
+export const dynamic = 'force-dynamic'
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+function authorized(req: NextRequest) {
+  const secret = process.env.CRON_SECRET
+  return !!secret && req.headers.get('authorization') === `Bearer ${secret}`
+}
 
 type Row = {
   id: number
@@ -58,6 +63,7 @@ async function syncOne(row: Row) {
 
 // Manual: sync one series (optionally forcing the AnimeSchedule slug)
 export async function POST(req: NextRequest) {
+  if (!authorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   if (!body.seriesSlug) return NextResponse.json({ error: 'seriesSlug required' }, { status: 400 })
 
@@ -80,6 +86,7 @@ export async function POST(req: NextRequest) {
 
 // Cron: refresh ongoing series that already have a slug and are >23h stale
 export async function GET(req: NextRequest) {
+  if (!authorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const cutoff = new Date(Date.now() - 23 * 60 * 60 * 1000)
   const sp = req.nextUrl.searchParams
   const backfill = sp.get('backfill') === '1'
@@ -104,7 +111,7 @@ export async function GET(req: NextRequest) {
           ),
     )
     .orderBy(series.id)
-    .limit(10)
+    .limit(5)
     .offset(backfill ? offset : 0)
 
   const results = []
@@ -115,7 +122,7 @@ export async function GET(req: NextRequest) {
   const failed = results.filter((r) => !r.ok).length
   return NextResponse.json({
     processed: results.length,
-    nextOffset: backfill && rows.length === 10 ? offset + failed : null,
+    nextOffset: backfill && rows.length === 5 ? offset + failed : null,
     results,
   })
 }
