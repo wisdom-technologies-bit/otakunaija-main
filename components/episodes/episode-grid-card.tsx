@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { formatReleaseDate } from '@/lib/format-date'
 import { type Episode } from '@/lib/db/schema'
 import { formatDuration, formatViewCount } from '@/lib/episode-utils'
-import { Play, Download } from 'lucide-react'
+import { Play } from 'lucide-react'
 
 type SerializedEpisode = Omit<Episode, 'publishedAt'> & { publishedAt: string | null }
 
@@ -16,6 +16,9 @@ interface EpisodeGridCardProps {
 
 export function EpisodeGridCard({ episode, seriesSlug }: EpisodeGridCardProps) {
   const publishedDate = episode.publishedAt ? formatReleaseDate(episode.publishedAt) : ''
+
+  const ageMs = episode.publishedAt ? Date.now() - new Date(episode.publishedAt).getTime() : -1
+  const isNew = ageMs >= 0 && ageMs < 7 * 24 * 60 * 60 * 1000
 
   const durationStr = episode.durationSeconds
     ? formatDuration(episode.durationSeconds)
@@ -54,18 +57,11 @@ export function EpisodeGridCard({ episode, seriesSlug }: EpisodeGridCardProps) {
             </span>
           </div>
 
-          {/* Download Button (Top Right) */}
-          <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-              className="rounded-full bg-black/60 hover:bg-black/80 p-2 transition-colors"
-            >
-              <Download className="h-4 w-4 text-white" />
-            </button>
-          </div>
+          {isNew && (
+            <div className="absolute top-2 right-2">
+              <span className="rounded bg-emerald-600/90 px-2 py-1 text-[11px] font-bold text-white">NEW</span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
