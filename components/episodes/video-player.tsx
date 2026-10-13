@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Loader2, Play } from 'lucide-react'
 import * as PlyrModule from 'plyr'
 
@@ -14,11 +15,27 @@ interface VideoPlayerProps {
   title: string
   subtitlesUrl?: string | null
   playId?: string | null
+  nextEpisode?: {
+    slug: string
+    seriesSlug: string
+    episodeNumber: number
+    title: string
+  } | null
+}
+
+interface ResolvedSubtitle {
+  url: string
+  srclang: string
+  label: string
+  default: boolean
 }
 
 interface ResolvedPlayback {
   streamUrl: string
   subtitleUrl: string | null
+  subtitles: ResolvedSubtitle[]
+  intro: { start: number; end: number } | null
+  outro: { start: number; end: number } | null
   type: string
   provider: string
   server: string | null
@@ -35,8 +52,13 @@ function isHlsStream(url: string, type: string): boolean {
 const PLAY_RESOLVE_BASE_URL = 'https://play.otakunaija.name.ng'
 const MAX_RETRY_ATTEMPTS = 4
 
-export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playId }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playId, nextEpisode = null }: VideoPlayerProps) {
+  const router = useRouter()
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showNextEpisodeOverlay, setShowNextEpisodeOverlay] = useState(false)
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(10)
+  const [showSkipIntro, setShowSkipIntro] = useState(false)
+  const [showSkipOutro, setShowSkipOutro] = useState(false)
   const [resolvedPlayback, setResolvedPlayback] = useState<ResolvedPlayback | null>(null)
   const [isResolving, setIsResolving] = useState(Boolean(playId?.trim()))
   const [resolveFailed, setResolveFailed] = useState(false)
@@ -49,6 +71,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const retryStatusRef = useRef(retryStatus)
   const playbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const plyrInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const nextEpisodeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const sourceGenerationRef = useRef(0)
   const [hlsMode, setHlsMode] = useState<'pending' | 'native' | 'hls' | 'fallback'>('pending')
 
@@ -73,6 +96,44 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     retryStatusRef.current = retryStatus
   }, [retryStatus])
 
+  const clearNextEpisodeInterval = useCallback(() => {
+    if (nextEpisodeIntervalRef.current) {
+      clearInterval(nextEpisodeIntervalRef.current)
+      nextEpisodeIntervalRef.current = null
+    }
+  }, [])
+
+  const navigateToNextEpisode = useCallback(() => {
+    if (!nextEpisode) return
+    clearNextEpisodeInterval()
+    setShowNextEpisodeOverlay(false)
+    router.push(`/episodes/${nextEpisode.seriesSlug}/${nextEpisode.slug}`)
+  }, [clearNextEpisodeInterval, nextEpisode, router])
+
+  useEffect(() => {
+    clearNextEpisodeInterval()
+    setShowNextEpisodeOverlay(false)
+    setNextEpisodeCountdown(10)
+
+    return clearNextEpisodeInterval
+  }, [clearNextEpisodeInterval, nextEpisode])
+
+  const handleVideoEnded = () => {
+    if (!nextEpisode) return
+    clearNextEpisodeInterval()
+    setNextEpisodeCountdown(10)
+    setShowNextEpisodeOverlay(true)
+    nextEpisodeIntervalRef.current = setInterval(() => {
+      setNextEpisodeCountdown((countdown) => {
+        if (countdown <= 1) {
+          navigateToNextEpisode()
+          return 0
+        }
+        return countdown - 1
+      })
+    }, 1000)
+  }
+
   const resolvePlayback = useCallback(async (excludeList: string[]) => {
     const normalizedPlayId = playId?.trim()
     if (!normalizedPlayId) return
@@ -88,9 +149,26 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       if (!response.ok) throw new Error(`Playback resolution failed: ${response.status}`)
       const data = await response.json()
       if (typeof data.streamUrl !== 'string' || !data.streamUrl) throw new Error('Missing stream URL')
-      const subtitles = Array.isArray(data.subtitles) ? data.subtitles : []
-      const subtitle = subtitles.find((track: { default?: boolean }) => track.default) ?? subtitles[0]
+      const subtitles: ResolvedSubtitle[] = Array.isArray(data.subtitles)
+        ? data.subtitles.flatMap((track: { url?: unknown; srclang?: unknown; label?: unknown; default?: unknown }) => {
+            if (typeof track.url !== 'string' || !track.url) return []
+            return [{
+              url: track.url,
+              srclang: typeof track.srclang === 'string' && track.srclang ? track.srclang : 'en',
+              label: typeof track.label === 'string' && track.label ? track.label : 'English',
+              default: track.default === true,
+            }]
+          })
+        : []
+      const subtitle = subtitles.find((track) => track.default) ?? subtitles[0]
       const rawSubtitleUrl = typeof subtitle?.url === 'string' ? subtitle.url : null
+      const normalizeRange = (range: unknown) => {
+        if (!range || typeof range !== 'object') return null
+        const candidate = range as { start?: unknown; end?: unknown }
+        return typeof candidate.start === 'number' && typeof candidate.end === 'number'
+          ? { start: candidate.start, end: candidate.end }
+          : null
+      }
       if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current)
       sourceGenerationRef.current += 1
       setResolvedPlayback({
@@ -98,6 +176,12 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
         subtitleUrl: rawSubtitleUrl
           ? rawSubtitleUrl.startsWith('http') ? rawSubtitleUrl : `${PLAY_RESOLVE_BASE_URL}${rawSubtitleUrl}`
           : null,
+        subtitles: subtitles.map((track) => ({
+          ...track,
+          url: track.url.startsWith('http') ? track.url : `${PLAY_RESOLVE_BASE_URL}${track.url}`,
+        })),
+        intro: normalizeRange(data.intro),
+        outro: normalizeRange(data.outro),
         type: typeof data.type === 'string' ? data.type : 'mp4',
         provider: typeof data.provider === 'string' ? data.provider : '',
         server: typeof data.server === 'string' ? data.server : null,
@@ -251,6 +335,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       'play',
       'progress',
       'current-time',
+      'duration',
       'mute',
       'volume',
       'captions',
@@ -281,6 +366,32 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     setIsPlaying(true)
   }
 
+  const handleTimeUpdate = () => {
+    const video = videoRef.current
+    if (!video) return
+    const currentTime = video.currentTime
+    const intro = resolvedPlayback?.intro
+    const outro = resolvedPlayback?.outro
+    setShowSkipIntro(Boolean(intro && currentTime >= intro.start && currentTime < intro.end))
+    setShowSkipOutro(Boolean(outro && currentTime >= outro.start && currentTime < outro.end))
+  }
+
+  const handleSkipIntro = () => {
+    const video = videoRef.current
+    const intro = resolvedPlayback?.intro
+    if (!video || !intro) return
+    video.currentTime = intro.end
+    setShowSkipIntro(false)
+  }
+
+  const handleSkipOutro = () => {
+    const video = videoRef.current
+    const outro = resolvedPlayback?.outro
+    if (!video || !outro) return
+    video.currentTime = outro.end
+    setShowSkipOutro(false)
+  }
+
   const hasPlayId = Boolean(playId?.trim())
 
   if (hasPlayId && isResolving) {
@@ -305,7 +416,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     const shouldRenderSource = !sourceIsHls || hlsMode === 'native' || hlsMode === 'fallback'
 
     return (
-      <div className="w-full bg-black">
+      <div className="relative w-full bg-black">
         <video
           ref={videoRef}
           preload="metadata"
@@ -315,6 +426,8 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
           title={title}
           crossOrigin="anonymous"
           onError={handlePlaybackFailure}
+          onEnded={handleVideoEnded}
+          onTimeUpdate={handleTimeUpdate}
         >
           {shouldRenderSource && (
             <source
@@ -322,17 +435,75 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
               type={sourceIsHls ? undefined : 'video/mp4'}
             />
           )}
-          {trackUrl && (
-            <track
-              kind="captions"
-              src={trackUrl ?? undefined}
-              srcLang="en"
-              label="English"
-              default
-            />
-          )}
+          {resolvedPlayback?.subtitles.length
+            ? resolvedPlayback.subtitles.map((track) => (
+                <track
+                  key={`${track.srclang}-${track.label}-${track.url}`}
+                  kind="captions"
+                  src={track.url}
+                  srcLang={track.srclang}
+                  label={track.label}
+                  default={track.default || !resolvedPlayback.subtitles.some((subtitle) => subtitle.default) && track === resolvedPlayback.subtitles[0]}
+                />
+              ))
+            : trackUrl && (
+                <track
+                  kind="captions"
+                  src={trackUrl}
+                  srcLang="en"
+                  label="English"
+                  default
+                />
+              )}
           Your browser does not support the video tag.
         </video>
+        {showSkipIntro && (
+          <button
+            type="button"
+            className="absolute bottom-16 right-4 rounded-full bg-black/75 px-3 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/90"
+            onClick={handleSkipIntro}
+          >
+            Skip Intro
+          </button>
+        )}
+        {showSkipOutro && (
+          <button
+            type="button"
+            className="absolute bottom-16 right-4 rounded-full bg-black/75 px-3 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm transition-colors hover:bg-black/90"
+            onClick={handleSkipOutro}
+          >
+            Skip Outro
+          </button>
+        )}
+        {showNextEpisodeOverlay && nextEpisode && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center text-white">
+            <div className="space-y-4">
+              <div>
+                <p className="text-lg font-semibold">Episode {nextEpisode.episodeNumber} will play in {nextEpisodeCountdown}s</p>
+                <p className="mt-1 text-sm text-white/80">{nextEpisode.title}</p>
+              </div>
+              <div className="flex justify-center gap-3">
+                <button
+                  type="button"
+                  className="rounded-md border border-white/40 px-4 py-2 text-sm font-medium hover:bg-white/10"
+                  onClick={() => {
+                    clearNextEpisodeInterval()
+                    setShowNextEpisodeOverlay(false)
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  onClick={navigateToNextEpisode}
+                >
+                  Play Now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
