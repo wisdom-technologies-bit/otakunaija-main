@@ -10,15 +10,6 @@ export const maxDuration = 60
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-function authorized(req: NextRequest) {
-  const bearer = req.headers.get('authorization')
-  const secret = req.headers.get('x-admin-secret')
-  return (
-    (!!process.env.CRON_SECRET && bearer === `Bearer ${process.env.CRON_SECRET}`) ||
-    (!!process.env.ADMIN_SYNC_SECRET && secret === process.env.ADMIN_SYNC_SECRET)
-  )
-}
-
 type Row = {
   id: number
   title: string
@@ -67,7 +58,6 @@ async function syncOne(row: Row) {
 
 // Manual: sync one series (optionally forcing the AnimeSchedule slug)
 export async function POST(req: NextRequest) {
-  if (!authorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   if (!body.seriesSlug) return NextResponse.json({ error: 'seriesSlug required' }, { status: 400 })
 
@@ -89,8 +79,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Cron: refresh ongoing series that already have a slug and are >23h stale
-export async function GET(req: NextRequest) {
-  if (!authorized(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+export async function GET() {
   const cutoff = new Date(Date.now() - 23 * 60 * 60 * 1000)
 
   const rows = await db
