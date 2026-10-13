@@ -15,6 +15,8 @@ import { PollPlacement } from '@/components/poll-placement'
 import { splitGenres } from '@/lib/genres'
 import { GenreTagger } from '@/components/push/genre-tagger'
 import { EnableNotifications } from '@/components/push/enable-notifications'
+import { getAnimeScheduleInfo } from '@/lib/animeschedule'
+import { SeriesDetails } from '@/components/episodes/series-details'
 
 export const revalidate = 3600
 
@@ -67,8 +69,11 @@ export default async function SeriesPage({ params }: Props) {
   }
 
   const { series, creator, episodes } = data
-  const episodeCount = episodes.length
-  const year = series.createdAt ? new Date(series.createdAt).getFullYear() : null
+  const info = await getAnimeScheduleInfo(series.slug)
+  const latestEp = episodes.reduce((m, e) => Math.max(m, e.episodeNumber), 0)
+  const episodeCount = info?.totalEpisodes ?? (latestEp || episodes.length)
+  const year = info?.year ?? (series.createdAt ? new Date(series.createdAt).getFullYear() : null)
+  const genres = info?.genres.length ? info.genres.map((g) => g.name) : splitGenres(series.genre)
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -100,7 +105,8 @@ export default async function SeriesPage({ params }: Props) {
                 name: series.title,
                 description: series.synopsis || '',
                 image: series.coverImageUrl || '',
-                genre: series.genre ? [series.genre] : [],
+                genre: genres,
+                ...(info?.premier ? { datePublished: info.premier.slice(0, 10) } : {}),
                 numberOfEpisodes: episodeCount,
                 containsSeason: [{ '@type': 'TVSeason', name: 'Season 1', numberOfEpisodes: episodeCount }],
               },
@@ -136,7 +142,7 @@ export default async function SeriesPage({ params }: Props) {
             <div className="min-w-0 space-y-2 md:space-y-3">
               <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl md:text-3xl">{series.title}</h1>
               <div className="flex flex-wrap items-center gap-1.5">
-                {splitGenres(series.genre).slice(0, 4).map((g) => (
+                {genres.slice(0, 6).map((g) => (
                   <Link key={g} href={`/episodes/browse?genre=${encodeURIComponent(g)}`}
                     className="rounded-full bg-primary/90 px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground hover:bg-primary">
                     {g}
@@ -147,8 +153,8 @@ export default async function SeriesPage({ params }: Props) {
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-foreground/70">
-                {year && <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {year}</span>}
-                <span className="inline-flex items-center gap-1.5"><Play className="h-3.5 w-3.5" /> {episodeCount} Episode{episodeCount !== 1 ? 's' : ''}</span>
+              {year && <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {year}{info && series.status === 'ongoing' ? ' – Present' : ''}</span>}
+                <span className="inline-flex items-center gap-1.5"><Play className="h-3.5 w-3.5" /> {episodeCount.toLocaleString('en-NG')} Episode{episodeCount !== 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
@@ -164,6 +170,8 @@ export default async function SeriesPage({ params }: Props) {
                 <ExpandableMarkdownSynopsis synopsis={series.synopsis} />
               </div>
             )}
+
+            {info && <SeriesDetails info={info} />}
 
             {/* Creator Credit */}
             {creator && <CreatorCredit creator={creator} />}
