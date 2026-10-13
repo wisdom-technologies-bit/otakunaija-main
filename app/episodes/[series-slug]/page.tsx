@@ -15,7 +15,7 @@ import { PollPlacement } from '@/components/poll-placement'
 import { splitGenres } from '@/lib/genres'
 import { GenreTagger } from '@/components/push/genre-tagger'
 import { EnableNotifications } from '@/components/push/enable-notifications'
-import { getAnimeScheduleInfo } from '@/lib/animeschedule'
+import type { AnimeScheduleInfo } from '@/lib/animeschedule'
 import { SeriesDetails } from '@/components/episodes/series-details'
 
 export const revalidate = 3600
@@ -69,7 +69,7 @@ export default async function SeriesPage({ params }: Props) {
   }
 
   const { series, creator, episodes } = data
-  const info = await getAnimeScheduleInfo(series.slug)
+  const info = (series.animescheduleData as AnimeScheduleInfo | null) ?? null
   const latestEp = episodes.reduce((m, e) => Math.max(m, e.episodeNumber), 0)
   const episodeCount = info?.totalEpisodes ?? (latestEp || episodes.length)
   const year = info?.year ?? (series.createdAt ? new Date(series.createdAt).getFullYear() : null)
