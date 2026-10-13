@@ -13,6 +13,7 @@ export interface AnimeScheduleInfo {
   romaji: string | null
   english: string | null
   native: string | null
+  posterColor: string | null
   genres: AsCategory[]
   studios: AsCategory[]
   sources: AsCategory[]
@@ -83,6 +84,7 @@ function normalize(a: any): AnimeScheduleInfo {
     romaji: cleanStr(a.names?.romaji),
     english: cleanStr(a.names?.english),
     native: cleanStr(a.names?.native),
+    posterColor: cleanStr(a.posterDominantColor),
     genres: a.genres ?? [],
     studios: a.studios ?? [],
     sources: a.sources ?? [],
