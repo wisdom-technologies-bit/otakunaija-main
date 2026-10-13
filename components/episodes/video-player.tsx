@@ -48,8 +48,26 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const hlsInstanceRef = useRef<import('hls.js').default | null>(null)
   const retryStatusRef = useRef(retryStatus)
   const playbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const plyrInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sourceGenerationRef = useRef(0)
   const [hlsMode, setHlsMode] = useState<'pending' | 'native' | 'hls' | 'fallback'>('pending')
+
+  // Plyr mutates the video subtree. Destroy it before React replaces that subtree
+  // so Plyr cannot remove nodes that React has already detached.
+  const destroyPlayer = useCallback(() => {
+    if (plyrInitTimeoutRef.current) {
+      clearTimeout(plyrInitTimeoutRef.current)
+      plyrInitTimeoutRef.current = null
+    }
+    const player = playerRef.current
+    playerRef.current = null
+    if (!player) return
+    try {
+      player.destroy()
+    } catch (error) {
+      console.warn('Failed to clean up Plyr instance', error)
+    }
+  }, [])
 
   useEffect(() => {
     retryStatusRef.current = retryStatus
@@ -117,11 +135,13 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     retryStatusRef.current = 'retrying'
     hlsInstanceRef.current?.destroy()
     hlsInstanceRef.current = null
+    destroyPlayer()
     resolvePlayback(newExcludedList)
-  }, [excludedCandidates, resolvePlayback, resolvedPlayback, retryAttempt])
+  }, [destroyPlayer, excludedCandidates, resolvePlayback, resolvedPlayback, retryAttempt])
 
   useEffect(() => {
     const normalizedPlayId = playId?.trim()
+    destroyPlayer()
     setExcludedCandidates([])
     setRetryAttempt(0)
     setRetryStatus('idle')
@@ -134,7 +154,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       return
     }
     resolvePlayback([])
-  }, [playId, resolvePlayback])
+  }, [destroyPlayer, playId, resolvePlayback])
 
   const sourceUrl = resolvedPlayback?.streamUrl ?? videoUrl
   const sourceType = resolvedPlayback?.type ?? 'mp4'
@@ -222,7 +242,8 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     // Only initialize Plyr when user clicks play
     if (isPlaying && videoRef.current && !playerRef.current) {
       // Wait a tick to ensure the video element is fully ready with tracks
-      setTimeout(() => {
+      plyrInitTimeoutRef.current = setTimeout(() => {
+        plyrInitTimeoutRef.current = null
         if (videoRef.current && !playerRef.current) {
           playerRef.current = new Plyr(videoRef.current, {
     controls: [
@@ -253,14 +274,8 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       }, 0)
     }
 
-    return () => {
-      // Clean up Plyr instance when component unmounts
-      if (playerRef.current) {
-        playerRef.current.destroy()
-        playerRef.current = null
-      }
-    }
-  }, [isPlaying])
+    return destroyPlayer
+  }, [destroyPlayer, isPlaying])
 
   const handlePlayClick = () => {
     setIsPlaying(true)
