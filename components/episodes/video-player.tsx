@@ -74,6 +74,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const nextEpisodeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const sourceGenerationRef = useRef(0)
   const [hlsMode, setHlsMode] = useState<'pending' | 'native' | 'hls' | 'fallback'>('pending')
+  const [playerEpoch, setPlayerEpoch] = useState(0)
 
   // Plyr mutates the video subtree. Destroy it before React replaces that subtree
   // so Plyr cannot remove nodes that React has already detached.
@@ -145,7 +146,6 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     // This prevents Plyr from trying to remove nodes React has already detached.
     hlsInstanceRef.current?.destroy()
     hlsInstanceRef.current = null
-    destroyPlayer()
     setIsResolving(true)
     try {
       const query = excludeList.length ? `?exclude=${encodeURIComponent(excludeList.join(','))}` : ''
@@ -197,6 +197,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       }
       if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current)
       sourceGenerationRef.current += 1
+      setPlayerEpoch((epoch) => epoch + 1)
       setResolvedPlayback({
         streamUrl: data.streamUrl.startsWith('http') ? data.streamUrl : `${PLAY_RESOLVE_BASE_URL}${data.streamUrl}`,
         subtitleUrl: rawSubtitleUrl
@@ -218,6 +219,10 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     } catch (error: unknown) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       console.error('Failed to resolve episode playback', error)
+      if (retryStatusRef.current === 'retrying') {
+        // Keep the "Switching provider..." overlay visible for a moment before the error
+        await new Promise((resolve) => setTimeout(resolve, 1200))
+      }
       if (retryStatusRef.current === 'retrying' && excludeList.length > 0) {
         setRetryStatus('exhausted')
         retryStatusRef.current = 'exhausted'
@@ -245,7 +250,6 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     retryStatusRef.current = 'retrying'
     hlsInstanceRef.current?.destroy()
     hlsInstanceRef.current = null
-    destroyPlayer()
     resolvePlayback(newExcludedList)
   }, [destroyPlayer, excludedCandidates, resolvePlayback, resolvedPlayback, retryAttempt])
 
@@ -386,7 +390,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     }
 
     return destroyPlayer
-  }, [destroyPlayer, isPlaying])
+  }, [destroyPlayer, isPlaying, sourceUrl, playerEpoch])
 
   const handlePlayClick = () => {
     setIsPlaying(true)
@@ -422,7 +426,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
   if (hasPlayId && isResolving && !isPlaying) {
     return (
-      <div className="flex aspect-video w-full flex-col items-center justify-center bg-black" role="status">
+      <div key="loading" className="flex aspect-video w-full flex-col items-center justify-center bg-black" role="status">
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
         {retryStatus === 'retrying' && <span className="mt-2 text-sm text-white">Switching provider...</span>}
       </div>
@@ -431,7 +435,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
   if (hasPlayId && resolveFailed) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center bg-black px-6 text-center text-sm text-white">
+      <div key="error" className="flex aspect-video w-full items-center justify-center bg-black px-6 text-center text-sm text-white">
         This episode is currently unavailable
       </div>
     )
@@ -442,13 +446,14 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     const shouldRenderSource = !sourceIsHls || hlsMode === 'native' || hlsMode === 'fallback'
 
     return (
-      <div className="relative w-full bg-black">
+      <div key="player" className="relative w-full bg-black">
         {hasPlayId && isResolving && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 text-center text-white" role="status">
             <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
             <span className="mt-2 text-sm">Switching provider...</span>
           </div>
         )}
+        <div key={`${sourceUrl ?? 'no-source'}-${playerEpoch}`}>
         <video
           ref={videoRef}
           preload="metadata"
@@ -489,6 +494,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
               )}
           Your browser does not support the video tag.
         </video>
+        </div>
         {showSkipIntro && (
           <button
             type="button"
