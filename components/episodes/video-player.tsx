@@ -140,6 +140,12 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
     const controller = new AbortController()
     let retryingWithoutStream = false
+
+    // Clean up third-party DOM mutations before React changes the player state.
+    // This prevents Plyr from trying to remove nodes React has already detached.
+    hlsInstanceRef.current?.destroy()
+    hlsInstanceRef.current = null
+    destroyPlayer()
     setIsResolving(true)
     try {
       const query = excludeList.length ? `?exclude=${encodeURIComponent(excludeList.join(','))}` : ''
@@ -220,7 +226,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     } finally {
       if (!controller.signal.aborted && !retryingWithoutStream) setIsResolving(false)
     }
-  }, [playId])
+  }, [destroyPlayer, playId])
 
   const handlePlaybackFailure = useCallback(() => {
     if (retryStatusRef.current === 'retrying') return
@@ -414,7 +420,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
   const hasPlayId = Boolean(playId?.trim())
 
-  if (hasPlayId && isResolving) {
+  if (hasPlayId && isResolving && !isPlaying) {
     return (
       <div className="flex aspect-video w-full flex-col items-center justify-center bg-black" role="status">
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
@@ -437,6 +443,12 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
     return (
       <div className="relative w-full bg-black">
+        {hasPlayId && isResolving && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 text-center text-white" role="status">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
+            <span className="mt-2 text-sm">Switching provider...</span>
+          </div>
+        )}
         <video
           ref={videoRef}
           preload="metadata"
