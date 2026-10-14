@@ -139,6 +139,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     if (!normalizedPlayId) return
 
     const controller = new AbortController()
+    let retryingWithoutStream = false
     setIsResolving(true)
     try {
       const query = excludeList.length ? `?exclude=${encodeURIComponent(excludeList.join(','))}` : ''
@@ -148,7 +149,26 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       )
       if (!response.ok) throw new Error(`Playback resolution failed: ${response.status}`)
       const data = await response.json()
-      if (typeof data.streamUrl !== 'string' || !data.streamUrl) throw new Error('Missing stream URL')
+      if (typeof data.streamUrl !== 'string' || !data.streamUrl) {
+        const provider = typeof data.provider === 'string' ? data.provider : ''
+        const server = typeof data.server === 'string' ? data.server : ''
+        const unavailableCandidate = provider ? `${provider}:${server || 'default'}` : null
+        const nextExcludedList = unavailableCandidate
+          ? Array.from(new Set([...excludeList, unavailableCandidate]))
+          : excludeList
+
+        if (unavailableCandidate && nextExcludedList.length > excludeList.length && excludeList.length < MAX_RETRY_ATTEMPTS) {
+          retryingWithoutStream = true
+          setExcludedCandidates(nextExcludedList)
+          setRetryAttempt((attempt) => attempt + 1)
+          setRetryStatus('retrying')
+          retryStatusRef.current = 'retrying'
+          await resolvePlayback(nextExcludedList)
+          return
+        }
+
+        throw new Error('Missing stream URL')
+      }
       const subtitles: ResolvedSubtitle[] = Array.isArray(data.subtitles)
         ? data.subtitles.flatMap((track: { url?: unknown; srclang?: unknown; label?: unknown; default?: unknown }) => {
             if (typeof track.url !== 'string' || !track.url) return []
@@ -198,7 +218,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       }
       setResolveFailed(true)
     } finally {
-      if (!controller.signal.aborted) setIsResolving(false)
+      if (!controller.signal.aborted && !retryingWithoutStream) setIsResolving(false)
     }
   }, [playId])
 
@@ -398,7 +418,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     return (
       <div className="flex aspect-video w-full flex-col items-center justify-center bg-black" role="status">
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
-        {retryStatus === 'retrying' && <span className="mt-2 text-sm text-white">Trying another server...</span>}
+        {retryStatus === 'retrying' && <span className="mt-2 text-sm text-white">Switching provider...</span>}
       </div>
     )
   }
