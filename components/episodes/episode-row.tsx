@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { type Episode } from '@/lib/db/schema'
 import { formatDuration, formatViewCount } from '@/lib/episode-utils'
 
-type SerializedEpisode = Omit<Episode, 'publishedAt'> & { publishedAt: string | null }
+type SerializedEpisode = Omit<Episode, 'publishedAt'> & { publishedAt: string | Date | null }
 
 interface EpisodeRowProps {
   episode: SerializedEpisode
@@ -15,7 +15,7 @@ interface EpisodeRowProps {
 }
 
 export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps) {
-  const publishedDate = episode.publishedAt ? formatReleaseDate(episode.publishedAt) : ''
+  const publishedDate = episode.publishedAt ? formatReleaseDate(typeof episode.publishedAt === 'string' ? episode.publishedAt : episode.publishedAt.toISOString()) : ''
 
   const durationStr = episode.durationSeconds
     ? formatDuration(episode.durationSeconds)

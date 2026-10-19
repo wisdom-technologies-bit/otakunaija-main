@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ChevronRight, Menu, Sparkles, X } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, Menu, Search, Sparkles, X } from "lucide-react";
 import { CATEGORIES } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
@@ -17,17 +17,10 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isAtTop, setIsAtTop] = useState(true);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const pathname = usePathname();
   const isEpisodesSection = pathname?.startsWith("/episodes");
   const isHome = pathname === "/";
-
-  useEffect(() => {
-    const handleScroll = () => setIsAtTop(window.scrollY < 48);
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const visibleNavLinks = NAV_LINKS.filter((l) => {
     if (l.href === "/" && isHome) return false;
@@ -66,18 +59,26 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <div className={`mx-1 w-[min(42vw,22rem)] transition-[width] duration-300 sm:w-[min(38vw,24rem)] ${isAtTop ? "md:w-[min(32vw,24rem)]" : "md:w-[min(28vw,20rem)]"}`}>
-            {isEpisodesSection ? (
-              <EpisodesSearchBar compact />
-            ) : (
-              <SearchBar compact />
-            )}
+          <div className="mx-1 hidden w-[min(42vw,22rem)] transition-[width] duration-300 sm:w-[min(38vw,24rem)] md:block">
+            {isEpisodesSection ? <EpisodesSearchBar compact /> : <SearchBar compact />}
           </div>
+          <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary md:hidden" aria-label="Open search" onClick={() => setMobileSearchOpen(true)}>
+            <Search className="h-5 w-5" />
+          </Button>
           <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary md:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen((s) => !s)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
+
+      {mobileSearchOpen && (
+        <div className="absolute inset-x-3 top-[4.75rem] z-50 rounded-2xl border border-border bg-background/95 p-3 shadow-2xl backdrop-blur-xl md:hidden">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">{isEpisodesSection ? <EpisodesSearchBar compact autoFocus /> : <SearchBar compact />}</div>
+            <Button variant="ghost" size="icon" className="shrink-0 rounded-full" aria-label="Close search" onClick={() => setMobileSearchOpen(false)}><X className="h-5 w-5" /></Button>
+          </div>
+        </div>
+      )}
 
       {!isEpisodesSection && (
         <div className="hidden border-t border-border/60 bg-card/30 md:block">
