@@ -3,6 +3,7 @@ import {
   getRecentEpisodesAcrossAllSeries,
   getUpcomingEpisodes,
   getTrendingSeries,
+  getPopularTodaySeries,
 } from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -19,6 +20,7 @@ import { UpcomingRow } from '@/components/episodes/upcoming-row'
 import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 import { PollPlacement } from '@/components/poll-placement'
 import { MoviesRow } from '@/components/episodes/movies-row'
+import { PopularTodayRow } from '@/components/episodes/popular-today-row'
 
 export const revalidate = 60
 
@@ -49,11 +51,13 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
   let recentEpisodes: any[] = []
   let upcomingEpisodes: any[] = []
   let trendingSeries: any[] = []
+  let popularToday: any[] = []
   try {
-    ;[recentEpisodes, upcomingEpisodes, trendingSeries] = await Promise.all([
+    ;[recentEpisodes, upcomingEpisodes, trendingSeries, popularToday] = await Promise.all([
       getRecentEpisodesAcrossAllSeries(10),
       getUpcomingEpisodes(12),
       getTrendingSeries(5),
+      getPopularTodaySeries(10),
     ])
   } catch (err) {
     console.error('Error fetching episodes data:', err)
@@ -134,6 +138,8 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
             <NewReleasesRow items={serializedRecentEpisodes} />
 
             <MoviesRow />
+
+            <PopularTodayRow items={popularToday} />
 
             <RecommendedRow />
 
