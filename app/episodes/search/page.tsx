@@ -100,15 +100,15 @@ export default async function SearchPage({
               )}
             </h1>
 
-            <p className="mt-3 text-sm text-muted-foreground">
-              {query
-                ? `${total} ${total === 1 ? 'matching episode' : 'matching episodes'} across ${episodeGroups.size} ${episodeGroups.size === 1 ? 'series' : 'series'}.`
-                : 'Search series, episode titles, and story descriptions.'}
-            </p>
+            {!query && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Search series, episode titles, and story descriptions.
+              </p>
+            )}
 
             <div className="mt-6">
               <EpisodesSearchBar
-                defaultValue={query}
+                defaultValue=""
                 autoFocus={!query}
               />
             </div>
