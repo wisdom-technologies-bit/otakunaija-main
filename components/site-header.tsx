@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronRight, Menu, Sparkles, X } from "lucide-react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Mail02Icon } from "@hugeicons/core-free-icons";
 import { CATEGORIES } from "@/lib/posts";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
@@ -21,7 +19,6 @@ export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
   const pathname = usePathname();
-  const router = useRouter();
   const isEpisodesSection = pathname?.startsWith("/episodes");
   const isHome = pathname === "/";
 
@@ -32,22 +29,6 @@ export function SiteHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleNewsletterClick = () => {
-    const target = document.getElementById("newsletter");
-    if (!target) {
-      // Newsletter section isn't on this page (e.g. an admin page) — go to homepage first
-      router.push("/#newsletter");
-      return;
-    }
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-    if (isDesktop) {
-      // Already visible on desktop — pulse-highlight instead of scrolling
-      target.classList.add("newsletter-highlight");
-      setTimeout(() => target.classList.remove("newsletter-highlight"), 1200);
-    } else {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
   const visibleNavLinks = NAV_LINKS.filter((l) => {
     if (l.href === "/" && isHome) return false;
     if (l.href === "/episodes" && isEpisodesSection) return false;
@@ -92,12 +73,6 @@ export function SiteHeader() {
               <SearchBar compact />
             )}
           </div>
-          <Button variant="default" onClick={handleNewsletterClick} className="hidden h-9 items-center gap-1.5 rounded-full bg-primary px-4 font-semibold text-primary-foreground shadow-[0_6px_20px_-10px_hsl(var(--primary))] hover:bg-primary/90 md:inline-flex">
-            <HugeiconsIcon icon={Mail02Icon} className="h-4 w-4" strokeWidth={2} /> Newsletter
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleNewsletterClick} aria-label="Newsletter" className="rounded-full text-primary hover:bg-primary/10 md:hidden">
-            <HugeiconsIcon icon={Mail02Icon} className="h-5 w-5" strokeWidth={2} />
-          </Button>
           <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary md:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen((s) => !s)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
