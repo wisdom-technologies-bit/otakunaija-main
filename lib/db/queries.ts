@@ -485,6 +485,41 @@ export async function searchEpisodesAndSeriesSmart(query: string) {
   return { seriesResults, episodesResults: refinedEpisodesResults }
 }
 
+// Small, server-only result set used by the live autocomplete menu.
+export async function getSearchSuggestions(query: string) {
+  const normalized = query.trim().replace(/\s+/g, ' ')
+  if (normalized.length < 2) return { series: [], episodes: [] }
+
+  const like = `%${normalized}%`
+  const [seriesResults, episodeResults] = await Promise.all([
+    db.select({
+      id: series.id,
+      title: series.title,
+      slug: series.slug,
+      imageUrl: series.posterImageUrl,
+      status: series.status,
+    }).from(series)
+      .where(sql`${series.title} ILIKE ${like} OR ${series.synopsis} ILIKE ${like}`)
+      .orderBy(sql`CASE WHEN lower(${series.title}) = lower(${normalized}) THEN 0 WHEN lower(${series.title}) LIKE lower(${normalized + '%'}) THEN 1 ELSE 2 END`, desc(series.createdAt))
+      .limit(4),
+    db.select({
+      id: episodes.id,
+      title: episodes.title,
+      slug: episodes.slug,
+      episodeNumber: episodes.episodeNumber,
+      imageUrl: episodes.thumbnailUrl,
+      seriesTitle: series.title,
+      seriesSlug: series.slug,
+    }).from(episodes)
+      .leftJoin(series, eq(episodes.seriesId, series.id))
+      .where(sql`${episodes.title} ILIKE ${like} OR ${series.title} ILIKE ${like}`)
+      .orderBy(desc(episodes.publishedAt))
+      .limit(4),
+  ])
+
+  return { series: seriesResults, episodes: episodeResults.filter((episode) => episode.seriesSlug) }
+}
+
 // Get episode count for a series
 export async function getSeriesEpisodeCount(seriesId: number) {
   const result = await db
