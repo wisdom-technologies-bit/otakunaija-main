@@ -12,20 +12,49 @@ interface EpisodeRowProps {
   episode: SerializedEpisode
   seriesSlug: string
   seriesTitle?: string
+  compact?: boolean
 }
 
-export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps) {
+export function EpisodeRow({ episode, seriesSlug, seriesTitle, compact = false }: EpisodeRowProps) {
   const publishedDate = episode.publishedAt ? formatReleaseDate(typeof episode.publishedAt === 'string' ? episode.publishedAt : episode.publishedAt.toISOString()) : ''
 
   const durationStr = episode.durationSeconds
     ? formatDuration(episode.durationSeconds)
     : 'Unknown'
 
+  if (compact) {
+    return (
+      <Link href={`/episodes/${seriesSlug}/${episode.slug}`} className="block">
+        <div className="group flex items-center gap-2 rounded-lg border border-border/40 px-2 py-1.5 transition-all hover:border-primary/40 hover:bg-card/60">
+          <span className="flex-shrink-0 rounded bg-primary/90 px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+            EP {episode.episodeNumber.toString().padStart(2, '0')}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-xs font-bold text-foreground transition-colors group-hover:text-primary">
+              {episode.title}
+            </h3>
+            {publishedDate && (
+              <p className="truncate text-[10px] text-foreground/60">{publishedDate}</p>
+            )}
+          </div>
+          <svg
+            className="h-3.5 w-3.5 flex-shrink-0 text-foreground/40"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </Link>
+    )
+  }
+
   return (
     <Link href={`/episodes/${seriesSlug}/${episode.slug}`}>
       <div className="group flex items-center gap-3 rounded-lg border border-border/40 p-2.5 transition-all hover:border-primary/40 hover:bg-card/60">
         {/* Thumbnail */}
-         <div className="relative h-14 w-24 flex-shrink-0 overflow-hidden rounded bg-muted">
+        <div className="relative h-14 w-24 flex-shrink-0 overflow-hidden rounded bg-muted">
           {episode.thumbnailUrl ? (
             <Image
               src={episode.thumbnailUrl}
@@ -53,7 +82,7 @@ export function EpisodeRow({ episode, seriesSlug, seriesTitle }: EpisodeRowProps
             {seriesTitle && (
               <p className="line-clamp-1 text-xs text-foreground/60">{seriesTitle}</p>
             )}
-              <p className="mt-0.5 text-[11px] text-foreground/60 sm:hidden">
+            <p className="mt-0.5 text-[11px] text-foreground/60 sm:hidden">
               {publishedDate}
               {publishedDate && durationStr !== 'Unknown' ? ' · ' : ''}
               {durationStr !== 'Unknown' ? durationStr : ''}
