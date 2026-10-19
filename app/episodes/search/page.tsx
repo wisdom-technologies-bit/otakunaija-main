@@ -1,4 +1,3 @@
-
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { SiteHeader } from '@/components/site-header'
@@ -173,20 +172,20 @@ export default async function SearchPage({
                               </span>
                             </div>
 
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-1.5">
                               {episodes.slice(0, 4).map((episode) => (
                                 <EpisodeRow
                                   key={episode.id}
                                   episode={episode}
                                   seriesSlug={series.slug}
-                                  seriesTitle={series.title}
+                                  compact
                                 />
                               ))}
 
                               {episodes.length > 4 && (
                                 <Link
                                   href={`/episodes/${series.slug}`}
-                                  className="rounded-lg border border-dashed border-primary/40 px-3 py-2 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                                  className="rounded-lg border border-dashed border-primary/40 px-3 py-1.5 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                                 >
                                   See all episodes ({episodes.length})
                                 </Link>
