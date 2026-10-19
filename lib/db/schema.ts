@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean, jsonb, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, timestamp, date, integer, boolean, jsonb, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import type { AnimeScheduleInfo } from '@/lib/animeschedule'
 import { relations, sql } from 'drizzle-orm'
 
@@ -86,6 +86,22 @@ export const postViews = pgTable(
     viewedAt: timestamp('viewed_at').defaultNow(),
   },
   (table) => [index('post_views_post_viewed_at_idx').on(table.postId, table.viewedAt), index('post_views_viewed_at_idx').on(table.viewedAt)],
+)
+
+export const episodeDailyViews = pgTable(
+  'episode_daily_views',
+  {
+    id: serial('id').primaryKey(),
+    episodeId: integer('episode_id').notNull().references(() => episodes.id),
+    deviceId: text('device_id').notNull(),
+    viewedDate: date('viewed_date').notNull().defaultNow(),
+    viewedAt: timestamp('viewed_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('episode_daily_views_episode_device_date_unique').on(table.episodeId, table.deviceId, table.viewedDate),
+    index('episode_daily_views_date_idx').on(table.viewedDate),
+    index('episode_daily_views_episode_date_idx').on(table.episodeId, table.viewedDate),
+  ],
 )
 
 export const episodeViews = pgTable(

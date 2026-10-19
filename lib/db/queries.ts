@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { db } from './index'
-import { creators, series, episodes, videos, postViews, episodeViews, episodeWatchPings } from './schema'
+import { creators, series, episodes, videos, postViews, episodeViews, episodeDailyViews, episodeWatchPings } from './schema'
 import { eq, asc, desc, and, lt, lte, gt, sql, count } from 'drizzle-orm'
 import { normalizeGenreParam, sortGenres, splitGenres, uniqueGenres } from '../genres'
 
@@ -315,6 +315,28 @@ const _getTrendingSeries = cache(
 
 export async function getTrendingSeries(limit = 5) {
   return _getTrendingSeries(limit)
+}
+
+// Series ranked by deduplicated episode views recorded during the current database day.
+export async function getPopularTodaySeries(limit = 10) {
+  const rows = await db
+    .select({
+      slug: series.slug,
+      title: series.title,
+      posterImageUrl: series.posterImageUrl,
+      genre: series.genre,
+      latestEpisodeNumber: sql<number | null>`MAX(${episodes.episodeNumber})`.as('latest_episode_number'),
+      todayViews: sql<number>`COUNT(${episodeDailyViews.id})`.as('today_views'),
+    })
+    .from(episodeDailyViews)
+    .innerJoin(episodes, eq(episodeDailyViews.episodeId, episodes.id))
+    .innerJoin(series, eq(episodes.seriesId, series.id))
+    .where(sql`${episodeDailyViews.viewedDate} = CURRENT_DATE`)
+    .groupBy(series.id)
+    .orderBy(desc(sql`today_views`), asc(series.title))
+    .limit(limit)
+
+  return rows.map((row) => ({ ...row, todayViews: Number(row.todayViews) }))
 }
 
   export async function getTopSeriesByGenre(genre: string, limit = 10) {
@@ -927,7 +949,17 @@ export async function recordEpisodeView(episodeId: number, deviceId: string) {
       .onConflictDoNothing()
       .returning()
 
-    // If this is the first view from this device, increment episode view count
+    await db
+      .insert(episodeDailyViews)
+      .values({
+        episodeId,
+        deviceId,
+        viewedDate: sql`CURRENT_DATE`,
+        viewedAt: new Date(),
+      })
+      .onConflictDoNothing()
+
+    // Keep the lifetime counter behavior unchanged: only the first device view increments it.
     if (result.length > 0) {
       await db
         .update(episodes)
