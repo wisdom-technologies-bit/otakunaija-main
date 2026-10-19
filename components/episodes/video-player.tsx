@@ -196,6 +196,10 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
           : null
       }
       if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current)
+
+      setShowSkipIntro(false)
+      setShowSkipOutro(false)
+
       sourceGenerationRef.current += 1
       setPlayerEpoch((epoch) => epoch + 1)
       setResolvedPlayback({
@@ -399,27 +403,60 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const handleTimeUpdate = () => {
     const video = videoRef.current
     if (!video) return
+
     const currentTime = video.currentTime
     const intro = resolvedPlayback?.intro
     const outro = resolvedPlayback?.outro
-    setShowSkipIntro(Boolean(intro && currentTime >= intro.start && currentTime < intro.end))
-    setShowSkipOutro(Boolean(outro && currentTime >= outro.start && currentTime < outro.end))
+
+    const validIntro =
+      intro &&
+      Number.isFinite(intro.start) &&
+      Number.isFinite(intro.end) &&
+      intro.start >= 0 &&
+      intro.end > intro.start
+
+    const validOutro =
+      outro &&
+      Number.isFinite(outro.start) &&
+      Number.isFinite(outro.end) &&
+      outro.start >= 0 &&
+      outro.end > outro.start
+
+    setShowSkipIntro(
+      Boolean(validIntro && currentTime >= intro.start && currentTime < intro.end),
+    )
+
+    setShowSkipOutro(
+      Boolean(validOutro && currentTime >= outro.start && currentTime < outro.end),
+    )
   }
 
   const handleSkipIntro = () => {
     const video = videoRef.current
     const intro = resolvedPlayback?.intro
+
     if (!video || !intro) return
+
     video.currentTime = intro.end
     setShowSkipIntro(false)
+    setShowSkipOutro(
+      Boolean(
+        resolvedPlayback?.outro &&
+        intro.end >= resolvedPlayback.outro.start &&
+        intro.end < resolvedPlayback.outro.end,
+      ),
+    )
   }
 
   const handleSkipOutro = () => {
     const video = videoRef.current
     const outro = resolvedPlayback?.outro
+
     if (!video || !outro) return
+
     video.currentTime = outro.end
     setShowSkipOutro(false)
+    setShowSkipIntro(false)
   }
 
   const hasPlayId = Boolean(playId?.trim())
