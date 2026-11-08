@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Newspaper, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Newspaper, Sparkles, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { NewsAutomationPanel } from "@/components/admin/news-automation-panel"
 import { formatRelativeTime } from "@/lib/posts"
 
 type NewsItem = {
@@ -124,7 +126,7 @@ export default function AdminPostsLatestPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <Tabs defaultValue="headlines" className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -135,6 +137,17 @@ export default function AdminPostsLatestPage() {
         </div>
         <Badge variant="secondary">Page {page}{totalPages ? ` of ${totalPages}` : ""}</Badge>
       </header>
+
+      <TabsList>
+        <TabsTrigger value="headlines">
+          <Newspaper aria-hidden="true" /> ANN headlines
+        </TabsTrigger>
+        <TabsTrigger value="automation">
+          <Sparkles aria-hidden="true" /> Automation
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="headlines" className="flex flex-col gap-5">
 
       {error ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center">
@@ -199,7 +212,12 @@ export default function AdminPostsLatestPage() {
         <span className="text-sm text-muted-foreground">Page {page}{totalPages ? ` of ${totalPages}` : ""}</span>
         <Button variant="outline" size="sm" disabled={!hasNextPage} onClick={() => void loadItems(page + 1)}>Next <ChevronRight aria-hidden="true" /></Button>
       </nav> : null}
-    </div>
+      </TabsContent>
+
+      <TabsContent value="automation" className="flex flex-col gap-5">
+        <NewsAutomationPanel />
+      </TabsContent>
+    </Tabs>
   )
 }
 

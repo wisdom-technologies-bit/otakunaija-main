@@ -8,7 +8,7 @@ import { SearchBar } from "@/components/search-bar"
 import { AdSlot } from "@/components/ad-slot"
 import { InfinitePostList } from "@/components/infinite-post-list"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
-import { CATEGORIES, getAllPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
+import { BLOG_CATEGORIES, getAllPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
 import { PollPlacement } from "@/components/poll-placement"
 
 export async function generateMetadata({
@@ -18,14 +18,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const sp = await searchParams
   const category =
-    sp.category && CATEGORIES.includes(sp.category as (typeof CATEGORIES)[number])
+    sp.category && BLOG_CATEGORIES.includes(sp.category as (typeof BLOG_CATEGORIES)[number])
       ? sp.category
       : undefined
 
   return {
     title: category ? `${category}` : "Blog",
     description: category
-      ? `Browse all ${category} anime articles on OtakuNaija.`
+      ? category === "News"
+        ? "Latest anime, manga and game news, published daily on OtakuNaija."
+        : `Browse all ${category} anime articles on OtakuNaija.`
       : "Browse all anime articles on OtakuNaija — Shonen, Romance, Action, and guides for Nigerian anime fans.",
     alternates: {
       canonical: category ? `/blog?category=${encodeURIComponent(category)}` : "/blog",
@@ -43,7 +45,7 @@ export default async function BlogPage({
   searchParams: Promise<Search>
 }) {
   const sp = await searchParams
-  const category = sp.category && CATEGORIES.includes(sp.category as (typeof CATEGORIES)[number])
+  const category = sp.category && BLOG_CATEGORIES.includes(sp.category as (typeof BLOG_CATEGORIES)[number])
     ? sp.category
     : undefined
   const q = sp.q?.trim() || undefined
@@ -116,7 +118,7 @@ export default async function BlogPage({
               >
                 All
               </Link>
-              {CATEGORIES.map((c) => (
+              {BLOG_CATEGORIES.map((c) => (
                 <Link
                   key={c}
                   href={`/blog?category=${encodeURIComponent(c)}`}

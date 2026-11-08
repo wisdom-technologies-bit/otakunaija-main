@@ -8,15 +8,16 @@ import { SiteFooter } from "@/components/site-footer"
 import { HomeSidebar } from "@/components/home/home-sidebar"
 import { AdSlot } from "@/components/ad-slot"
 import { EnableNotifications } from "@/components/push/enable-notifications"
-import { getFeaturedPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
+import { getFeaturedPosts, getNewsPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
 
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const [featured, recent, trending] = await Promise.all([
+  const [featured, recent, trending, news] = await Promise.all([
     getFeaturedPosts(4),
     getRecentPosts(6),
     getTrendingPosts(5),
+    getNewsPosts(4),
   ])
 
   return (
@@ -31,7 +32,7 @@ export default async function HomePage() {
           <section className="home-premium-feed-section">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="min-w-0"><HomeFeed initialPosts={recent} initialOffset={recent.length} inlineAd={<div className="my-8 md:my-10"><AdSlot slot="footer" /></div>} /></div>
-              <div className="min-w-0"><HomeSidebar trending={trending} /></div>
+              <div className="min-w-0"><HomeSidebar trending={trending} news={news} /></div>
             </div>
           </section>
           <EnableNotifications />

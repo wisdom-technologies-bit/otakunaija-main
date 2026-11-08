@@ -23,9 +23,21 @@ export type Post = {
   read_time: number
   published_at: string
   created_at: string
+  /** Set on auto-published news posts: where the report came from. */
+  source_name?: string | null
+  source_url?: string | null
 }
 
 export const CATEGORIES = ["Shonen", "Romance", "Action", "Guides"] as const
+
+/**
+ * Categories offered as filters on /blog. Editorial categories keep the site
+ * navigation tidy; "News" is added here so the automated news posts are
+ * browsable without putting News in the main menu.
+ */
+export const BLOG_CATEGORIES = [...CATEGORIES, "News"] as const
+
+export const NEWS_CATEGORY = "News"
 
 export function getCoverImage(post: Pick<Post, "cover_image" | "title" | "category">, w = 900, h = 600) {
   if (post.cover_image && post.cover_image.trim().length > 0) {
@@ -91,6 +103,37 @@ const _getRecentPosts = cache(
     { revalidate: 1800, tags: ['blog-recent'] }
   )
 )
+
+const _getNewsPosts = cache(
+  unstable_cache(
+    async (limit: number): Promise<Post[]> => {
+      const rows = await sql`
+        SELECT * FROM posts
+        WHERE category = ${NEWS_CATEGORY}
+        ORDER BY published_at DESC
+        LIMIT ${limit}
+      `
+      return rows as Post[]
+    },
+    ['news-posts'],
+    { revalidate: 900, tags: ['blog-news'] }
+  )
+)
+
+/** Newest auto-published anime news posts (used by the home sidebar strip). */
+export async function getNewsPosts(limit = 4): Promise<Post[]> {
+  if (BLOG_DYNAMIC) {
+    const rows = await sql`
+      SELECT * FROM posts
+      WHERE category = ${NEWS_CATEGORY}
+      ORDER BY published_at DESC
+      LIMIT ${limit}
+    `
+    return rows as Post[]
+  }
+
+  return _getNewsPosts(limit)
+}
 
 export async function getRecentPosts(limit = 6, offset = 0): Promise<Post[]> {
   if (BLOG_DYNAMIC) {

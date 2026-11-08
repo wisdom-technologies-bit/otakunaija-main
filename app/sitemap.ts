@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { CATEGORIES, getAllSlugs } from "@/lib/posts"
+import { BLOG_CATEGORIES, getAllSlugs } from "@/lib/posts"
 import { getAllSeriesWithEpisodesForSitemap } from "@/lib/db/queries"
 import { getPublicPollSlugs } from "@/lib/db/queries/polls"
 
@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/polls`, changeFrequency: "daily", priority: 0.8 },
   ]
 
-  const categoryRoutes: MetadataRoute.Sitemap = CATEGORIES.map((c) => ({
+  const categoryRoutes: MetadataRoute.Sitemap = BLOG_CATEGORIES.map((c) => ({
     url: `${BASE}/blog?category=${encodeURIComponent(c)}`,
     changeFrequency: "weekly",
     priority: 0.6,

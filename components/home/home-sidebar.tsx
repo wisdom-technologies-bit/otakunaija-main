@@ -1,15 +1,16 @@
 import Link from "next/link"
 import { ArrowRight, Minus, TrendingDown, TrendingUp, Vote } from "lucide-react"
-import { CATEGORIES } from "@/lib/posts"
+import { CATEGORIES, formatRelativeTime, type Post } from "@/lib/posts"
 import type { TrendingPost } from "@/lib/trending"
 import { AdSlot } from "@/components/ad-slot"
 import { NewsletterForm } from "@/components/newsletter-form"
 
 type HomeSidebarProps = {
   trending: TrendingPost[]
+  news?: Post[]
 }
 
-export function HomeSidebar({ trending }: HomeSidebarProps) {
+export function HomeSidebar({ trending, news = [] }: HomeSidebarProps) {
   return (
     <aside className="min-w-0 w-full flex flex-col gap-8">
       <div id="newsletter" className="scroll-mt-32">
@@ -63,6 +64,29 @@ export function HomeSidebar({ trending }: HomeSidebarProps) {
               )
             })}
           </ol>
+        </section>
+      ) : null}
+
+      {news.length > 0 ? (
+        <section aria-labelledby="home-news-title">
+          <h2 id="home-news-title" className="hp-display text-2xl">Latest anime news</h2>
+          <ul className="mt-4 divide-y divide-[var(--hp-border)]">
+            {news.slice(0, 4).map((post) => (
+              <li key={post.id} className="py-3 first:pt-0 last:pb-0">
+                <Link href={`/blog/${post.slug}`} className="hp-title hp-focus line-clamp-2 text-sm">
+                  {post.title}
+                </Link>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="hp-chip">News</span>
+                  <span className="text-[0.625rem] text-[var(--hp-text-dim)]">{formatRelativeTime(post.published_at)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <Link href="/blog?category=News" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--hp-accent)]">
+            All news
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
         </section>
       ) : null}
 

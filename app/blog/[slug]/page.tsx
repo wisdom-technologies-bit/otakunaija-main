@@ -140,7 +140,34 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                     "url": "https://otakunaija.name.ng/android-chrome-512x512.png"
                   }
                 }
-              }
+              },
+              // Auto-published news posts cite the original report and stay
+              // canonical on our own URL.
+              ...(post.source_url
+                ? [{
+                    "@type": "NewsArticle",
+                    "headline": post.title,
+                    "description": post.excerpt,
+                    "image": [getCoverImage(post, 1200, 630)],
+                    "datePublished": post.published_at,
+                    "dateModified": post.published_at,
+                    "articleSection": post.category,
+                    "keywords": (post.tags ?? []).join(", "),
+                    "url": `https://otakunaija.name.ng/blog/${post.slug}`,
+                    "mainEntityOfPage": { "@type": "WebPage", "@id": `https://otakunaija.name.ng/blog/${post.slug}` },
+                    "isBasedOn": post.source_url,
+                    "citation": post.source_url,
+                    "author": { "@type": "Organization", "name": post.author },
+                    "publisher": {
+                      "@type": "Organization",
+                      "name": "OtakuNaija",
+                      "logo": {
+                        "@type": "ImageObject",
+                        "url": "https://otakunaija.name.ng/android-chrome-512x512.png"
+                      }
+                    }
+                  }]
+                : [])
             ]
           })
         }}
@@ -304,6 +331,25 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 ))}
 
               </div>
+
+              {post.source_url ? (
+                <div className="mt-8 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm">
+                  <p className="text-foreground/80">
+                    Source:{" "}
+                    <a
+                      href={post.source_url}
+                      target="_blank"
+                      rel="noopener nofollow"
+                      className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
+                    >
+                      {post.source_name || "Anime News Network"}
+                    </a>
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Rewritten by OtakuNaija from the original report.
+                  </p>
+                </div>
+              ) : null}
 
               {post.tags && post.tags.length > 0 ? (
                 <div className="mt-10 flex flex-wrap items-center gap-2 border-t border-border pt-6">
