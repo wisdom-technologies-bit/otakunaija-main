@@ -1,16 +1,22 @@
-'use client'
-
-import Link from 'next/link'
-import type { ReactNode } from 'react'
+import Link from "next/link"
+import type { ReactNode } from "react"
 
 export function SectionTitle({ title, href, action }: { title: string; href?: string; action?: ReactNode }) {
   return (
-    <div className="mb-4 flex items-center justify-between">
-      <h2 className="flex items-center text-lg font-semibold text-foreground sm:text-xl">
-        <span aria-hidden="true" className="mr-2 h-5 w-1 rounded-full bg-primary" />
+    <div className="otk-section-head mb-4">
+      <h2 className="otk-section-title flex items-center text-lg sm:text-xl">
+        <span aria-hidden="true" className="mr-2 h-5 w-1 rounded-full bg-[var(--otk-accent)]" />
         {title}
       </h2>
-      {action ?? (href ? <Link href={href} className="text-sm font-medium text-primary hover:underline">View All</Link> : null)}
+      {action ??
+        (href ? (
+          <Link
+            href={href}
+            className="otk-focus text-sm font-semibold text-[var(--otk-accent)] hover:underline"
+          >
+            View all
+          </Link>
+        ) : null)}
     </div>
   )
 }
