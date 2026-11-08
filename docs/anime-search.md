@@ -233,7 +233,21 @@ Caching: `unstable_cache` plus React `cache()` are used in `/vercel/share/v0-pro
 - `PLAY_API_KEY` — Play ingestion API authentication.
 - `CRON_SECRET` — cron/scheduled route bearer authentication.
 - `ANIMESCHEDULE_TOKEN` — AnimeSchedule API access.
-- `NEWS_API_URL`, `NEWS_API_KEY` — external news API integration.
+- `NEWS_API_URL`, `NEWS_API_KEY` — external news API integration used by the existing admin news flow (`/admin/posts-latest`, `lib/news-proxy.ts`). Both flows are independent: the manual flow keeps working when these two are set, and the automation below never reads them.
+- `CRON_SECRET` — bearer token for every `/api/cron/*` route, including `/api/cron/news`.
+
+### Automated anime news (`/api/cron/news`, `lib/news/*`)
+
+The automation reads Anime News Network's public RSS feed directly (no Consumet/Redis service), rewrites each story with Groq, and publishes it to the blog as a "News" post with `source_name` / `source_url` provenance. The schema it needs lives in `docs/sql/news-automation.sql` and is run by hand in the Neon SQL editor; the route never migrates.
+
+- `GROQ_API_KEY` — **required** for rewriting. Sent as `Authorization: Bearer …` to `https://api.groq.com/openai/v1/chat/completions`. Without it the route returns 500 and publishes nothing (a `dry=1` run still works).
+- `GROQ_MODEL` — optional, default `llama-3.3-70b-versatile`.
+- `NEWS_AUTOPUBLISH` — default `true`. Only the literal string `true` auto-publishes; anything else parks finished rewrites in `news_ingest.rewritten` for approval in the admin Automation tab.
+- `NEWS_MAX_PER_RUN` — default `3`, clamped to `1…10`. Items per cron run (the Groq free tier is rate limited).
+- `NEWS_BLOCKED_KEYWORDS` — optional comma-separated list; a feed item whose title contains one is queued as `skipped` instead of rewritten.
+- `NEWS_PUSH` — default off. When `true`, a published story sends at most one OneSignal push per run (`lib/push.ts`, requires the existing OneSignal vars).
+- Reviews, features, interviews, columns and contests from the feed are queued as `skipped` (`filtered:not_news`): they are editorial pieces, not news, and would otherwise be published under the News category with a news byline. Retry any of them from the admin Automation tab if you want them anyway.
+- `NEWS_FEED_URL` — optional override for the feed (default `https://www.animenewsnetwork.com/all/rss.xml?ann-edition=w`).
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` — Cloudinary uploads/signing.
 - `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` — object storage/R2.
 - `NEXT_PUBLIC_ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY` — push notifications.
