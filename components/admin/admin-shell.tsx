@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, FileText, Mail, Users, LogOut, Plus, ExternalLink, User, Folder, Film, Newspaper, GitMerge } from "lucide-react"
+import { LayoutDashboard, FileText, Mail, Users, LogOut, Plus, ExternalLink, User, Folder, Film, Newspaper, GitMerge, Send } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { logoutAction } from "@/app/actions/admin"
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/admin/series", label: "Series", icon: Folder },
   { href: "/admin/episodes", label: "Episodes", icon: Film },
   { href: "/admin/videos", label: "Movies & Specials", icon: Film },
+  { href: "/admin/newsletter", label: "Newsletter", icon: Send },
   { href: "/admin/subscribers", label: "Subscribers", icon: Users },
   { href: "/admin/messages", label: "Messages", icon: Mail },
   { href: "/admin/anilist-backfill", label: "AniList Matches", icon: GitMerge },

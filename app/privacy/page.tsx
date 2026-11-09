@@ -36,6 +36,22 @@ export default function PrivacyPage() {
               referral source.
             </p>
 
+            <h2>Our newsletter</h2>
+            <p>
+              The newsletter is one email each morning, Nigerian time: the news that matters, new episodes, and what
+              airs next. Nothing is sent until you confirm your address by tapping the link in our first email, and
+              every issue carries a one-click unsubscribe link and a link to your preferences, where you can choose
+              whether to receive news, new episodes and upcoming airings, and whether you want a daily or a
+              Sunday-only email.
+            </p>
+            <p>
+              We send it through Brevo, which acts as our email processor: it holds your address and delivers the
+              message on our behalf, and it records delivery, open and click events so we know whether the email is
+              working. We do not sell or rent subscriber addresses. We keep a subscription, including the delivery
+              data attached to it, until you unsubscribe; after that the address is marked unsubscribed and is not
+              emailed again unless you sign up afresh.
+            </p>
+
             <h2>How we use information</h2>
             <ul>
               <li>To deliver our newsletter and respond to your inquiries.</li>
@@ -62,11 +78,21 @@ export default function PrivacyPage() {
               We also use Vercel Analytics for anonymous traffic measurement. No personally identifiable information
               is collected by these tools without your consent.
             </p>
+            <p>
+              Our newsletter is delivered by{" "}
+              <a href="https://www.brevo.com" target="_blank" rel="noreferrer">
+                Brevo
+              </a>
+              , which processes subscriber email addresses and delivery events on our instructions.
+            </p>
 
             <h2>Data retention</h2>
             <p>
-              Newsletter subscriptions are kept until you unsubscribe. Contact form messages are retained for up to
-              two years for support and reference purposes, then deleted.
+              Newsletter subscriptions are kept until you unsubscribe, together with the delivery, open and click
+              events attached to them. Unsubscribing stops all further email and keeps only the record needed to
+              honour that choice; signing up again after that creates a fresh pending subscription that you have to
+              confirm. Contact form messages are retained for up to two years for support and reference purposes,
+              then deleted.
             </p>
 
             <h2>Your rights</h2>
