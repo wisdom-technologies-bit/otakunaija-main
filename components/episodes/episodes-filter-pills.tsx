@@ -20,6 +20,27 @@ export function EpisodesFilterPills({ genres, activeGenre, activeStatus, basePat
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <nav aria-label="Episodes" className="flex flex-wrap items-center gap-2">
+        <Link
+          href="/episodes/new-releases"
+          className="rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+        >
+          New releases
+        </Link>
+        <Link
+          href="/episodes/upcoming"
+          className="rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+        >
+          Upcoming
+        </Link>
+        <Link
+          href="/episodes/browse"
+          className="rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+        >
+          Catalog
+        </Link>
+      </nav>
+      <span aria-hidden="true" className="mx-1 hidden h-5 w-px bg-border sm:block" />
       <Link
         href={basePath}
         className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${

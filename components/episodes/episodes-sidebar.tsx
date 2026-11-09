@@ -11,6 +11,34 @@ interface EpisodesSidebarProps {
 export function EpisodesSidebar({ trendingSeries }: EpisodesSidebarProps) {
   return (
     <aside className="space-y-8 lg:sticky lg:top-20">
+      <nav aria-label="Episodes" className="rounded-xl border border-border bg-card p-5">
+        <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          Episodes
+        </h3>
+        <ul className="space-y-1 text-sm font-medium">
+          <li>
+            <Link href="/episodes" className="block rounded-md py-1.5 hover:text-primary">
+              All episodes
+            </Link>
+          </li>
+          <li>
+            <Link href="/episodes/new-releases" className="block rounded-md py-1.5 hover:text-primary">
+              New releases
+            </Link>
+          </li>
+          <li>
+            <Link href="/episodes/upcoming" className="block rounded-md py-1.5 hover:text-primary">
+              Upcoming
+            </Link>
+          </li>
+          <li>
+            <Link href="/episodes/browse" className="block rounded-md py-1.5 hover:text-primary">
+              Browse the catalog
+            </Link>
+          </li>
+        </ul>
+      </nav>
+
       <section id="newsletter" className="scroll-mt-24 rounded-xl border border-border bg-card p-5">
         <h3 className="mb-2 text-base font-bold text-foreground">
           Get weekly anime drops, straight to your inbox.
