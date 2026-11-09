@@ -18,7 +18,7 @@ import { SeriesHeroCarousel } from '@/components/episodes/series-hero-carousel'
 import { ResumeWatchingRow } from '@/components/episodes/resume-watching-row'
 import { NewReleasesRow } from '@/components/episodes/new-releases-row'
 import RecommendedRow from '@/components/episodes/recommended-row'
-import { UpcomingRow } from '@/components/episodes/upcoming-row'
+import { UpcomingSection } from '@/components/episodes/upcoming-section'
 import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 import { PollPlacement } from '@/components/poll-placement'
 import { MoviesRow } from '@/components/episodes/movies-row'
@@ -26,6 +26,8 @@ import { PopularTodayRow } from '@/components/episodes/popular-today-row'
 import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
 import { HomeSectionHeading } from '@/components/home/home-section-heading'
 import { SeriesCardSkeleton } from '@/components/episodes/skeletons'
+import { getAiringThisWeek, getUpcomingBySeason } from '@/lib/anilist/upcoming-store'
+import type { UpcomingItem } from '@/lib/anilist/upcoming'
 
 export const revalidate = 60
 
@@ -75,6 +77,24 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
   } catch (err) {
     console.error('Error fetching episodes data:', err)
     error = 'Failed to load episodes. Please try again later.'
+  }
+
+  // Cached AniList rows only — never a live AniList call on a page render.
+  let upcomingAnime: UpcomingItem[] = []
+  try {
+    const [airingWeek, nextUp] = await Promise.all([getAiringThisWeek(), getUpcomingBySeason()])
+    const seen = new Set<number>()
+    const unique = (items: UpcomingItem[]) =>
+      items.filter((item) => {
+        if (seen.has(item.anilistId)) return false
+        seen.add(item.anilistId)
+        return true
+      })
+    // This week's air times first, then next season's premieres, so the rail
+    // never becomes a wall of one kind. The section caps the result at 12.
+    upcomingAnime = [...unique(airingWeek.days.flatMap((day) => day.items)).slice(0, 6), ...unique(nextUp.items)]
+  } catch (err) {
+    console.error('Error loading upcoming anime cache:', err)
   }
 
   const serializeEpisodes = (items: any[]) => items.map(({ episode, series, creator }) => ({
@@ -153,7 +173,11 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
 
             <TrendingSeriesSection trendingSeries={trendingSeries} />
 
-            <UpcomingRow items={serializedUpcomingEpisodes} />
+            <UpcomingSection
+              episodes={serializedUpcomingEpisodes}
+              anime={upcomingAnime}
+              now={now}
+            />
 
             {genres.length > 0 ? (
               <section aria-labelledby="episodes-genres-heading">

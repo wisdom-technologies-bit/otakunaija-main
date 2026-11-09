@@ -17,6 +17,7 @@ import { PollPlacement } from "@/components/poll-placement"
 import { EnableNotifications } from "@/components/push/enable-notifications"
 import { getFeaturedPosts, getNewsPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
 import { getPopularTodaySeries, getRecentEpisodesAcrossAllSeries, getTrendingSeries, getUpcomingEpisodes } from "@/lib/db/queries"
+import { getAiringThisWeek, type AiringItem } from "@/lib/anilist/upcoming-store"
 import { toISO } from "@/lib/to-iso"
 import { NEW_POST_WINDOW_HOURS, createSeenTracker, dedupePosts, pickUnseen } from "@/lib/post-ui"
 
@@ -66,6 +67,16 @@ export default async function HomePage() {
     console.error("[home] episode catalogue unavailable", error)
   }
 
+  // Airing today, from the cached AniList tables. Only tops up the "Coming up"
+  // strip when our own scheduled episodes are thin.
+  let airingToday: AiringItem[] = []
+  try {
+    const week = await getAiringThisWeek()
+    airingToday = (week.days.find((day) => day.isToday)?.items ?? []).slice(0, 4)
+  } catch (error) {
+    console.error("[home] upcoming anime cache unavailable", error)
+  }
+
   // One post is never rendered twice on the page: sections claim posts in
   // reading order before they are handed to a component.
   const seen = createSeenTracker()
@@ -103,6 +114,7 @@ export default async function HomePage() {
                 recent={serializeEpisodes(recentEpisodes)}
                 upcoming={serializeEpisodes(upcomingEpisodes)}
                 now={now}
+                airingToday={airingToday}
               />
 
               <PollPlacement source="homepage" />

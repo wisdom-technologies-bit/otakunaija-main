@@ -37,6 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const episodesLandingRoute: MetadataRoute.Sitemap = [
     { url: `${BASE}/episodes`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE}/episodes/upcoming`, changeFrequency: "daily", priority: 0.8 },
   ]
 
   const seriesRoutes: MetadataRoute.Sitemap = allSeries.map((s) => ({
