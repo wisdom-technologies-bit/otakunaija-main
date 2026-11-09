@@ -18,8 +18,8 @@ const MAX_RETRY_WAIT_SECONDS = 20
 const DEFAULT_RETRY_WAIT_MS = 3_000
 
 /** A run of this many identical consecutive words counts as copying. */
-export const VERBATIM_RUN_LENGTH = 8
-export const MIN_CONTENT_WORDS = 120
+export const VERBATIM_RUN_LENGTH = 16
+export const MIN_CONTENT_WORDS = 100
 export const MAX_TITLE_CHARS = 90
 export const MAX_EXCERPT_CHARS = 180
 
