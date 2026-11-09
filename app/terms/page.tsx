@@ -35,6 +35,17 @@ export default function TermsPage() {
               models on our content without explicit written permission is prohibited.
             </p>
 
+            <h2>News and sources</h2>
+            <p>
+              OtakuNaija&apos;s news articles are written by OtakuNaija from facts reported by third-party outlets
+              such as Anime News Network. Original reports remain the property of their publishers, and we link to the
+              original article on every news story we cover.
+            </p>
+            <p>
+              If you own a story or image and want a correction or removal, contact us through the{" "}
+              <a href="/contact">contact page</a> and we will respond promptly.
+            </p>
+
             <h2>User-submitted content</h2>
             <p>
               When you send us a message, comment, or pitch, you grant us a non-exclusive, royalty-free license to

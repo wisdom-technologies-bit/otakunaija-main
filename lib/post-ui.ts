@@ -63,12 +63,6 @@ export function pickUnseen(posts: Post[], seen: SeenTracker, limit?: number): Po
   return out
 }
 
-/** `Source: Anime News Network` for auto-published news, otherwise null. */
-export function sourceChipLabel(sourceName?: string | null): string | null {
-  const name = sourceName?.trim()
-  if (!name) return null
-  return `Source: ${name}`
-}
 
 export type CoverResolution =
   | { kind: "image"; src: string }

@@ -7,7 +7,6 @@ import { CatalogToolbar } from '@/components/episodes/catalog-toolbar'
 import { CatalogPagination } from '@/components/episodes/catalog-pagination'
 import { MovieCard } from '@/components/episodes/movie-card'
 import { buildHref } from '@/lib/listing-url'
-import './../../../listings.css'
 
 export const metadata: Metadata = { title: 'Movies, OVAs & Specials' }
 

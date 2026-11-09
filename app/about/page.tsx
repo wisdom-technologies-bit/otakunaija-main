@@ -73,6 +73,11 @@ export default function AboutPage() {
                 otakus who finally see themselves in anime journalism.
               </p>
             </div>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Our news desk summarises reports from outlets such as Anime News Network, credits them, and links to the
+              original. Publishers can request a correction or removal at any time via our{" "}
+              <a className="text-primary underline underline-offset-4" href="/contact">contact page</a>.
+            </p>
           </section>
 
           <section className="py-12">

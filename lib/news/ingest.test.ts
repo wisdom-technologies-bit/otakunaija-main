@@ -347,12 +347,26 @@ describe("runNewsIngest", () => {
     expect(store.rows[0].last_error).toContain("article_fetch_failed")
   })
 
-  it("falls back to the placeholder when the cover image cannot be copied", async () => {
+  it("uses the allowed remote image when the copy fails, and records the reason", async () => {
     const { store, deps } = makeDeps({
-      copyImage: vi.fn(async () => {
-        throw new Error("image_http_403")
-      }),
+      copyImage: vi.fn(async () => ({ error: "image_http_403" as const })),
     })
+
+    const result = await runNewsIngest({}, deps)
+    expect(result.published).toBe(1)
+    expect(result.imageReasons.image_http_403).toBe(1)
+    expect(store.posts[0].coverImage).toBe(FEED_ITEM.imageUrl)
+  })
+
+  it("leaves the cover empty when the copy fails and the host is not allowed", async () => {
+    const { store, deps } = makeDeps({
+      copyImage: vi.fn(async () => ({ error: "cloudinary_not_configured" as const })),
+    })
+    // an og:image on a host we do not serve from
+    deps.fetchArticle = vi.fn(async () => ({
+      ok: true as const,
+      data: { ...ARTICLE, imageUrl: "https://evil.example.com/x.jpg" },
+    }))
 
     const result = await runNewsIngest({}, deps)
     expect(result.published).toBe(1)

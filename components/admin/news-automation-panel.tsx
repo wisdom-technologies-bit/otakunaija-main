@@ -25,6 +25,7 @@ type AutomationRow = {
   has_rewrite: boolean
   post_id: number | null
   post_slug: string | null
+  post_cover_image: string | null
   created_at: string
   updated_at: string
 }
@@ -190,6 +191,18 @@ export function NewsAutomationPanel() {
                       {row.original_title || row.guid}
                     </h2>
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      {row.status === "published" ? (
+                        <span
+                          className={
+                            row.post_cover_image
+                              ? "inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary"
+                              : "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+                          }
+                          title={row.post_cover_image ? "Post has a cover image" : "Post has no cover image"}
+                        >
+                          {row.post_cover_image ? "✓ cover" : "✗ no cover"}
+                        </span>
+                      ) : null}
                       <a
                         href={row.source_url}
                         target="_blank"

@@ -18,6 +18,7 @@ const EMPTY_RESULT: NewsRunResult = {
   failed: 0,
   skipped: 0,
   remaining: 0,
+  imageReasons: {},
   dry: false,
   log: [],
 }

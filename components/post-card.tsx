@@ -4,7 +4,7 @@ import type { ElementType } from "react"
 import { FreshnessBadge } from "@/components/freshness-badge"
 import { PostCoverFallback } from "@/components/post-cover-fallback"
 import { RelativeTime } from "@/components/home/relative-time"
-import { NEW_POST_WINDOW_HOURS, isNewPost, resolveCover, sourceChipLabel } from "@/lib/post-ui"
+import { NEW_POST_WINDOW_HOURS, isNewPost, resolveCover } from "@/lib/post-ui"
 import type { Post } from "@/lib/posts"
 import { cn } from "@/lib/utils"
 
@@ -49,7 +49,6 @@ export function PostCard({
   headingLevel = "h3",
 }: PostCardProps) {
   const cover = resolveCover(post)
-  const source = sourceChipLabel(post.source_name)
   const isLead = variant === "lead" || variant === "featured"
   const isRow = variant === "list" || variant === "compact"
   const excerptVisible = showExcerpt ?? (isLead || variant === "grid")
@@ -86,14 +85,12 @@ export function PostCard({
           ) : (
             <PostCoverFallback
               category={cover.category}
-              showSiteMark={variant !== "compact"}
               showLabel={variant !== "compact"}
             />
           )}
           {!isRow ? (
             <div className="otk-card-chips">
               <span className="otk-chip">{post.category}</span>
-              {source ? <span className="otk-chip otk-chip-source">{source}</span> : null}
             </div>
           ) : null}
           <FreshnessBadge
@@ -107,7 +104,6 @@ export function PostCard({
           {isRow ? (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="otk-chip">{post.category}</span>
-              {source ? <span className="otk-chip otk-chip-source">{source}</span> : null}
             </div>
           ) : null}
           <Heading className="otk-card-title line-clamp-2">{post.title}</Heading>

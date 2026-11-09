@@ -6,7 +6,7 @@ import { NewsletterForm } from "@/components/newsletter-form"
 import { PostCoverFallback } from "@/components/post-cover-fallback"
 import { RelativeTime } from "@/components/home/relative-time"
 import { BLOG_CATEGORIES, type Post } from "@/lib/posts"
-import { resolveCover, sourceChipLabel } from "@/lib/post-ui"
+import { resolveCover } from "@/lib/post-ui"
 
 type BlogSidebarProps = {
   trending: Post[]
@@ -20,7 +20,7 @@ function Thumb({ post }: { post: Post }) {
       {cover.kind === "image" ? (
         <Image src={cover.src} alt="" fill sizes="56px" loading="lazy" className="object-cover" />
       ) : (
-        <PostCoverFallback category={cover.category} showSiteMark={false} showLabel={false} />
+        <PostCoverFallback category={cover.category} showLabel={false} />
       )}
     </span>
   )
@@ -63,7 +63,6 @@ export function BlogSidebar({ trending, news }: BlogSidebarProps) {
           </h2>
           <ul className="divide-y divide-[var(--otk-border)]">
             {news.slice(0, 4).map((post) => {
-              const source = sourceChipLabel(post.source_name)
               return (
                 <li key={post.id} className="py-2.5 first:pt-0 last:pb-0">
                   <Link
@@ -74,12 +73,6 @@ export function BlogSidebar({ trending, news }: BlogSidebarProps) {
                   </Link>
                   <p className="otk-meta mt-1">
                     <RelativeTime date={post.published_at} />
-                    {source ? (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <span className="truncate">{post.source_name}</span>
-                      </>
-                    ) : null}
                   </p>
                 </li>
               )

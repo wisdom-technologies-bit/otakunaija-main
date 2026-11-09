@@ -26,7 +26,6 @@ import { PopularTodayRow } from '@/components/episodes/popular-today-row'
 import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
 import { HomeSectionHeading } from '@/components/home/home-section-heading'
 import { SeriesCardSkeleton } from '@/components/episodes/skeletons'
-import './../listings.css'
 
 export const revalidate = 60
 

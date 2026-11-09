@@ -21,6 +21,8 @@ export type AutomationRow = {
   has_rewrite: boolean
   post_id: number | null
   post_slug: string | null
+  /** Cover of the published post, so the admin can flag image-less news. */
+  post_cover_image: string | null
   created_at: string
   updated_at: string
 }
@@ -41,6 +43,7 @@ function toAutomationRow(row: AdminIngestRow): AutomationRow {
     has_rewrite: Boolean(row.rewritten),
     post_id: row.post_id,
     post_slug: row.post_slug,
+    post_cover_image: row.post_cover_image ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { runNewsIngest } from "@/lib/news/ingest"
 import { revalidateBlogCaches } from "@/lib/news/revalidate"
+import { AUTO_BACKFILL_LIMIT, backfillMissingCovers, clampBackfillLimit } from "@/lib/news/backfill"
+import { fetchArticle } from "@/lib/news/ann"
+import { copyImageToCloudinary } from "@/lib/news/image"
+import { listPostsMissingCover, updatePostCover } from "@/lib/news/store"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -33,9 +37,21 @@ async function handle(request: NextRequest) {
   const limitParam = params.get("limit")
   const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined
 
+  if (params.get("backfill_images") === "1") {
+    const requested = Number.parseInt(params.get("limit") ?? "", 10)
+    const backfill = await backfillMissingCovers({
+      limit: Number.isFinite(requested) ? clampBackfillLimit(requested) : undefined,
+      dry,
+      store: { listPostsMissingCover, updatePostCover },
+      fetchArticle,
+      copyImage: copyImageToCloudinary,
+    })
+    return NextResponse.json(backfill, { status: 200 })
+  }
+
   if (!dry && !process.env.GROQ_API_KEY?.trim()) {
     return NextResponse.json(
-      { error: "GROQ_API_KEY is not configured", dry, fetched: 0, new: 0, published: 0, rewritten: 0, failed: 0, skipped: 0, remaining: 0 },
+      { error: "GROQ_API_KEY is not configured", dry, fetched: 0, new: 0, published: 0, rewritten: 0, failed: 0, skipped: 0, remaining: 0, image_reasons: {} },
       { status: 500 },
     )
   }
@@ -50,6 +66,26 @@ async function handle(request: NextRequest) {
     revalidateBlogCaches()
   }
 
+  // Heal a couple of old cover-less posts on every real run.
+  const backfill = result.dry
+    ? null
+    : await backfillMissingCovers({
+        limit: AUTO_BACKFILL_LIMIT,
+        dry: false,
+        store: { listPostsMissingCover, updatePostCover },
+        fetchArticle,
+        copyImage: copyImageToCloudinary,
+      })
+
   const status = result.error && result.fetched === 0 ? 502 : 200
-  return NextResponse.json(result, { status })
+  return NextResponse.json(
+    {
+      ...result,
+      image_reasons: result.imageReasons,
+      backfill: backfill
+        ? { checked: backfill.checked, updated: backfill.updated, failed: backfill.failed, reasons: backfill.reasons }
+        : null,
+    },
+    { status },
+  )
 }

@@ -82,7 +82,7 @@ export function NewsletterForm({ variant = "card", className }: NewsletterFormPr
   return (
     <section
       className={cn(
-        "rounded-xl border border-border bg-gradient-to-br from-card to-card/40 p-5",
+        "rounded-2xl border border-border bg-gradient-to-br from-card to-card/40 p-5",
         className,
       )}
     >
@@ -94,13 +94,13 @@ export function NewsletterForm({ variant = "card", className }: NewsletterFormPr
         />
         <span className="text-xs font-semibold uppercase tracking-wider">Newsletter</span>
       </div>
-      <h3 className="mt-2 font-display text-lg font-semibold text-foreground text-balance">
+      <h3 className="mt-3 font-display text-lg font-semibold text-foreground text-balance">
         Get weekly anime drops, straight to your inbox.
       </h3>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="mt-3 text-sm text-muted-foreground">
         New episodes, reviews, and recommendations every Sunday. No spam.
       </p>
-      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2">
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
         <Input
           type="email"
           required
