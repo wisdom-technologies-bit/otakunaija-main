@@ -110,10 +110,7 @@ export function SeriesCard({ series, creatorName, variant = "poster", className,
           </span>
 
           <div className="absolute inset-x-0 bottom-0 z-[2] flex items-end justify-between gap-1 p-2">
-            <span className="otk-chip max-w-[62%] truncate">{genre}</span>
-            {series.episodeCount !== undefined ? (
-              <span className="otk-chip otk-chip-accent">Ep {series.episodeCount}</span>
-            ) : null}
+            <span className="otk-chip max-w-[70%] truncate">{genre}</span>
           </div>
         </div>
 

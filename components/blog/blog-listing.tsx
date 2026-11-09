@@ -72,8 +72,9 @@ export function BlogListing({ posts, totalLoaded, category, search, trendingIds,
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="otk-meta" aria-live="polite">
-          Showing {posts.length}
-          {rest.length > 0 ? "+" : ""} of {totalLoaded} article{totalLoaded === 1 ? "" : "s"} on this page
+          Showing {posts.length} of {Math.max(totalLoaded, posts.length)}
+          {posts.length > 0 && totalLoaded >= 10 ? "+" : ""} article{posts.length === 1 ? "" : "s"}
+          {rest.length > 0 ? " · more below" : ""}
         </p>
         <div className="flex items-center gap-1 rounded-full border border-[var(--otk-border)] p-1">
           <button

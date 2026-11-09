@@ -139,6 +139,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
       </section>
 
       <main className="otk-page mx-auto w-full max-w-7xl flex-1 px-4 py-8 md:px-6 md:py-10">
+        <h1 className="sr-only">Anime episodes &amp; series</h1>
         {error && (
           <div className="mb-8 rounded-lg border border-red-400/30 bg-red-900/10 p-4 text-red-400">
             {error}

@@ -25,10 +25,7 @@ export function NewReleasesRow({
 
   return (
     <section aria-labelledby="new-releases-heading">
-      <SectionTitle title="New releases" href="/episodes/new-releases" />
-      <h2 id="new-releases-heading" className="sr-only">
-        New releases
-      </h2>
+      <SectionTitle id="new-releases-heading" title="New releases" href="/episodes/new-releases" />
       <ScrollRow ariaLabel="New releases" fade>
         {rows.map(({ episode, series }) => (
           <EpisodeCard

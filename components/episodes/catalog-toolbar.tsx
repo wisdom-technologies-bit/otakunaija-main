@@ -38,10 +38,15 @@ export function CatalogToolbar({
   const chips = activeFilterChips(current, { [statusKey]: statusLabel, genre: genreLabel, sort: sortLabel })
   const filtered = hasActiveFilters(current)
 
-  const genreOptions = [
-    { value: buildHref(basePath, current, { genre: undefined }), label: "All genres" },
-    ...genres.map((item) => ({ value: buildHref(basePath, current, { genre: item }), label: item })),
+  const VISIBLE_GENRES = 6
+  const visibleGenres = genres.slice(0, VISIBLE_GENRES)
+  const tailGenres = genres.slice(VISIBLE_GENRES)
+  const allGenresHref = buildHref(basePath, current, { genre: undefined })
+  const tailOptions = [
+    { value: allGenresHref, label: "All genres" },
+    ...tailGenres.map((item) => ({ value: buildHref(basePath, current, { genre: item }), label: item })),
   ]
+  const tailValue = tailGenres.includes(genre) ? buildHref(basePath, current, { genre }) : allGenresHref
 
   return (
     <div className="otk-toolbar">
@@ -99,7 +104,7 @@ export function CatalogToolbar({
             >
               All
             </Link>
-            {genres.map((item) => (
+            {visibleGenres.map((item) => (
               <Link
                 key={item}
                 href={buildHref(basePath, current, { genre: item })}
@@ -111,7 +116,9 @@ export function CatalogToolbar({
               </Link>
             ))}
           </div>
-          <GenreSelect value={genreOptions[0].value} label="Choose a genre" options={genreOptions} />
+          {tailGenres.length > 0 ? (
+            <GenreSelect value={tailValue} label={`More ${genreLabel.toLowerCase()} options`} options={tailOptions} />
+          ) : null}
         </div>
       ) : null}
 

@@ -471,10 +471,12 @@
 }
 
 /* ---------- rails (scroll rows) ---------- */
-.otk-page .otk-rail-wrap { position: relative; }
+.otk-page .otk-rail-wrap { min-width: 0; position: relative; }
 
 .otk-page .otk-rail {
   display: flex;
+  min-width: 0;
+  max-width: 100%;
   gap: 0.9rem;
   overflow-x: auto;
   overflow-y: hidden;
@@ -565,6 +567,8 @@
   border-radius: var(--otk-radius-lg);
   display: grid;
   gap: 0.9rem;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   padding: 0.9rem;
 }
 
@@ -572,6 +576,7 @@
   background: var(--otk-surface-2);
   border-radius: 999px;
   display: inline-flex;
+  max-width: 100%;
   flex-wrap: wrap;
   gap: 0.15rem;
   padding: 0.2rem;
@@ -624,6 +629,7 @@
 .otk-page .otk-chip-scroller {
   display: flex;
   gap: 0.4rem;
+  min-width: 0;
   overflow-x: auto;
   padding-bottom: 0.25rem;
   scrollbar-width: none;
@@ -652,6 +658,7 @@
 .otk-page .otk-section {
   display: grid;
   gap: 1.1rem;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
 }
 
@@ -691,7 +698,9 @@
 .otk-page .otk-coming-up {
   display: grid;
   gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
   margin-top: 0.6rem;
+  min-width: 0;
 }
 
 .otk-page .otk-coming-up-item {
@@ -848,6 +857,8 @@
 .otk-page .otk-aside-section {
   display: grid;
   gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
 }
 
 .otk-page .otk-aside-title {
@@ -872,6 +883,7 @@
 .otk-page .otk-layout {
   display: grid;
   gap: 2.25rem;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
 }
 
