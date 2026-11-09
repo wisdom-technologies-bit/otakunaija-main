@@ -5,7 +5,7 @@ import { AdSlot } from "@/components/ad-slot"
 import { NewsletterForm } from "@/components/newsletter-form"
 import { PostCoverFallback } from "@/components/post-cover-fallback"
 import { RelativeTime } from "@/components/home/relative-time"
-import { resolveCover, sourceChipLabel } from "@/lib/post-ui"
+import { resolveCover } from "@/lib/post-ui"
 import type { Post } from "@/lib/posts"
 
 type HomeSidebarProps = {
@@ -20,7 +20,7 @@ function Thumb({ post }: { post: Post }) {
       {cover.kind === "image" ? (
         <Image src={cover.src} alt="" fill sizes="56px" loading="lazy" className="object-cover" />
       ) : (
-        <PostCoverFallback category={cover.category} showSiteMark={false} showLabel={false} />
+        <PostCoverFallback category={cover.category} showLabel={false} />
       )}
     </span>
   )
@@ -35,13 +35,13 @@ export function HomeSidebar({ trending, news = [] }: HomeSidebarProps) {
     <aside className="otk-aside" aria-label="Trending and latest news">
       {trending.length > 0 ? (
         <section className="otk-aside-section" aria-labelledby="home-trending-title">
-          <h2 id="home-trending-title" className="otk-aside-title flex items-center gap-2">
-            <Flame className="size-4 text-[var(--otk-accent)]" aria-hidden="true" />
-            Trending
+          <h2 id="home-trending-title" className="otk-aside-title otk-aside-title-row">
+            <Flame className="size-4 shrink-0 text-[var(--otk-accent)]" aria-hidden="true" />
+            <span>Trending</span>
           </h2>
           <ol className="divide-y divide-[var(--otk-border)]">
             {trending.slice(0, 5).map((post, index) => (
-              <li key={post.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+              <li key={post.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <span className="w-4 shrink-0 font-display text-sm font-bold text-[var(--otk-accent)]">
                   {index + 1}
                 </span>
@@ -64,28 +64,19 @@ export function HomeSidebar({ trending, news = [] }: HomeSidebarProps) {
             Latest news
           </h2>
           <ul className="divide-y divide-[var(--otk-border)]">
-            {news.slice(0, 4).map((post) => {
-              const source = sourceChipLabel(post.source_name)
-              return (
-                <li key={post.id} className="py-2.5 first:pt-0 last:pb-0">
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="otk-focus line-clamp-2 text-sm font-medium leading-snug text-[var(--otk-text)] hover:text-[var(--otk-accent)]"
-                  >
-                    {post.title}
-                  </Link>
-                  <p className="otk-meta mt-1">
-                    <RelativeTime date={post.published_at} />
-                    {source ? (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <span className="truncate">{post.source_name}</span>
-                      </>
-                    ) : null}
-                  </p>
-                </li>
-              )
-            })}
+            {news.slice(0, 4).map((post) => (
+              <li key={post.id} className="py-3 first:pt-0 last:pb-0">
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="otk-focus line-clamp-2 text-sm font-medium leading-snug text-[var(--otk-text)] hover:text-[var(--otk-accent)]"
+                >
+                  {post.title}
+                </Link>
+                <p className="otk-meta mt-1">
+                  <RelativeTime date={post.published_at} />
+                </p>
+              </li>
+            ))}
           </ul>
           <Link
             href="/blog?category=News"
@@ -97,10 +88,7 @@ export function HomeSidebar({ trending, news = [] }: HomeSidebarProps) {
         </section>
       ) : null}
 
-      <section className="otk-aside-section" aria-labelledby="home-newsletter-side-title" id="newsletter">
-        <h2 id="home-newsletter-side-title" className="otk-aside-title">
-          Newsletter
-        </h2>
+      <section className="otk-aside-section" aria-label="Newsletter" id="newsletter">
         <NewsletterForm variant="card" />
       </section>
 

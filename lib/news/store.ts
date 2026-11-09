@@ -65,7 +65,11 @@ export type StatusPatch = {
   postId?: number | null
 }
 
-export type AdminIngestRow = IngestRow & { post_slug: string | null }
+export type AdminIngestRow = IngestRow & {
+  post_slug: string | null
+  /** `posts.cover_image` for the published row: shown as the admin Image column. */
+  post_cover_image: string | null
+}
 
 export type NewsStore = {
   insertItems(items: NewIngestItem[]): Promise<number>
@@ -78,6 +82,8 @@ export type NewsStore = {
   getRow(id: number): Promise<IngestRow | null>
   markRewritten(id: number, rewritten: RewrittenArticle, attempts: number): Promise<void>
   setStatus(id: number, status: IngestStatus, patch?: StatusPatch): Promise<void>
+  /** Remember the cover source that was chosen (og:image or feed image). */
+  setImageUrl?(id: number, url: string | null): Promise<void>
   findPostBySourceUrl(sourceUrl: string): Promise<{ id: number; slug: string } | null>
   chooseUniqueSlug(base: string): Promise<string>
   insertPost(input: NewPostInput): Promise<{ id: number; slug: string }>
@@ -235,6 +241,12 @@ export const sqlStore: NewsStore = {
     `
   },
 
+  async setImageUrl(id, url) {
+    await sql`
+      UPDATE news_ingest SET image_url = ${url}, updated_at = now() WHERE id = ${id}::int
+    `
+  },
+
   async findPostBySourceUrl(sourceUrl) {
     const rows = (await sql`SELECT id, slug FROM posts WHERE source_url = ${sourceUrl} LIMIT 1`) as SqlRow[]
     return rows[0] ? { id: Number(rows[0].id), slug: String(rows[0].slug) } : null
@@ -268,7 +280,7 @@ export const sqlStore: NewsStore = {
 /** Admin automation tab: newest ingest rows with the live post slug. */
 export async function listIngestRows(limit = 100): Promise<AdminIngestRow[]> {
   const rows = (await sql`
-    SELECT n.*, p.slug AS post_slug
+    SELECT n.*, p.slug AS post_slug, p.cover_image AS post_cover_image
     FROM news_ingest n
     LEFT JOIN posts p ON p.id = n.post_id
     ORDER BY n.created_at DESC
@@ -278,7 +290,34 @@ export async function listIngestRows(limit = 100): Promise<AdminIngestRow[]> {
   return rows.map((row) => ({
     ...toIngestRow(row),
     post_slug: (row.post_slug as string | null) ?? null,
+    post_cover_image: (row.post_cover_image as string | null) ?? null,
   }))
+}
+
+/**
+ * Posts that were published without a cover (the pre-og:image backlog), newest
+ * first. Used by the cron backfill; a post that already has a cover is never
+ * returned, which keeps the operation idempotent.
+ */
+export async function listPostsMissingCover(limit = 5): Promise<{ id: number; slug: string; source_url: string }[]> {
+  const rows = (await sql`
+    SELECT id, slug, source_url
+    FROM posts
+    WHERE source_url IS NOT NULL
+      AND (cover_image IS NULL OR regexp_replace(cover_image, '^\\s+|\\s+$', '', 'g') = '')
+    ORDER BY published_at DESC NULLS LAST, id DESC
+    LIMIT ${limit}::int
+  `) as SqlRow[]
+
+  return rows.map((row) => ({
+    id: Number(row.id),
+    slug: String(row.slug),
+    source_url: String(row.source_url),
+  }))
+}
+
+export async function updatePostCover(id: number, coverImage: string): Promise<void> {
+  await sql`UPDATE posts SET cover_image = ${coverImage} WHERE id = ${id}::int`
 }
 
 /** Small aggregate for the admin header. */

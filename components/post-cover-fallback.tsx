@@ -14,21 +14,18 @@ const ICONS: Record<FallbackIcon, typeof Newspaper> = {
 type PostCoverFallbackProps = {
   category?: string | null
   className?: string
-  /** Hide the small site mark in tiny slots. */
-  showSiteMark?: boolean
   /** Hide the category label in tiny slots. */
   showLabel?: boolean
 }
 
 /**
- * The single shared "post has no cover" tile. Category tinted gradient, a
- * category icon and a small site mark, filling the same box as a real image so
+ * The single shared "post has no cover" tile: category tinted gradient plus the
+ * category icon and label, centred, filling the same box as a real image so
  * nothing shifts and the generated placeholder is never shown.
  */
 export function PostCoverFallback({
   category,
   className,
-  showSiteMark = true,
   showLabel = true,
 }: PostCoverFallbackProps) {
   const visual = categoryVisual(category)
@@ -41,7 +38,6 @@ export function PostCoverFallback({
       data-fallback="post-cover"
       data-category={visual.label}
     >
-      {showSiteMark ? <span className="otk-cover-fallback-mark">OtakuNaija</span> : null}
       <Icon className="otk-cover-fallback-icon" strokeWidth={1.5} />
       {showLabel ? <span className="otk-cover-fallback-label">{visual.label}</span> : null}
     </div>

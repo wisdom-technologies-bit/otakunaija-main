@@ -69,11 +69,13 @@ describe("publishIngestRow", () => {
     const fake = store()
     const result = await publishIngestRow(row(), { store: fake, copyImage: async () => "https://res.cloudinary.com/x.jpg" })
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       ok: true,
       postId: 42,
       slug: slugifyTitle(REWRITTEN.title),
       title: REWRITTEN.title,
+      coverImage: "https://res.cloudinary.com/x.jpg",
+      imageReason: null,
     })
     expect(fake.insertPost).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -92,7 +94,7 @@ describe("publishIngestRow", () => {
     const fake = store({ findPostBySourceUrl: vi.fn(async () => ({ id: 9, slug: "already-there" })) })
     const result = await publishIngestRow(row(), { store: fake, copyImage: async () => null })
 
-    expect(result).toEqual({ ok: true, postId: 9, slug: "already-there", title: REWRITTEN.title })
+    expect(result).toMatchObject({ ok: true, postId: 9, slug: "already-there", title: REWRITTEN.title })
     expect(fake.insertPost).not.toHaveBeenCalled()
     expect(fake.setStatus).toHaveBeenCalledWith(7, "published", { postId: 9, error: null })
   })
@@ -110,7 +112,7 @@ describe("publishIngestRow", () => {
     })
 
     const result = await publishIngestRow(row(), { store: fake, copyImage: async () => null })
-    expect(result).toEqual({ ok: true, postId: 11, slug: "raced", title: REWRITTEN.title })
+    expect(result).toMatchObject({ ok: true, postId: 11, slug: "raced", title: REWRITTEN.title })
   })
 
   it("marks the row failed when the insert fails for another reason", async () => {
@@ -139,5 +141,102 @@ describe("describeSqlError", () => {
   it("adds the SQL-file hint only for missing schema", () => {
     expect(describeSqlError(new Error('relation "news_ingest" does not exist'))).toContain("docs/sql/news-automation.sql")
     expect(describeSqlError(new Error("network timeout"))).toBe("network timeout")
+  })
+})
+
+describe("publishIngestRow cover image", () => {
+  const OG = "https://www.animenewsnetwork.com/thumbnails/og-image.jpg"
+  const FEED = "https://cdn.animenewsnetwork.com/feed-image.jpg"
+
+  it("prefers the article og:image over the feed image", async () => {
+    const inserted: { coverImage: string | null }[] = []
+    const localStore = store({
+      insertPost: vi.fn(async (input) => {
+        inserted.push({ coverImage: input.coverImage })
+        return { id: 42, slug: input.slug }
+      }),
+    })
+    const copyImage = vi.fn(async () => ({ url: "https://res.cloudinary.com/demo/cover.jpg" }))
+
+    const result = await publishIngestRow(row({ image_url: FEED }), {
+      store: localStore,
+      copyImage,
+      articleImageUrl: OG,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(copyImage).toHaveBeenCalledWith(OG)
+    expect(inserted[0].coverImage).toBe("https://res.cloudinary.com/demo/cover.jpg")
+  })
+
+  it("falls back to the feed image when the article has no og:image", async () => {
+    const copyImage = vi.fn(async () => ({ url: "https://res.cloudinary.com/demo/cover.jpg" }))
+
+    const result = await publishIngestRow(row({ image_url: FEED }), {
+      store: store(),
+      copyImage,
+      articleImageUrl: null,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(copyImage).toHaveBeenCalledWith(FEED)
+  })
+
+  it("stores the chosen source URL back on the ingest row", async () => {
+    const setImageUrl = vi.fn(async () => {})
+
+    await publishIngestRow(row({ image_url: null }), {
+      store: store({ setImageUrl }),
+      copyImage: vi.fn(async () => ({ url: "https://res.cloudinary.com/demo/cover.jpg" })),
+      articleImageUrl: OG,
+    })
+
+    expect(setImageUrl).toHaveBeenCalledWith(7, OG)
+  })
+
+  it("publishes without a cover, records the reason, and keeps the remote URL when allowed", async () => {
+    const inserted: { coverImage: string | null }[] = []
+    const setStatus = vi.fn(async () => {})
+    const localStore = store({
+      setStatus,
+      insertPost: vi.fn(async (input) => {
+        inserted.push({ coverImage: input.coverImage })
+        return { id: 42, slug: input.slug }
+      }),
+    })
+
+    const result = await publishIngestRow(row({ image_url: null }), {
+      store: localStore,
+      copyImage: vi.fn(async () => ({ error: "image_http_403" })),
+      articleImageUrl: OG,
+    })
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.imageReason).toBe("image_http_403")
+      expect(result.coverImage).toBe(OG)
+    }
+    expect(inserted[0].coverImage).toBe(OG)
+    const calls = setStatus.mock.calls as unknown as unknown[][]
+    const publishedCall = calls.find((call) => call[1] === "published")
+    expect(publishedCall?.[2]).toMatchObject({ error: "image_http_403" })
+  })
+
+  it("leaves the cover null when the copy fails and the host is not allowed", async () => {
+    const inserted: { coverImage: string | null }[] = []
+    const localStore = store({
+      insertPost: vi.fn(async (input) => {
+        inserted.push({ coverImage: input.coverImage })
+        return { id: 42, slug: input.slug }
+      }),
+    })
+
+    await publishIngestRow(row({ image_url: null }), {
+      store: localStore,
+      copyImage: vi.fn(async () => ({ error: "cloudinary_not_configured" })),
+      articleImageUrl: "https://evil.example.com/x.jpg",
+    })
+
+    expect(inserted[0].coverImage).toBeNull()
   })
 })

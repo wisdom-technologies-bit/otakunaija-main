@@ -9,7 +9,9 @@ describe("PostCoverFallback", () => {
 
     expect(html).toContain('data-fallback="post-cover"')
     expect(html).toContain("otk-fallback-news")
-    expect(html).toContain("OtakuNaija")
+    // exactly one label, one icon: no site mark stacked on top of the chip row
+    expect(html).not.toContain("OtakuNaija")
+    expect(html).toContain("otk-cover-fallback-label")
     expect(html).toContain("News")
     // never a broken image or the generated placeholder
     expect(html).not.toContain("<img")
@@ -24,7 +26,7 @@ describe("PostCoverFallback", () => {
 
   it("hides the decorative mark and label in tiny slots", () => {
     const html = renderToStaticMarkup(
-      createElement(PostCoverFallback, { category: "Action", showSiteMark: false, showLabel: false }),
+      createElement(PostCoverFallback, { category: "Action", showLabel: false }),
     )
     expect(html).toContain('data-fallback="post-cover"')
     expect(html).not.toContain("OtakuNaija")

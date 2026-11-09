@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { RelativeTime } from "@/components/home/relative-time"
-import { sourceChipLabel } from "@/lib/post-ui"
 import type { Post } from "@/lib/posts"
 import { cn } from "@/lib/utils"
 
@@ -11,7 +10,6 @@ type NewsTickerProps = {
 }
 
 function TickerItem({ post }: { post: Post }) {
-  const source = sourceChipLabel(post.source_name)
   return (
     <li className="otk-ticker-item">
       <span aria-hidden="true" className="otk-ticker-sep">
@@ -20,7 +18,6 @@ function TickerItem({ post }: { post: Post }) {
       <Link href={`/blog/${post.slug}`} className="otk-focus">
         {post.title}
       </Link>
-      {source ? <span className="sr-only">{source}</span> : null}
       <span className="otk-ticker-time">
         <RelativeTime date={post.published_at} />
       </span>

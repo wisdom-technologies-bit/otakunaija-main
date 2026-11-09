@@ -1,6 +1,5 @@
 import { hpDisplay } from "./home-fonts"
 import "./home-premium.css"
-import "./listings.css"
 import { HomeHero } from "@/components/home/home-hero"
 import { HomeIntroStrip } from "@/components/home/home-intro-strip"
 import { HomeFeed } from "@/components/home/home-feed"

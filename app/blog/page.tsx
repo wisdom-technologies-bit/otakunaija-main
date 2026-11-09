@@ -10,7 +10,6 @@ import { BlogSidebar } from "@/components/blog/blog-sidebar"
 import { BLOG_CATEGORIES, getAllPosts, getNewsPosts, getTrendingPosts } from "@/lib/posts"
 import { isNewPost } from "@/lib/post-ui"
 import { PollPlacement } from "@/components/poll-placement"
-import "./../listings.css"
 
 export async function generateMetadata({
   searchParams,

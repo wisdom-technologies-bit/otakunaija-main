@@ -7,7 +7,6 @@ import { CatalogToolbar } from '@/components/episodes/catalog-toolbar'
 import { CatalogPagination } from '@/components/episodes/catalog-pagination'
 import { getAllUsedGenres, getPaginatedSeries, getLatestEpisodeNumber } from '@/lib/db/queries'
 import { buildHref } from '@/lib/listing-url'
-import './../../listings.css'
 
 export const metadata: Metadata = { title: 'Browse All Anime', description: 'Browse all anime series on OtakuNaija.', alternates: { canonical: '/episodes/browse' } }
 

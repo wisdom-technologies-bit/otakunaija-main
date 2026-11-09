@@ -8,6 +8,8 @@ interface HomeSectionHeadingProps {
   description?: string
   href?: string
   linkLabel?: string
+  /** Shown instead of linkLabel below 360px ("Browse" for "Browse series"). */
+  shortLinkLabel?: string
   level?: "h2" | "h3" | "h4"
   count?: string
   id?: string
@@ -24,6 +26,7 @@ export function HomeSectionHeading({
   description,
   href,
   linkLabel = "View all",
+  shortLinkLabel,
   level = "h2",
   count,
   id,
@@ -48,7 +51,14 @@ export function HomeSectionHeading({
           href={href}
           className="otk-focus shrink-0 pb-1 text-sm font-semibold text-[var(--otk-accent)] transition-opacity hover:opacity-75"
         >
-          {linkLabel}
+          {shortLinkLabel ? (
+            <>
+              <span className="hidden min-[360px]:inline">{linkLabel}</span>
+              <span className="min-[360px]:hidden">{shortLinkLabel}</span>
+            </>
+          ) : (
+            linkLabel
+          )}
         </Link>
       ) : null}
     </div>

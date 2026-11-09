@@ -7,7 +7,6 @@ import {
   isNewPost,
   pickUnseen,
   resolveCover,
-  sourceChipLabel,
 } from "./post-ui"
 import type { Post } from "./posts"
 
@@ -76,19 +75,6 @@ describe("seen tracker", () => {
   it("dedupes repeated ids inside one list, keeping the first", () => {
     const list = [post(1), post(2), post(1), post(3), post(2)]
     expect(dedupePosts(list).map((p) => p.id)).toEqual([1, 2, 3])
-  })
-})
-
-describe("sourceChipLabel", () => {
-  it("labels auto-published news with its source", () => {
-    expect(sourceChipLabel("Anime News Network")).toBe("Source: Anime News Network")
-    expect(sourceChipLabel("  Anime News Network  ")).toBe("Source: Anime News Network")
-  })
-
-  it("renders nothing for editorial posts", () => {
-    expect(sourceChipLabel(null)).toBeNull()
-    expect(sourceChipLabel(undefined)).toBeNull()
-    expect(sourceChipLabel("   ")).toBeNull()
   })
 })
 

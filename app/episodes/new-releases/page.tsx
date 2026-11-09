@@ -6,7 +6,6 @@ import { CatalogHeader } from '@/components/episodes/catalog-header'
 import { CatalogPagination } from '@/components/episodes/catalog-pagination'
 import { getPaginatedNewEpisodes } from '@/lib/db/queries'
 import { toISO } from '@/lib/to-iso'
-import './../../listings.css'
 
 export const metadata: Metadata = { title: 'New Episodes', description: 'Watch the latest anime episodes on OtakuNaija.', alternates: { canonical: '/episodes/new-releases' } }
 

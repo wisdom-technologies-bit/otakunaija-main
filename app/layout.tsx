@@ -9,6 +9,7 @@ import { HideV0Badge } from "@/components/HideV0Badge"
 import { OneSignalInit } from "@/components/push/onesignal-init"
 import { ScrollToTop } from "@/components/ScrollToTop"
 import "./globals.css"
+import "./listings.css"
 
 const inter = Inter({
   subsets: ["latin"],

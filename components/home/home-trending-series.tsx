@@ -29,19 +29,20 @@ export function HomeTrendingSeries({ items }: { items: TrendingSeriesItem[] }) {
         title="Trending series"
         href="/episodes"
         linkLabel="Browse series"
+        shortLinkLabel="Browse"
         id="home-trending-series-heading"
       />
 
-      <ScrollRow ariaLabel="Trending series" fade>
+      <ScrollRow ariaLabel="Trending series" fade railClassName="otk-rail-trending">
         {ranked.map((item, index) => {
           const status = item.status ? STATUS_LABEL[item.status] ?? item.status : null
           return (
             <Link
               key={item.slug}
               href={`/episodes/${item.slug}`}
-              className="otk-focus group w-36 shrink-0 no-underline sm:w-40"
+              className="otk-trending-card otk-focus group no-underline"
             >
-              <div className="otk-card relative aspect-[2/3] overflow-hidden">
+              <div className="otk-card otk-rank-card">
                 {item.posterImageUrl ? (
                   <Image
                     src={item.posterImageUrl}
@@ -61,10 +62,7 @@ export function HomeTrendingSeries({ items }: { items: TrendingSeriesItem[] }) {
                   {index + 1}
                 </span>
                 {status ? (
-                  <span
-                    className="otk-chip"
-                    style={{ position: "absolute", right: "0.4rem", top: "0.4rem", zIndex: 3 }}
-                  >
+                  <span className="otk-chip otk-chip-corner">
                     {status}
                   </span>
                 ) : null}

@@ -1,6 +1,6 @@
 import { fetchArticle, fetchFeed, type ArticleContent, type FeedItem } from "./ann"
 import { DEFAULT_MAX_AGE_HOURS, parseBlockedKeywords, selectFeedItems } from "./filters"
-import { copyImageToCloudinary } from "./image"
+import { copyImageToCloudinary, type CopyImageLike } from "./image"
 import { publishIngestRow } from "./publish"
 import { rewriteArticle, type RewriteOutcome } from "./rewrite"
 import { sqlStore, type IngestRow, type NewsStore } from "./store"
@@ -59,6 +59,8 @@ export function readConfig(overrides: Partial<NewsRunConfig> = {}): NewsRunConfi
 
 export type NewsRunCounts = {
   fetched: number
+  /** Cover problems counted by reason (image_http_403, cloudinary_not_configured…). */
+  imageReasons: Record<string, number>
   new: number
   published: number
   rewritten: number
@@ -87,7 +89,7 @@ export type NewsRunDeps = {
   fetchFeed: (feedUrl?: string) => Promise<{ ok: true; data: { items: FeedItem[] } } | { ok: false; error: string }>
   fetchArticle: (url: string) => Promise<{ ok: true; data: ArticleContent } | { ok: false; error: string }>
   rewrite: (input: { title: string; text: string; url: string; topics: string[] }) => Promise<RewriteOutcome>
-  copyImage: (imageUrl: string | null) => Promise<string | null>
+  copyImage: (imageUrl: string | null) => Promise<CopyImageLike>
   push: (payload: { title: string; path: string; image: string | null; message: string }) => Promise<void>
   now: () => Date
 }
@@ -109,7 +111,7 @@ export const defaultDeps: NewsRunDeps = {
 }
 
 function emptyCounts(dry: boolean): NewsRunCounts {
-  return { fetched: 0, new: 0, published: 0, rewritten: 0, failed: 0, skipped: 0, remaining: 0, dry }
+  return { fetched: 0, new: 0, published: 0, rewritten: 0, failed: 0, skipped: 0, remaining: 0, dry, imageReasons: {} }
 }
 
 /**
@@ -230,6 +232,7 @@ export async function runNewsIngest(
 
     const title = row.original_title ?? row.guid
     let article = row.rewritten
+    let articleImageUrl: string | null = null
 
     if (!article) {
       if (config.dry) {
@@ -249,6 +252,12 @@ export async function runNewsIngest(
         counts.failed += 1
         record(`article failed guid=${row.guid}: ${articleResult.error}`)
         continue
+      }
+
+      // Keep the og:image on the row: a publish in a later run must not lose it.
+      articleImageUrl = articleResult.data.imageUrl ?? null
+      if (articleImageUrl && articleImageUrl !== row.image_url) {
+        await resolved.store.setImageUrl?.(row.id, articleImageUrl)
       }
 
       const outcome = await resolved.rewrite({
@@ -292,6 +301,7 @@ export async function runNewsIngest(
       {
         store: resolved.store,
         copyImage: resolved.copyImage,
+        articleImageUrl,
         log: record,
       },
     )
@@ -302,6 +312,9 @@ export async function runNewsIngest(
     }
 
     counts.published += 1
+    if (published.imageReason) {
+      counts.imageReasons[published.imageReason] = (counts.imageReasons[published.imageReason] ?? 0) + 1
+    }
 
     if (config.pushEnabled && !pushSent) {
       try {
