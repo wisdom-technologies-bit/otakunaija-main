@@ -8,7 +8,7 @@ export function NewsletterInlineBar() {
         <p id="home-newsletter-title" className="text-sm font-bold text-[var(--otk-text)]">
           Get the daily anime briefing
         </p>
-        <p className="otk-meta mt-1">One email each morning. News, releases and what to watch.</p>
+        <p className="otk-meta mt-1">One email each morning: the news that matters, new episodes, and what airs next.</p>
       </div>
       <NewsletterForm variant="inline" className="max-w-md md:min-w-[20rem]" />
     </section>

@@ -248,6 +248,21 @@ The automation reads Anime News Network's public RSS feed directly (no Consumet/
 - `NEWS_PUSH` — default off. When `true`, a published story sends at most one OneSignal push per run (`lib/push.ts`, requires the existing OneSignal vars).
 - Reviews, features, interviews, columns and contests from the feed are queued as `skipped` (`filtered:not_news`): they are editorial pieces, not news, and would otherwise be published under the News category with a news byline. Retry any of them from the admin Automation tab if you want them anyway.
 - `NEWS_FEED_URL` — optional override for the feed (default `https://www.animenewsnetwork.com/all/rss.xml?ann-edition=w`).
+### Daily newsletter (`/api/cron/newsletter`, `/api/webhooks/brevo`, `lib/newsletter/*`)
+
+One issue per morning, prepared at 06:30 and sent at 07:00 Africa/Lagos. It signs people up with double opt-in, sends through Brevo's transactional API, records opens/clicks/bounces from Brevo webhooks, and needs the schema in `docs/sql/newsletter.sql`, which is run by hand in the Neon SQL editor; the routes never migrate.
+
+- `BREVO_API_KEY` — **required to send**. Sent as the `api-key` header to `https://api.brevo.com/v3/smtp/email`. Without it the cron and admin pages say so plainly, the issue is still prepared and previewed, and nothing is sent.
+- `BREVO_WEBHOOK_SECRET` — **required for the webhook**. Compared in constant time against either `Authorization: Bearer <secret>` or `?secret=<secret>` on `POST /api/webhooks/brevo`. Unset means the route refuses every request.
+- `NEWSLETTER_FROM_EMAIL` — sender address (default `press@otakunaija.name.ng`). It must be a verified sender in the Brevo dashboard.
+- `NEWSLETTER_FROM_NAME` — sender display name (default `OtakuNaija`).
+- `NEWSLETTER_REPLY_TO` — optional reply-to address. When unset, replies go to the sender.
+- `NEWSLETTER_MODE` — `approve` (default) or `auto`. `approve` leaves the prepared issue as a draft until an admin approves it; `auto` approves it during prepare so the 07:00 run sends it.
+- `NEWSLETTER_DAILY_CAP` — default `250`. The hard ceiling on emails per UTC day, oldest `last_sent_at` first so everyone is served fairly.
+- `NEWSLETTER_POSTAL_ADDRESS` — required footer line; the newsletter will not render without a postal address.
+- `SITE_URL` — default `https://otakunaija.name.ng`; used for links in the email and for the unsubscribe URL.
+- `GROQ_API_KEY` / `GROQ_MODEL` — shared with the news automation. Used for the subject, preheader and editor's note. Without a key the copy falls back to a rule-based version, so a missing key degrades the writing but never blocks the issue.
+
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` — Cloudinary uploads/signing.
 - `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` — object storage/R2.
 - `NEXT_PUBLIC_ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY` — push notifications.
