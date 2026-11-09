@@ -1,24 +1,58 @@
 import Link from "next/link"
 import type { ElementType } from "react"
+import { cn } from "@/lib/utils"
 
 interface HomeSectionHeadingProps {
   eyebrow: string
   title: string
+  description?: string
   href?: string
   linkLabel?: string
   level?: "h2" | "h3" | "h4"
+  count?: string
+  id?: string
+  className?: string
 }
 
-export function HomeSectionHeading({ eyebrow, title, href, linkLabel = "View all", level = "h2" }: HomeSectionHeadingProps) {
+/**
+ * The one section heading used across the home page and the episode listings:
+ * eyebrow, display heading, optional description and result count.
+ */
+export function HomeSectionHeading({
+  eyebrow,
+  title,
+  description,
+  href,
+  linkLabel = "View all",
+  level = "h2",
+  count,
+  id,
+  className,
+}: HomeSectionHeadingProps) {
   const Heading = level as ElementType
 
   return (
-    <div className="flex items-end justify-between gap-6">
-      <div>
-        <p className="hp-eyebrow">{eyebrow}</p>
-        <Heading className="hp-display mt-3 text-[clamp(2rem,4vw,4rem)]">{title}</Heading>
+    <div className={cn("otk-section-head", className)}>
+      <div className="min-w-0">
+        <p className="otk-eyebrow">{eyebrow}</p>
+        <Heading id={id} className="otk-section-title mt-2 text-balance">
+          {title}
+        </Heading>
+        {description ? (
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--otk-text-dim)]">{description}</p>
+        ) : null}
+        {count ? <p className="otk-meta mt-2">{count}</p> : null}
       </div>
-      {href ? <Link href={href} className="hp-focus shrink-0 pb-1 text-sm font-semibold text-[var(--hp-accent)] transition-opacity hover:opacity-75">{linkLabel}</Link> : null}
+      {href ? (
+        <Link
+          href={href}
+          className="otk-focus shrink-0 pb-1 text-sm font-semibold text-[var(--otk-accent)] transition-opacity hover:opacity-75"
+        >
+          {linkLabel}
+        </Link>
+      ) : null}
     </div>
   )
 }
+
+export default HomeSectionHeading

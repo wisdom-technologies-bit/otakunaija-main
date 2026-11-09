@@ -1,15 +1,20 @@
-import { NewsletterForm } from "@/components/newsletter-form"
-
+/**
+ * Slim one-line introduction under the hero. The newsletter form now lives in
+ * its own compact bar further down the page.
+ */
 export function HomeIntroStrip() {
   return (
-    <section className="home-premium-intro border-y border-[var(--hp-border)]" aria-labelledby="home-intro-title">
-      <div className="hp-container flex flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-10">
-        <div className="max-w-2xl">
-          <h1 id="home-intro-title" className="hp-intro-title">Anime News, Reviews &amp; Guides for Nigerian Otakus</h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--hp-text-dim)]">Reviews, episode breakdowns, and recommendations from Nigerian otakus for the global anime community.</p>
-        </div>
-        <NewsletterForm variant="inline" className="md:w-auto md:min-w-[24rem]" />
+    <section className="border-y border-[var(--otk-border)]" aria-labelledby="home-intro-title">
+      <div className="hp-container flex flex-col gap-2 py-4 md:flex-row md:items-baseline md:justify-between md:gap-8 md:py-5">
+        <h1 id="home-intro-title" className="hp-intro-title text-balance">
+          Anime news, reviews &amp; guides for Nigerian otakus
+        </h1>
+        <p className="max-w-md text-sm leading-relaxed text-[var(--otk-text-dim)]">
+          Reporting and recommendations from Lagos, for the global anime community.
+        </p>
       </div>
     </section>
   )
 }
+
+export default HomeIntroStrip

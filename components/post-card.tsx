@@ -1,112 +1,130 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Timer, ChartNoAxesColumn, User, Calendar } from "lucide-react"
-import { type Post, formatDate, formatRelativeTime, getCoverImage } from "@/lib/posts"
+import type { ElementType } from "react"
+import { FreshnessBadge } from "@/components/freshness-badge"
+import { PostCoverFallback } from "@/components/post-cover-fallback"
+import { RelativeTime } from "@/components/home/relative-time"
+import { NEW_POST_WINDOW_HOURS, isNewPost, resolveCover, sourceChipLabel } from "@/lib/post-ui"
+import type { Post } from "@/lib/posts"
 import { cn } from "@/lib/utils"
+
+export type PostCardVariant = "lead" | "featured" | "grid" | "list" | "compact"
+export type PostCardAspect = "16/9" | "16/10"
 
 type PostCardProps = {
   post: Post
-  variant?: "default" | "featured" | "compact"
+  variant?: PostCardVariant
+  aspect?: PostCardAspect
   className?: string
   priority?: boolean
+  showExcerpt?: boolean
+  headingLevel?: "h2" | "h3" | "h4"
 }
 
-export function PostCard({ post, variant = "default", className, priority = false }: PostCardProps) {
-  const isFeatured = variant === "featured"
-  const isCompact = variant === "compact"
+const SIZES: Record<PostCardVariant, string> = {
+  lead: "(min-width: 1024px) 60vw, (min-width: 768px) 90vw, 92vw",
+  featured: "(min-width: 1024px) 60vw, (min-width: 768px) 90vw, 92vw",
+  grid: "(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 92vw",
+  list: "(min-width: 640px) 10rem, 7.5rem",
+  compact: "5.25rem",
+}
 
-  if (isCompact) {
-    return (
-      <Link
-        href={`/blog/${post.slug}`}
-        className={cn(
-          "group flex gap-3 rounded-lg p-2 transition-colors hover:bg-card",
-          className,
-        )}
-      >
-        <div className="relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted">
-          <Image
-            src={getCoverImage(post, 200, 160)}
-            alt={post.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="80px"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">{post.category}</p>
-          <h4 className="mt-0.5 line-clamp-2 text-sm font-medium leading-snug text-foreground group-hover:text-primary">
-            {post.title}
-          </h4>
-        </div>
-      </Link>
-    )
-  }
+const ASPECTS: Record<PostCardAspect, string> = {
+  "16/9": "aspect-[16/9]",
+  "16/10": "aspect-[16/10]",
+}
+
+/**
+ * One post card used by the home page and /blog. Metadata is always visible,
+ * the whole card is a single link, and a post without a cover renders the
+ * shared fallback tile instead of a broken placeholder.
+ */
+export function PostCard({
+  post,
+  variant = "grid",
+  aspect = "16/10",
+  className,
+  priority = false,
+  showExcerpt,
+  headingLevel = "h3",
+}: PostCardProps) {
+  const cover = resolveCover(post)
+  const source = sourceChipLabel(post.source_name)
+  const isLead = variant === "lead" || variant === "featured"
+  const isRow = variant === "list" || variant === "compact"
+  const excerptVisible = showExcerpt ?? (isLead || variant === "grid")
+  const Heading = headingLevel as ElementType
+  const aspectClass = ASPECTS[aspect]
 
   return (
     <article
       className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
-        isFeatured && "md:flex-row",
+        "otk-card",
+        isLead && "otk-card-lead",
+        variant === "list" && "otk-card-row",
+        variant === "compact" && "otk-card-row otk-card-compact",
         className,
       )}
     >
       <Link
         href={`/blog/${post.slug}`}
-        className={cn(
-          "relative block aspect-[16/10] w-full overflow-hidden bg-muted",
-          isFeatured && "md:aspect-auto md:w-1/2",
-        )}
+        className="otk-card-link otk-focus"
+        aria-label={post.title}
+        data-post-id={post.id}
       >
-        <Image
-          src={getCoverImage(post, isFeatured ? 1200 : 800, isFeatured ? 750 : 500)}
-          alt={post.title}
-          fill
-          loading={priority ? "eager" : "lazy"}
-          priority={priority}
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes={isFeatured ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"}
-        />
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background/70 to-transparent" />
-        <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground">
-          {post.category}
-        </span>
-      </Link>
-
-      <div className={cn("flex flex-1 flex-col p-5", isFeatured && "md:p-7")}>
-        <Link href={`/blog/${post.slug}`} className="block">
-          <h3
-            className={cn(
-              "font-display font-bold leading-tight text-foreground transition-colors group-hover:text-primary text-balance",
-              isFeatured ? "text-2xl md:text-3xl" : "text-lg",
-            )}
-          >
-            {post.title}
-          </h3>
-        </Link>
-        <p className={cn("mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground", isFeatured && "md:text-base")}>
-          {post.excerpt}
-        </p>
-
-        <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1 font-medium text-foreground/80 truncate max-w-[40%]">
-            <User className="h-3 w-3 flex-shrink-0" /> {post.author}
-          </span>
-          <span aria-hidden className="hidden sm:inline">•</span>
-          <time dateTime={post.published_at} className="inline-flex items-center gap-1 whitespace-nowrap">
-            <Calendar className="h-3 w-3" /> {formatRelativeTime(post.published_at)}
-          </time>
-          <span aria-hidden className="hidden sm:inline">•</span>
-          <span className="inline-flex items-center gap-1 whitespace-nowrap">
-            <Timer className="h-3 w-3" /> {post.read_time} min
-          </span>
-          {isFeatured ? (
-            <span className="hidden sm:inline-flex items-center gap-1">
-              <ChartNoAxesColumn className="h-3 w-3" /> {post.views.toLocaleString()}
-            </span>
+        <div className={cn("otk-card-media", aspectClass, isRow && "self-start")}>
+          {cover.kind === "image" ? (
+            <Image
+              src={cover.src}
+              alt=""
+              fill
+              sizes={SIZES[variant]}
+              priority={priority}
+              loading={priority ? undefined : "lazy"}
+              className="object-cover"
+            />
+          ) : (
+            <PostCoverFallback
+              category={cover.category}
+              showSiteMark={variant !== "compact"}
+              showLabel={variant !== "compact"}
+            />
+          )}
+          {!isRow ? (
+            <div className="otk-card-chips">
+              <span className="otk-chip">{post.category}</span>
+              {source ? <span className="otk-chip otk-chip-source">{source}</span> : null}
+            </div>
           ) : null}
+          <FreshnessBadge
+            publishedAt={post.published_at}
+            windowHours={NEW_POST_WINDOW_HOURS}
+            initial={isNewPost(post.published_at)}
+          />
         </div>
-      </div>
+
+        <div className="otk-card-body">
+          {isRow ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="otk-chip">{post.category}</span>
+              {source ? <span className="otk-chip otk-chip-source">{source}</span> : null}
+            </div>
+          ) : null}
+          <Heading className="otk-card-title line-clamp-2">{post.title}</Heading>
+          {excerptVisible ? (
+            <p className="otk-card-excerpt line-clamp-2">{post.excerpt}</p>
+          ) : null}
+          <p className="otk-card-meta">
+            <span>{post.author}</span>
+            <span aria-hidden="true">·</span>
+            <RelativeTime date={post.published_at} />
+            <span aria-hidden="true">·</span>
+            <span>{post.read_time} min read</span>
+          </p>
+        </div>
+      </Link>
     </article>
   )
 }
+
+export default PostCard

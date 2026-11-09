@@ -2,14 +2,15 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { PostCard } from "@/components/post-card"
-import { Sidebar } from "@/components/sidebar"
 import { SearchBar } from "@/components/search-bar"
 import { AdSlot } from "@/components/ad-slot"
-import { InfinitePostList } from "@/components/infinite-post-list"
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty"
-import { BLOG_CATEGORIES, getAllPosts, getRecentPosts, getTrendingPosts } from "@/lib/posts"
+import { BlogListing } from "@/components/blog/blog-listing"
+import { BlogCategoryPills } from "@/components/blog/blog-category-pills"
+import { BlogSidebar } from "@/components/blog/blog-sidebar"
+import { BLOG_CATEGORIES, getAllPosts, getNewsPosts, getTrendingPosts } from "@/lib/posts"
+import { isNewPost } from "@/lib/post-ui"
 import { PollPlacement } from "@/components/poll-placement"
+import "./../listings.css"
 
 export async function generateMetadata({
   searchParams,
@@ -39,6 +40,8 @@ type Search = { category?: string; q?: string }
 
 export const dynamic = "force-dynamic"
 
+const PAGE_SIZE = 10
+
 export default async function BlogPage({
   searchParams,
 }: {
@@ -50,10 +53,10 @@ export default async function BlogPage({
     : undefined
   const q = sp.q?.trim() || undefined
 
-  const [posts, recent, trending] = await Promise.all([
-    getAllPosts({ category, search: q, limit: 10 }),
-    getRecentPosts(4),
+  const [posts, trending, news] = await Promise.all([
+    getAllPosts({ category, search: q, limit: PAGE_SIZE }),
     getTrendingPosts(5),
+    getNewsPosts(8),
   ])
 
   const headline = q
@@ -62,8 +65,11 @@ export default async function BlogPage({
       ? `${category} anime`
       : "All articles"
 
+  const hasFreshNews = news.some((post) => isNewPost(post.published_at))
+  const countLabel = `${posts.length}${posts.length === PAGE_SIZE ? "+" : ""} article${posts.length === 1 ? "" : "s"}`
+
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-background">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -89,90 +95,87 @@ export default async function BlogPage({
       />
       <SiteHeader />
 
-      <main className="flex-1">
+      <main className="otk-page flex-1">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="py-4">
             <AdSlot slot="header" />
           </div>
 
-          <section className="pt-6 pb-8">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">OtakuNaija Blog</p>
-            <h1 className="mt-2 font-display text-3xl md:text-5xl font-bold tracking-tight text-balance">
-              {headline}
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm md:text-base text-muted-foreground">
-              {posts.length} article{posts.length === 1 ? "" : "s"} · Curated by the OtakuNaija editorial team.
-            </p>
-
-            <div className="mt-6 max-w-2xl">
-              <SearchBar defaultValue={q} />
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <Link
-                href="/blog"
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${!category && !q
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
-                  }`}
-              >
-                All
-              </Link>
-              {BLOG_CATEGORIES.map((c) => (
-                <Link
-                  key={c}
-                  href={`/blog?category=${encodeURIComponent(c)}`}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium ${category === c
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-foreground/80 hover:border-primary hover:text-primary"
-                    }`}
-                >
-                  {c}
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="pb-14">
-            <div className="grid min-w-0 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="min-w-0">
-                {posts.length === 0 ? (
-                  <Empty className="rounded-xl border border-border bg-card">
-                    <EmptyHeader>
-                      <EmptyTitle>No articles found</EmptyTitle>
-                      <EmptyDescription>
-                        Try a different search term or browse a category from the filters above.
-                      </EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                ) : (
+          <header className="pb-5 pt-2">
+            <nav aria-label="Breadcrumb" className="text-xs text-[var(--otk-text-dim)]">
+              <ol className="flex flex-wrap items-center gap-1.5">
+                <li>
+                  <Link href="/" className="otk-focus hover:text-[var(--otk-accent)]">
+                    Home
+                  </Link>
+                </li>
+                <li aria-hidden="true">/</li>
+                <li>
+                  <Link href="/blog" className="otk-focus hover:text-[var(--otk-accent)]">
+                    Blog
+                  </Link>
+                </li>
+                {category ? (
                   <>
-                    <div className="grid gap-6 sm:grid-cols-2">
-                      {posts.slice(0, 4).map((p) => (
-                        <PostCard key={p.id} post={p} />
-                      ))}
-                    </div>
-
-                    {posts.length > 4 ? (
-                      <div className="my-10">
-                        <AdSlot slot="footer" />
-                      </div>
-                    ) : null}
-
-                    <InfinitePostList
-                      initialPosts={posts.slice(4)}
-                      initialOffset={posts.length}
-                      category={category}
-                      search={q}
-                      trendingIds={trending.map((p) => p.id)}
-                    />
+                    <li aria-hidden="true">/</li>
+                    <li>
+                      <span aria-current="page" className="font-semibold text-[var(--otk-text)]">
+                        {category}
+                      </span>
+                    </li>
                   </>
-                )}
+                ) : null}
+                {q ? (
+                  <>
+                    <li aria-hidden="true">/</li>
+                    <li>
+                      <span aria-current="page" className="font-semibold text-[var(--otk-text)]">
+                        Search
+                      </span>
+                    </li>
+                  </>
+                ) : null}
+              </ol>
+            </nav>
+
+            <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-8">
+              <div className="min-w-0">
+                <p className="otk-eyebrow">OtakuNaija Blog</p>
+                <h1 className="otk-display mt-2 text-3xl md:text-5xl">{headline}</h1>
+                <p className="otk-meta mt-2">
+                  <span>{countLabel}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>Curated by the OtakuNaija editorial team</span>
+                </p>
+              </div>
+              <div className="w-full md:max-w-sm">
+                <SearchBar defaultValue={q} compact />
+              </div>
+            </div>
+          </header>
+
+          <BlogCategoryPills category={category} search={q} hasFreshNews={hasFreshNews} />
+
+          <section className="py-8" aria-label="Articles">
+            <div className="otk-layout">
+              <div className="min-w-0">
+                <BlogListing
+                  posts={posts}
+                  totalLoaded={posts.length}
+                  category={category}
+                  search={q}
+                  trendingIds={trending.map((post) => post.id)}
+                  inlineAd={<AdSlot slot="footer" />}
+                />
               </div>
 
-              <div className="space-y-8"><Sidebar recent={recent} trending={trending} /><PollPlacement source="blog" className="hidden lg:block" /></div>
+              <div className="min-w-0 space-y-8">
+                <BlogSidebar trending={trending} news={news} />
+                <PollPlacement source="blog" className="hidden lg:block" />
+              </div>
             </div>
           </section>
+
           <PollPlacement source="blog" className="mx-auto mb-12 max-w-2xl lg:hidden" />
         </div>
       </main>

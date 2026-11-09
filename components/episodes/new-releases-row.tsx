@@ -1,59 +1,42 @@
-import Link from 'next/link'
-import Image from 'next/image'
-import { formatRelativeTime } from '@/lib/posts'
-import { SectionTitle } from '@/components/episodes/section-title'
-type ReleaseEpisode = { id: number; slug: string; title: string; episodeNumber: number; thumbnailUrl: string | null; publishedAt: string | null }
-type ReleaseSeries = { slug: string; title: string; posterImageUrl: string | null; coverImageUrl: string | null }
+import { EpisodeCard } from "@/components/episodes/episode-card"
+import { SectionTitle } from "@/components/episodes/section-title"
+import { ScrollRow } from "@/components/shared/scroll-row"
 
-interface NewReleasesRowProps {
-  items: { episode: ReleaseEpisode; series: ReleaseSeries | null }[]
+type ReleaseEpisode = {
+  id: number
+  slug: string
+  title: string
+  episodeNumber: number
+  thumbnailUrl: string | null
+  durationSeconds?: number | null
+  publishedAt: string | null
 }
+type ReleaseSeries = { slug: string; title: string } | null
 
-export function NewReleasesRow({ items }: NewReleasesRowProps) {
+export function NewReleasesRow({
+  items,
+  now,
+}: {
+  items: { episode: ReleaseEpisode; series: ReleaseSeries }[]
+  now?: number
+}) {
+  const rows = items.filter((item) => item.series)
+  if (rows.length === 0) return null
+
   return (
-    <section>
-      <SectionTitle title="New Releases" href="/episodes/new-releases" />
-      <div className="flex w-full gap-4 overflow-x-auto overflow-y-hidden pb-2 touch-pan-x no-scrollbar">
-        <div className="flex gap-4 min-w-max">
-          {items.map(({ episode, series: ser }) =>
-            ser ? (
-              <Link
-                key={episode.id}
-                href={`/episodes/${ser.slug}/${episode.slug}`}
-                className="group w-40 flex-shrink-0"
-              >
-                <div className="relative aspect-video w-40 overflow-hidden rounded-lg bg-muted">
-                  {episode.thumbnailUrl ? (
-                    <Image
-                      src={episode.thumbnailUrl}
-                      alt={episode.title}
-                      fill
-                      className="object-cover transition-transform group-hover:scale-105"
-                      sizes="160px"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-                      <span className="text-xs text-muted-foreground">No image</span>
-                    </div>
-                  )}
-                  <span className="absolute left-1.5 top-1.5 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
-                    New
-                  </span>
-                  <span className="absolute right-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    Ep {episode.episodeNumber}
-                  </span>
-                </div>
-                <p className="mt-2 line-clamp-1 text-sm font-medium text-foreground group-hover:text-primary">
-                  {ser.title}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {episode.publishedAt ? formatRelativeTime(episode.publishedAt.toString()) : ''}
-                </p>
-              </Link>
-            ) : null
-          )}
-        </div>
-      </div>
+    <section aria-labelledby="new-releases-heading">
+      <SectionTitle id="new-releases-heading" title="New releases" href="/episodes/new-releases" />
+      <ScrollRow ariaLabel="New releases" fade>
+        {rows.map(({ episode, series }) => (
+          <EpisodeCard
+            key={episode.id}
+            episode={episode}
+            series={series}
+            now={now}
+            className="w-[72vw] shrink-0 sm:w-60 lg:w-64"
+          />
+        ))}
+      </ScrollRow>
     </section>
   )
 }

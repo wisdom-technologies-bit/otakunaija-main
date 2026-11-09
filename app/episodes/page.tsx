@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import {
+  getAllUsedGenres,
   getRecentEpisodesAcrossAllSeries,
   getUpcomingEpisodes,
   getTrendingSeries,
@@ -21,6 +23,10 @@ import { EpisodesSidebar } from '@/components/episodes/episodes-sidebar'
 import { PollPlacement } from '@/components/poll-placement'
 import { MoviesRow } from '@/components/episodes/movies-row'
 import { PopularTodayRow } from '@/components/episodes/popular-today-row'
+import { TrendingSeriesSection } from '@/components/episodes/trending-series-section'
+import { HomeSectionHeading } from '@/components/home/home-section-heading'
+import { SeriesCardSkeleton } from '@/components/episodes/skeletons'
+import './../listings.css'
 
 export const revalidate = 60
 
@@ -39,7 +45,13 @@ interface EpisodesPageProps {
 }
 
 function GenreRowSkeleton() {
-  return <div className="flex gap-4 overflow-hidden"><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /><div className="h-52 w-[120px] shrink-0 rounded-lg bg-muted" /></div>
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <SeriesCardSkeleton key={index} />
+      ))}
+    </div>
+  )
 }
 
 export default async function EpisodesPage({ searchParams }: EpisodesPageProps) {
@@ -52,12 +64,14 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
   let upcomingEpisodes: any[] = []
   let trendingSeries: any[] = []
   let popularToday: any[] = []
+  let genres: string[] = []
   try {
-    ;[recentEpisodes, upcomingEpisodes, trendingSeries, popularToday] = await Promise.all([
-      getRecentEpisodesAcrossAllSeries(10),
+    ;[recentEpisodes, upcomingEpisodes, trendingSeries, popularToday, genres] = await Promise.all([
+      getRecentEpisodesAcrossAllSeries(12),
       getUpcomingEpisodes(12),
       getTrendingSeries(5),
       getPopularTodaySeries(10),
+      getAllUsedGenres(),
     ])
   } catch (err) {
     console.error('Error fetching episodes data:', err)
@@ -72,6 +86,7 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
   const serializedRecentEpisodes = serializeEpisodes(recentEpisodes)
   const serializedUpcomingEpisodes = serializeEpisodes(upcomingEpisodes)
   const heroSeries = trendingSeries.slice(0, 4).map((item) => item.series)
+  const now = Date.now()
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -113,8 +128,8 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
 
       <SiteHeader />
 
-      {/* Page Header */}
-      <section className="border-b border-border/40 py-4 md:py-8">
+      {/* Hero carousel + resume watching (untouched hero component) */}
+      <section className="border-b border-border/40 py-4 md:py-6">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="space-y-4">
             <SeriesHeroCarousel seriesList={heroSeries} />
@@ -123,23 +138,49 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
         </div>
       </section>
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-8">
+      <main className="otk-page mx-auto w-full max-w-7xl flex-1 px-4 py-8 md:px-6 md:py-10">
+        <h1 className="sr-only">Anime episodes &amp; series</h1>
         {error && (
           <div className="mb-8 rounded-lg border border-red-400/30 bg-red-900/10 p-4 text-red-400">
             {error}
           </div>
         )}
 
-        {/* Two‑column layout with safety constraints */}
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-10 min-w-0 overflow-hidden">
-            <UpcomingRow items={serializedUpcomingEpisodes} />
-
-            <NewReleasesRow items={serializedRecentEpisodes} />
-
-            <MoviesRow />
+          <div className="space-y-10 min-w-0">
+            <NewReleasesRow items={serializedRecentEpisodes} now={now} />
 
             <PopularTodayRow items={popularToday} />
+
+            <TrendingSeriesSection trendingSeries={trendingSeries} />
+
+            <UpcomingRow items={serializedUpcomingEpisodes} />
+
+            {genres.length > 0 ? (
+              <section aria-labelledby="episodes-genres-heading">
+                <HomeSectionHeading
+                  eyebrow="Find your next watch"
+                  title="Genres"
+                  href="/episodes/browse"
+                  linkLabel="Browse catalog"
+                  id="episodes-genres-heading"
+                  level="h2"
+                />
+                <div className="otk-chip-scroller mt-2" role="group" aria-label="Browse series by genre">
+                  {genres.map((item) => (
+                    <Link
+                      key={item}
+                      href={`/episodes/browse?genre=${encodeURIComponent(item)}`}
+                      className="otk-pill otk-focus"
+                    >
+                      {item}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <MoviesRow />
 
             <RecommendedRow />
 
@@ -154,7 +195,6 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
 
           <EpisodesSidebar trendingSeries={trendingSeries} />
         </div>
-
 
         <PollPlacement source="episodes" className="mx-auto mt-14 max-w-2xl" />
       </main>
