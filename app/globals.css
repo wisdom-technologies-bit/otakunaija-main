@@ -242,5 +242,3 @@
 }
 
 /* Hero progress bar */
-@keyframes hero-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.hero-progress { transform-origin: left; animation: hero-progress 6s linear forwards; }

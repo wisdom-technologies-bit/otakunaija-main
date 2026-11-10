@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { db } from './index'
 import { creators, series, episodes, videos, postViews, episodeViews, episodeDailyViews, episodeWatchPings } from './schema'
-import { eq, ne, asc, desc, and, lt, lte, gt, sql, count } from 'drizzle-orm'
+import { eq, ne, asc, desc, and, lt, lte, gt, inArray, sql, count } from 'drizzle-orm'
 import { normalizeGenreParam, sortGenres, splitGenres, uniqueGenres } from '../genres'
 
 function seriesGenreMatches(genre: string) {
@@ -321,6 +321,44 @@ const _getTrendingSeries = cache(
 
 export async function getTrendingSeries(limit = 5) {
   return _getTrendingSeries(limit)
+}
+
+
+export type SeriesHeroMeta = {
+  episodeCount: number
+  latestEpisodeSlug: string | null
+  latestEpisodeNumber: number | null
+}
+
+/**
+ * Episode counts and latest-episode pointers for a handful of series, for the
+ * /episodes hero. One query: the hero needs to know where "Watch Now" goes
+ * without firing a request per slide.
+ */
+export async function getSeriesHeroMeta(seriesIds: number[]): Promise<Record<number, SeriesHeroMeta>> {
+  const ids = (seriesIds ?? []).filter((id) => Number.isInteger(id))
+  if (ids.length === 0) return {}
+
+  const rows = await db
+    .select({ seriesId: episodes.seriesId, slug: episodes.slug, episodeNumber: episodes.episodeNumber })
+    .from(episodes)
+    .where(inArray(episodes.seriesId, ids))
+    .orderBy(asc(episodes.seriesId), desc(episodes.episodeNumber))
+
+  const meta: Record<number, SeriesHeroMeta> = {}
+  for (const row of rows) {
+    const current = meta[row.seriesId]
+    if (!current) {
+      meta[row.seriesId] = {
+        episodeCount: 1,
+        latestEpisodeSlug: row.slug,
+        latestEpisodeNumber: row.episodeNumber,
+      }
+    } else {
+      current.episodeCount += 1
+    }
+  }
+  return meta
 }
 
 // Series ranked by deduplicated episode views recorded during the current database day.

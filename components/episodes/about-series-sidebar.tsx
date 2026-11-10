@@ -32,7 +32,7 @@ export function AboutSeriesSidebar({ series, episodes, currentEpisodeId }: About
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-foreground">About {series.title}</h2>
         <div className="flex gap-4">
-          <div className="relative aspect-[2/3] w-28 flex-shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted sm:w-32">
+          <div className="otk-side-poster border border-border/60 bg-muted" data-testid="about-series-poster">
             {series.posterImageUrl ? (
               <Image src={series.posterImageUrl} alt={series.title} fill className="object-cover" sizes="128px" />
             ) : (
