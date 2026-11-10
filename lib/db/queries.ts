@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { db } from './index'
 import { creators, series, episodes, videos, postViews, episodeViews, episodeDailyViews, episodeWatchPings } from './schema'
-import { eq, asc, desc, and, lt, lte, gt, sql, count } from 'drizzle-orm'
+import { eq, ne, asc, desc, and, lt, lte, gt, sql, count } from 'drizzle-orm'
 import { normalizeGenreParam, sortGenres, splitGenres, uniqueGenres } from '../genres'
 
 function seriesGenreMatches(genre: string) {
@@ -21,6 +21,9 @@ const _getAllSeriesWithEpisodesForSitemap = cache(
         })
         .from(series)
         .leftJoin(episodes, eq(series.id, episodes.seriesId))
+        // Upcoming titles are `noindex, follow` until they start airing, so
+        // listing them here would only ask crawlers to fetch a page we hide.
+        .where(ne(series.status, 'upcoming'))
 
       const seriesMap = new Map<number, { title: string; slug: string; episodes: { title: string; slug: string; publishedAt: Date | null }[] }>()
 
@@ -302,6 +305,9 @@ const _getTrendingSeries = cache(
         .from(series)
         .leftJoin(creators, eq(series.creatorId, creators.id))
         .leftJoin(episodes, eq(series.id, episodes.seriesId))
+        // Trending is episode-driven: a not-yet-released placeholder has no
+        // episodes and must never appear here.
+        .where(ne(series.status, 'upcoming'))
         .groupBy(series.id, creators.id)
         .orderBy(desc(sql`total_views`))
         .limit(limit)
@@ -352,7 +358,7 @@ export async function getPopularTodaySeries(limit = 10) {
     })
     .from(series)
     .leftJoin(episodes, eq(series.id, episodes.seriesId))
-    .where(seriesGenreMatches(genre))
+    .where(and(seriesGenreMatches(genre), ne(series.status, 'upcoming')))
     .groupBy(series.id)
     .orderBy(desc(sql`total_views`), asc(series.id))
     .limit(limit)
@@ -404,7 +410,19 @@ export async function getPaginatedSeries({
   const offset = Math.max(0, page - 1) * pageSize
   const [items, [{ total }]] = await Promise.all([
     db.select({ series, creator: creators }).from(series).leftJoin(creators, eq(series.creatorId, creators.id)).where(where)
-      .orderBy(sort === 'title' ? asc(series.title) : desc(series.createdAt)).limit(pageSize).offset(offset),
+      .orderBy(
+        ...[
+          sort === 'title'
+            ? asc(series.title)
+            : status === 'upcoming'
+              // Upcoming titles have no episodes yet, so "newest" means
+              // "arriving soonest first"; undated ones sink to the end.
+              ? sql`${series.startDate} ASC NULLS LAST`
+              : desc(series.createdAt),
+          ...(sort === 'title' || status !== 'upcoming' ? [] : [asc(series.title)]),
+        ],
+      )
+      .limit(pageSize).offset(offset),
     db.select({ total: count() }).from(series).where(where),
   ])
   return { items, total: Number(total), page, pageSize, totalPages: Math.max(1, Math.ceil(Number(total) / pageSize)) }

@@ -13,6 +13,9 @@ const nextConfig = {
       // AniList artwork for the upcoming anime cache (s4.anilist.co serves
       // every coverImage/bannerImage URL returned by graphql.anilist.co).
       { protocol: "https", hostname: "s4.anilist.co" },
+      // TMDB title logos (app/api/cron/series-logos). `images.unoptimized` is on,
+      // so this is documentation plus a guarantee if that ever changes.
+      { protocol: "https", hostname: "image.tmdb.org" },
     ],
   },
 }

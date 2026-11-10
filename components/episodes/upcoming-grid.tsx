@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Info } from "lucide-react"
 import { useState } from "react"
 import { Countdown } from "@/components/episodes/countdown"
+import { OnSiteChip } from "@/components/episodes/on-site-chip"
+import { AdminImportButton } from "@/components/episodes/admin-import-button"
 import {
   Dialog,
   DialogContent,
@@ -34,7 +36,16 @@ function readableSource(source: string | null): string | null {
  * description on hover/focus; on touch the little (i) button opens a sheet with
  * the full detail, a trailer link and a Details link.
  */
-export function UpcomingGrid({ items, now }: { items: UpcomingItem[]; now: number }) {
+export function UpcomingGrid({
+  items,
+  now,
+  isAdmin = false,
+}: {
+  items: UpcomingItem[]
+  now: number
+  /** Admins get an "Add to OtakuNaija" action on titles that are not on site. */
+  isAdmin?: boolean
+}) {
   const [selected, setSelected] = useState<UpcomingItem | null>(null)
 
   if (!items.length) return null
@@ -48,7 +59,7 @@ export function UpcomingGrid({ items, now }: { items: UpcomingItem[]; now: numbe
             <li key={item.anilistId} className="min-w-0">
               <article className="otk-card group relative">
                 <Link href={item.href} className="otk-card-link otk-focus">
-                  <div className="otk-card-media relative aspect-[2/3] w-full">
+                  <div className="otk-card-media otk-upcoming-media relative aspect-[2/3] w-full">
                     {item.coverUrl ? (
                       <Image
                         src={item.coverUrl}
@@ -64,9 +75,13 @@ export function UpcomingGrid({ items, now }: { items: UpcomingItem[]; now: numbe
                       </div>
                     )}
 
-                    <span className="otk-chip absolute left-2 top-2 z-[2] bg-[color-mix(in_oklch,var(--otk-bg)_75%,transparent)] backdrop-blur-sm">
-                      {FORMAT_LABELS[item.format ?? ""] ?? item.format ?? "Anime"}
-                    </span>
+                    {/* One chip row, top-left: chips wrap rather than overlap. */}
+                    <div className="otk-badge-row" data-testid="upcoming-badge-row">
+                      <span className="otk-chip bg-[color-mix(in_oklch,var(--otk-bg)_75%,transparent)] backdrop-blur-sm" data-badge="format">
+                        {FORMAT_LABELS[item.format ?? ""] ?? item.format ?? "Anime"}
+                      </span>
+                      {item.onSite ? <OnSiteChip /> : null}
+                    </div>
 
                     {/* Hover / keyboard focus reveal, hidden from touch. */}
                     {item.description ? (
@@ -81,7 +96,6 @@ export function UpcomingGrid({ items, now }: { items: UpcomingItem[]; now: numbe
                       <span className={`otk-chip ${item.startDateIso ? "" : "otk-chip-status-upcoming"}`}>
                         {item.startDateIso ? item.startLabel : "TBA"}
                       </span>
-                      {item.onSite ? <span className="otk-chip otk-chip-accent">On OtakuNaija</span> : null}
                     </div>
 
                     <h3 className="otk-card-title line-clamp-2">{item.title}</h3>
@@ -112,6 +126,12 @@ export function UpcomingGrid({ items, now }: { items: UpcomingItem[]; now: numbe
                 >
                   <Info className="h-4 w-4" aria-hidden="true" />
                 </button>
+
+                {isAdmin && !item.onSite ? (
+                  <div className="px-2 pb-2">
+                    <AdminImportButton anilistId={item.anilistId} title={item.title} compact />
+                  </div>
+                ) : null}
               </article>
             </li>
           )

@@ -95,6 +95,14 @@ export default function AboutPage() {
             </div>
           </section>
 
+          <section className="my-8 rounded-xl border border-border bg-card p-6">
+            <h2 className="font-display text-lg font-semibold">Data and attribution</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Anime metadata and artwork come from AniList and Anivexa, and some title logos come from The Movie
+              Database (TMDB). This product uses the TMDB API but is not endorsed or certified by TMDB.
+            </p>
+          </section>
+
           <section className="my-8">
             <AdSlot slot="in-article" />
           </section>

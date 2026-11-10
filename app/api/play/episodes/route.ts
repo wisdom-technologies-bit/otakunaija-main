@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/index'
 import { episodes, series } from '@/lib/db/schema'
 import { hasValidPlayApiKey, unauthorizedResponse } from '@/lib/play-auth'
@@ -61,12 +61,24 @@ export async function POST(request: Request) {
     if (body.airDate !== null && body.airDate !== undefined) values.publishedAt = new Date(body.airDate)
 
     try {
-      const inserted = await db.insert(episodes).values(values).returning({ id: episodes.id })
+      // The first episode promotes an upcoming series to ongoing in the same
+      // transaction as the insert, so a series can never be "upcoming" with an
+      // episode already published.
+      const inserted = await db.transaction(async (tx) => {
+        const [episode] = await tx.insert(episodes).values(values).returning({ id: episodes.id })
+        if (seriesRow.status === 'upcoming' || seriesRow.isPlaceholder) {
+          await tx
+            .update(series)
+            .set({ status: 'ongoing', isPlaceholder: false })
+            .where(and(eq(series.id, seriesRow.id), sql`${series.status} IS DISTINCT FROM 'completed'`))
+        }
+        return episode
+      })
       const publishedAt = values.publishedAt as Date | undefined
       if (publishedAt && publishedAt >= new Date(Date.now() - 48 * 60 * 60 * 1000)) {
-        void enqueuePushEvent("episode", inserted[0].id).catch(() => {})
+        void enqueuePushEvent("episode", inserted.id).catch(() => {})
       }
-      return Response.json({ episodeId: inserted[0].id, seriesId: seriesRow.id }, { status: 201 })
+      return Response.json({ episodeId: inserted.id, seriesId: seriesRow.id }, { status: 201 })
     } catch (error) {
       if (!isUniqueViolation(error)) throw error
       const raced = (await db.select({ id: episodes.id, seriesId: episodes.seriesId }).from(episodes).where(eq(episodes.playId, body.playId)).limit(1))[0]
