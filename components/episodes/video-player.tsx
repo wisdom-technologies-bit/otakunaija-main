@@ -56,7 +56,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const router = useRouter()
   const [isPlaying, setIsPlaying] = useState(false)
   const [showNextEpisodeOverlay, setShowNextEpisodeOverlay] = useState(false)
-  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(10)
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(5)
   const [showSkipIntro, setShowSkipIntro] = useState(false)
   const [showSkipOutro, setShowSkipOutro] = useState(false)
   const [resolvedPlayback, setResolvedPlayback] = useState<ResolvedPlayback | null>(null)
@@ -114,7 +114,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   useEffect(() => {
     clearNextEpisodeInterval()
     setShowNextEpisodeOverlay(false)
-    setNextEpisodeCountdown(10)
+    setNextEpisodeCountdown(5)
 
     return clearNextEpisodeInterval
   }, [clearNextEpisodeInterval, nextEpisode])
@@ -122,7 +122,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const handleVideoEnded = () => {
     if (!nextEpisode) return
     clearNextEpisodeInterval()
-    setNextEpisodeCountdown(10)
+    setNextEpisodeCountdown(5)
     setShowNextEpisodeOverlay(true)
     nextEpisodeIntervalRef.current = setInterval(() => {
       setNextEpisodeCountdown((countdown) => {

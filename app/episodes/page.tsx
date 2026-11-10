@@ -6,6 +6,7 @@ import {
   getUpcomingEpisodes,
   getTrendingSeries,
   getPopularTodaySeries,
+  getSeriesHeroMeta,
 } from '@/lib/db/queries'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -104,7 +105,20 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
   }))
   const serializedRecentEpisodes = serializeEpisodes(recentEpisodes)
   const serializedUpcomingEpisodes = serializeEpisodes(upcomingEpisodes)
-  const heroSeries = trendingSeries.slice(0, 4).map((item) => item.series)
+  const heroRows = trendingSeries.slice(0, 4).map((item) => item.series)
+  // One extra query for where "Watch Now" lands on each slide (latest episode).
+  let heroMeta: Awaited<ReturnType<typeof getSeriesHeroMeta>> = {}
+  try {
+    heroMeta = await getSeriesHeroMeta(heroRows.map((series) => series.id))
+  } catch (err) {
+    console.error('Error loading hero episode meta:', err)
+  }
+  const heroSeries = heroRows.map((series) => ({
+    ...series,
+    episodeCount: heroMeta[series.id]?.episodeCount,
+    latestEpisodeSlug: heroMeta[series.id]?.latestEpisodeSlug ?? null,
+    latestEpisodeNumber: heroMeta[series.id]?.latestEpisodeNumber ?? null,
+  }))
   const now = Date.now()
 
   return (
@@ -147,13 +161,11 @@ export default async function EpisodesPage({ searchParams }: EpisodesPageProps) 
 
       <SiteHeader />
 
-      {/* Hero carousel + resume watching (untouched hero component) */}
-      <section className="border-b border-border/40 py-4 md:py-6">
-        <div className="mx-auto max-w-7xl px-4 md:px-6">
-          <div className="space-y-4">
-            <SeriesHeroCarousel seriesList={heroSeries} />
-            <ResumeWatchingRow />
-          </div>
+      {/* Full-bleed cinematic hero; the resume rail stays inside the page gutter. */}
+      <section className="pb-4 md:pb-6" aria-label="Featured series">
+        <SeriesHeroCarousel seriesList={heroSeries} />
+        <div className="mx-auto max-w-7xl px-4 pt-3 md:px-6 md:pt-4">
+          <ResumeWatchingRow />
         </div>
       </section>
 

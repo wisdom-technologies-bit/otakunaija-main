@@ -103,25 +103,36 @@ describe("upcoming series page", () => {
   })
 
   it("shows the chip, the release line and the trailer, and no empty episodes panel", () => {
-    expect(page).toContain("seriesStatusLabel(series.status)")
+    // The status chip and the coming label still come from the shared helpers,
+    // now rendered by the hero band and the upcoming panel.
     expect(page).toContain("seriesComingLabel(series)")
-    expect(page).toContain("series-upcoming-panel")
-    expect(page).toContain("Watch trailer")
-    // the upcoming branch renders before the tabbed episodes layout, and gates it
-    expect(page.indexOf("series-upcoming-panel")).toBeLessThan(page.indexOf("<SeriesTabs tabs={tabs} />"))
+    expect(read("components/episodes/series-hero-band.tsx")).toContain("seriesStatusLabel(series.status)")
+    // The upcoming branch renders the not-yet-released panel instead of the tabs.
+    expect(page).toContain("<SeriesUpcomingPanel")
+    expect(page.indexOf("<SeriesUpcomingPanel")).toBeLessThan(page.indexOf("<SeriesTabs tabs={tabs} />"))
     expect(page).toContain("{upcoming ? (")
+    // The trailer action lives in the panel, and only YouTube is embeddable.
+    const panelSource = read("components/episodes/series-upcoming-panel.tsx")
+    expect(panelSource).toContain("<TrailerModal")
+    expect(read("lib/episode-ui.ts")).toContain("youtube-nocookie.com/embed")
+    expect(panelSource).toContain('data-testid="series-upcoming-panel"')
   })
 
   it("renders the title logo without a TMDB call on render", () => {
-    expect(page).toContain("getSeriesLogo(series)")
-    expect(page).not.toContain("fetchLogoFor")
-    expect(page).not.toContain("themoviedb.org")
+    expect(page).toContain("<SeriesHeroBand")
+    expect(read("components/episodes/series-hero-band.tsx")).toContain("logoPath={series.logoPath}")
+    expect(page).not.toMatch(/fetchLogoFor|themoviedb\.org|await logoUrl/)
+    // the reader is a pure URL builder: no fetch happens while rendering
+    const logo = read("components/episodes/series-logo.tsx")
+    expect(logo).toContain("logoUrl(")
+    expect(logo).not.toMatch(/fetch\(|await\s/)
   })
 
   it("shows a series with zero episodes without crashing", () => {
     const panel = read("components/episodes/series-episodes-panel.tsx")
-    expect(panel).toContain("No episodes have been published yet.")
-    expect(panel).toContain("current.length > 0")
+    expect(panel).toContain("No episodes yet")
+    expect(panel).toContain("episodes.length === 0")
+    expect(panel).toContain("visible.length === 0")
   })
 })
 
