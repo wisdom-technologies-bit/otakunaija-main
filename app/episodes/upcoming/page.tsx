@@ -16,6 +16,7 @@ import {
   getUpcomingMovies,
 } from "@/lib/anilist/upcoming-store"
 import { formatRelativeAge, groupByStartMonth, type UpcomingItem } from "@/lib/anilist/upcoming"
+import { getCurrentSession } from "@/lib/auth"
 import {
   VIEW_LABELS,
   buildUpcomingHref,
@@ -57,13 +58,17 @@ export default async function UpcomingAnimePage({ searchParams }: PageProps) {
   const now = new Date()
   const nowMs = now.getTime()
 
-  const [cacheState, week, season, later, movies] = await Promise.all([
+  const [session, cacheState, week, season, later, movies] = await Promise.all([
+    getCurrentSession(),
     getUpcomingCacheState(now),
     params.view === "week" ? getAiringThisWeek(now) : Promise.resolve(null),
     params.view === "season" ? getUpcomingBySeason(now) : Promise.resolve(null),
     params.view === "later" ? getUpcomingFurtherOut(now) : Promise.resolve(null),
     params.view === "movies" ? getUpcomingMovies() : Promise.resolve(null),
   ])
+
+  // Logged-in admins can queue a title that is not on the site yet.
+  const isAdmin = Boolean(session)
 
   const allItems: UpcomingItem[] =
     week?.days.flatMap((day) => day.items) ??
@@ -242,13 +247,13 @@ export default async function UpcomingAnimePage({ searchParams }: PageProps) {
                   >
                     {group.label}
                   </h2>
-                  <UpcomingGrid items={group.items} now={nowMs} />
+                  <UpcomingGrid items={group.items} now={nowMs} isAdmin={isAdmin} />
                 </section>
               ))}
             </div>
           ) : (
             <div className="mt-6">
-              <UpcomingGrid items={paged.items} now={nowMs} />
+              <UpcomingGrid items={paged.items} now={nowMs} isAdmin={isAdmin} />
             </div>
           )}
 

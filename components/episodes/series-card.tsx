@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import type { Series } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
+import { isUpcomingSeries, seriesComingLabel } from "@/lib/series-upcoming"
 
 interface SeriesCardProps {
   series: Series & { episodeCount?: number }
@@ -28,10 +29,13 @@ export function SeriesCard({ series, creatorName, variant = "poster", className,
   const genre = series.genre?.split(",")[0]?.trim() || "Anime"
   const status = series.status ?? "ongoing"
   const statusLabel = STATUS_LABEL[status] ?? status
+  const upcoming = isUpcomingSeries(series)
   const episodeLabel =
-    series.episodeCount !== undefined
+    !upcoming && series.episodeCount !== undefined
       ? `${series.episodeCount} episode${series.episodeCount === 1 ? "" : "s"}`
       : null
+  // A not-yet-released card says when it lands instead of how many episodes exist.
+  const metaLabel = upcoming ? seriesComingLabel(series) : episodeLabel ?? "New series"
 
   if (variant === "default") {
     return (
@@ -118,7 +122,7 @@ export function SeriesCard({ series, creatorName, variant = "poster", className,
           <h3 className="otk-card-title line-clamp-2">{series.title}</h3>
           <p className="otk-card-meta">
             <span>
-              {episodeLabel ?? "New series"} · {statusLabel}
+              {metaLabel} · {statusLabel}
             </span>
           </p>
         </div>

@@ -17,6 +17,17 @@ import { GenreTagger } from '@/components/push/genre-tagger'
 import type { AnimeScheduleInfo } from '@/lib/animeschedule'
 import { SeriesDetails } from '@/components/episodes/series-details'
 import { SeriesTabs, type SeriesTab } from '@/components/episodes/series-tabs'
+import { SeriesTitleLogo } from '@/components/episodes/series-title-logo'
+import { getSeriesLogo } from '@/lib/tmdb/reader'
+import {
+  isUpcomingSeries,
+  seriesComingLabel,
+  seriesStartLabel,
+  seriesStatusClass,
+  seriesStatusLabel,
+  seriesTrailerUrl,
+  upcomingEpisodeCount,
+} from '@/lib/series-upcoming'
 
 export const revalidate = 3600
 
@@ -35,10 +46,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
+  const upcoming = isUpcomingSeries(data.series)
+
   return {
-    title: `${data.series.title}`,
+    title: upcoming ? `${data.series.title} — ${seriesComingLabel(data.series)}` : `${data.series.title}`,
     description: data.series.synopsis || `Watch ${data.series.title} on OtakuNaija.`,
     alternates: { canonical: `/episodes/${data.series.slug}` },
+    // A not-yet-released title has no episodes and no watchable content, so it
+    // stays out of the index (and out of the sitemap) until it starts airing.
+    ...(upcoming ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: data.series.title,
       description: data.series.synopsis || `Watch ${data.series.title} on OtakuNaija.`,
@@ -70,8 +86,13 @@ export default async function SeriesPage({ params }: Props) {
 
   const { series, creator, episodes } = data
   const info = (series.animescheduleData as AnimeScheduleInfo | null) ?? null
+  const upcoming = isUpcomingSeries(series)
+  const upcomingEpisodes = upcomingEpisodeCount(series)
+  const startLabel = seriesStartLabel(series)
+  const trailerUrl = seriesTrailerUrl(series)
+  const logo = getSeriesLogo(series)
   const latestEp = episodes.reduce((m, e) => Math.max(m, e.episodeNumber), 0)
-  const episodeCount = info?.totalEpisodes ?? (latestEp || episodes.length)
+  const episodeCount = info?.totalEpisodes ?? upcomingEpisodes ?? (latestEp || episodes.length)
   const year = info?.year ?? (series.createdAt ? new Date(series.createdAt).getFullYear() : null)
   const genres = info?.genres.length ? info.genres.map((g) => g.name) : splitGenres(series.genre)
   const hasWatch = !!info && (info.streams.length > 0 || !!info.jpnTime || !!info.subTime || !!info.dubTime)
@@ -168,26 +189,49 @@ export default async function SeriesPage({ params }: Props) {
               </div>
             )}
             <div className="min-w-0 space-y-2 md:space-y-3">
+              <SeriesTitleLogo logo={logo} title={series.title} />
               <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl md:text-3xl">{series.title}</h1>
               <div className="flex flex-wrap items-center gap-1.5">
+                <span
+                  className={`otk-chip ${seriesStatusClass(series.status)}`}
+                  data-testid="series-status-chip"
+                  style={{ position: 'static' }}
+                >
+                  {seriesStatusLabel(series.status)}
+                </span>
+                {info?.stats && (
+                  <span className="rounded-full bg-black/50 px-2.5 py-0.5 text-[11px] font-medium text-white">
+                    ★ {info.stats.score.toFixed(1)}
+                  </span>
+                )}
                 {genres.slice(0, 6).map((g) => (
                   <Link key={g} href={`/episodes/browse?genre=${encodeURIComponent(g)}`}
                     className="rounded-full bg-primary/90 px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground hover:bg-primary">
                     {g}
                   </Link>
                 ))}
-                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white ${series.status === 'ongoing' ? 'bg-emerald-900/70' : 'bg-slate-900/70'}`}>
-                  {series.status === 'ongoing' ? 'Ongoing' : 'Completed'}
-                  {info?.stats && (
-                  <span className="rounded-full bg-black/50 px-2.5 py-0.5 text-[11px] font-medium text-white">
-                    ★ {info.stats.score.toFixed(1)}
-                  </span>
-                )}
-                </span>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-foreground/70">
-              {year && <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {year}{info && series.status === 'ongoing' ? ' – Present' : ''}</span>}
-                <span className="inline-flex items-center gap-1.5"><Play className="h-3.5 w-3.5" /> {episodeCount.toLocaleString('en-NG')} Episode{episodeCount !== 1 ? 's' : ''}</span>
+                {upcoming ? (
+                  <span className="inline-flex items-center gap-1.5" data-testid="series-coming-line">
+                    <Calendar className="h-3.5 w-3.5" /> {seriesComingLabel(series)}
+                  </span>
+                ) : (
+                  <>
+                    {year && <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {year}{info && series.status === 'ongoing' ? ' – Present' : ''}</span>}
+                    <span className="inline-flex items-center gap-1.5"><Play className="h-3.5 w-3.5" /> {episodeCount.toLocaleString('en-NG')} Episode{episodeCount !== 1 ? 's' : ''}</span>
+                  </>
+                )}
+                {trailerUrl && (
+                  <a
+                    href={trailerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="otk-focus inline-flex items-center gap-1.5 underline decoration-dotted underline-offset-2 hover:text-foreground"
+                  >
+                    <Play className="h-3.5 w-3.5" /> Watch trailer
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -209,8 +253,55 @@ export default async function SeriesPage({ params }: Props) {
             {/* Creator Credit */}
             {creator && <CreatorCredit creator={creator} />}
 
-            {/* Episodes panel with tabs + sort */}
-            <SeriesTabs tabs={tabs} />
+            {/* An upcoming series has nothing to play yet: no episodes panel with
+                zero rows, just where it stands and when it lands. */}
+            {upcoming ? (
+              <section
+                className="rounded-xl border border-border bg-card p-5"
+                data-testid="series-upcoming-panel"
+                aria-labelledby="series-upcoming-heading"
+              >
+                <h2 id="series-upcoming-heading" className="text-base font-bold text-foreground">
+                  {seriesComingLabel(series)}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {series.synopsis
+                    ? 'Episodes will appear here as soon as the first one airs.'
+                    : 'This title has been announced. Episodes will appear here when it starts airing.'}
+                </p>
+                <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-foreground/70">
+                  <div className="flex gap-1.5">
+                    <dt className="font-semibold">Release</dt>
+                    <dd>{startLabel}</dd>
+                  </div>
+                  {upcomingEpisodes ? (
+                    <div className="flex gap-1.5">
+                      <dt className="font-semibold">Episodes announced</dt>
+                      <dd>{upcomingEpisodes}</dd>
+                    </div>
+                  ) : null}
+                  {series.format ? (
+                    <div className="flex gap-1.5">
+                      <dt className="font-semibold">Format</dt>
+                      <dd>{series.format}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+                {trailerUrl ? (
+                  <a
+                    href={trailerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="otk-pill otk-focus mt-4 inline-flex"
+                    data-testid="series-trailer-link"
+                  >
+                    Watch trailer
+                  </a>
+                ) : null}
+              </section>
+            ) : (
+              <SeriesTabs tabs={tabs} />
+            )}
           </div>
 
           {/* Sidebar (desktop) */}

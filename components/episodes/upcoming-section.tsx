@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Countdown } from "@/components/episodes/countdown"
+import { OnSiteChip } from "@/components/episodes/on-site-chip"
 import { SectionTitle } from "@/components/episodes/section-title"
 import { ScrollRow } from "@/components/shared/scroll-row"
 import { daysUntil, type UpcomingItem } from "@/lib/anilist/upcoming"
@@ -115,7 +116,7 @@ export function UpcomingSection({
                   href={item.href}
                   className="otk-focus group w-[8.5rem] shrink-0 sm:w-36"
                 >
-                  <div className="otk-card-media relative aspect-[2/3] w-full overflow-hidden rounded-[var(--otk-radius)]">
+                  <div className="otk-card-media otk-upcoming-media relative aspect-[2/3] w-full overflow-hidden rounded-[var(--otk-radius)]">
                     {item.coverUrl ? (
                       <Image
                         src={item.coverUrl}
@@ -125,12 +126,13 @@ export function UpcomingSection({
                         className="object-cover transition-transform group-hover:scale-105"
                       />
                     ) : null}
-                    <span className="otk-chip absolute left-1.5 top-1.5 bg-black/65 text-white backdrop-blur-sm">
-                      {FORMAT_LABELS[item.format ?? ""] ?? item.format ?? "Anime"}
-                    </span>
-                    {item.onSite ? (
-                      <span className="otk-chip otk-chip-accent absolute right-1.5 top-1.5">On OtakuNaija</span>
-                    ) : null}
+                    {/* One chip row, top-left: chips wrap rather than overlap. */}
+                    <div className="otk-badge-row" data-testid="upcoming-badge-row">
+                      <span className="otk-chip bg-black/65 text-white backdrop-blur-sm" data-badge="format">
+                        {FORMAT_LABELS[item.format ?? ""] ?? item.format ?? "Anime"}
+                      </span>
+                      {item.onSite ? <OnSiteChip /> : null}
+                    </div>
                   </div>
                   <p className="mt-2 line-clamp-2 text-sm font-medium text-foreground group-hover:text-primary">
                     {item.title}

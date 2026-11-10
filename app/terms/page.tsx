@@ -68,6 +68,12 @@ export default function TermsPage() {
               purpose. Reviews represent the opinions of individual writers.
             </p>
 
+            <h2>Third-party data and attribution</h2>
+            <p>
+              Series metadata and artwork come from AniList, Anivexa and The Movie Database (TMDB). This product uses
+              the TMDB API but is not endorsed or certified by TMDB.
+            </p>
+
             <h2>Affiliate links and ads</h2>
             <p>
               Some pages contain affiliate links and Google AdSense advertisements. We may earn a commission from

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, date, integer, boolean, jsonb, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, timestamp, date, integer, boolean, jsonb, real, unique, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import type { AnimeScheduleInfo } from '@/lib/animeschedule'
 import { relations, sql } from 'drizzle-orm'
 
@@ -20,8 +20,10 @@ export const series = pgTable('series', {
   title: text('title').notNull(),
   slug: text('slug').notNull().unique(),
   synopsis: text('synopsis'),
+  // Also the banner: there is no separate banner column (see docs/sql/series-upcoming-logos.sql).
   coverImageUrl: text('cover_image_url'),
   posterImageUrl: text('poster_image_url'),
+  // 'ongoing' | 'completed' | 'upcoming'
   status: text('status').default('ongoing'),
   genre: text('genre'),
   anilistId: integer('anilist_id').unique(),
@@ -30,7 +32,51 @@ export const series = pgTable('series', {
   animescheduleData: jsonb('animeschedule_data').$type<AnimeScheduleInfo>(),
   animescheduleSyncedAt: timestamp('animeschedule_synced_at', { withTimezone: true }),
   createdAt: timestamp('created_at').defaultNow(),
-})
+
+  // Upcoming-release metadata, written by the play service (POST /api/play/anime).
+  format: text('format'),
+  startDate: date('start_date'),
+  startYear: integer('start_year'),
+  startMonth: integer('start_month'),
+  season: text('season'),
+  seasonYear: integer('season_year'),
+  popularity: integer('popularity'),
+  trailerSite: text('trailer_site'),
+  trailerId: text('trailer_id'),
+  episodesTotal: integer('episodes_total'),
+  durationMinutes: integer('duration_minutes'),
+  source: text('source'),
+  // True while the series exists only because AniList announced it.
+  isPlaceholder: boolean('is_placeholder').notNull().default(false),
+
+  // TMDB identity + cached title logo (app/api/cron/series-logos).
+  tmdbId: integer('tmdb_id'),
+  tmdbMedia: text('tmdb_media').$type<'tv' | 'movie'>(),
+  tmdbSeason: integer('tmdb_season'),
+  imdbId: text('imdb_id'),
+  logoPath: text('logo_path'),
+  logoAspectRatio: real('logo_aspect_ratio'),
+  logoWidth: integer('logo_width'),
+  logoStatus: text('logo_status').$type<'found' | 'none' | 'error'>(),
+  logoCheckedAt: timestamp('logo_checked_at', { withTimezone: true }),
+}, (table) => [
+  // The logo cron's work queue.
+  index('series_logo_pending_idx').on(table.logoCheckedAt).where(sql`${table.logoPath} IS NULL`),
+  index('series_status_start_date_idx').on(table.status, table.startDate),
+])
+
+/**
+ * Admin "Import by AniList ID" log. The play service owns the request queue;
+ * this only records what was asked for, so the admin page can list the last 20.
+ */
+export const animeImportLog = pgTable('anime_import_log', {
+  id: serial('id').primaryKey(),
+  anilistId: integer('anilist_id').notNull(),
+  requestedBy: text('requested_by'),
+  status: text('status').notNull().$type<'placeholder' | 'queued' | 'error'>(),
+  message: text('message'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [index('anime_import_log_created_idx').on(table.createdAt)])
 
 export const videos = pgTable('videos', {
   id: serial('id').primaryKey(),

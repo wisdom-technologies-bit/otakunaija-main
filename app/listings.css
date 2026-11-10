@@ -136,6 +136,40 @@
   color: oklch(0.16 0.01 280);
 }
 
+/* One badge row in the top-left corner of a poster.
+   Chips wrap inside the row instead of being pinned to opposite corners, which
+   is what used to make them collide on narrow phone posters. */
+.otk-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  inset-inline-start: 0.5rem;
+  max-width: calc(100% - 16px);
+  position: absolute;
+  top: 0.5rem;
+  z-index: 2;
+}
+
+/* Container for the poster so the "on site" chip can size itself to the card,
+   not the viewport: compact under 11rem wide, full text from 11rem up. */
+.otk-upcoming-media {
+  container-type: inline-size;
+}
+
+.otk-chip-onsite-full {
+  display: none;
+}
+
+@container (min-width: 11rem) {
+  .otk-chip-onsite-short {
+    display: none;
+  }
+
+  .otk-chip-onsite-full {
+    display: inline;
+  }
+}
+
 /* ---------- cards ---------- */
 .otk-card {
   background: var(--otk-surface);
