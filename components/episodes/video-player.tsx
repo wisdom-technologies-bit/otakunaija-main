@@ -30,6 +30,7 @@ import {
   type PlayerFailure,
 } from '@/lib/player/diagnostics'
 import { StartWatchdog } from '@/lib/player/start-watchdog'
+import { STALL_GRACE_MS, describeBufferStall, isBufferStall } from '@/lib/player/buffer-stall'
 
 interface VideoPlayerProps {
   videoUrl: string | null
@@ -102,6 +103,9 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const plyrInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nextEpisodeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const sourceGenerationRef = useRef(0)
+  /** The fragment in flight, kept for a stall report. Redacted when reported. */
+  const lastFragmentUrlRef = useRef<string | null>(null)
+  const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [playerEpoch, setPlayerEpoch] = useState(0)
   /** Set once, when the native path fails and hls.js is available to take over. */
   const [forceHls, setForceHls] = useState(false)
@@ -452,20 +456,55 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       let recoveredMedia = false
 
       hls.on(Hls.Events.MANIFEST_LOADED, () => instance.noteManifestLoaded())
+      const clearStallTimer = () => {
+        if (stallTimerRef.current) {
+          clearTimeout(stallTimerRef.current)
+          stallTimerRef.current = null
+        }
+      }
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => instance.noteManifestLoaded())
-      hls.on(Hls.Events.FRAG_LOADING, () => instance.noteFragmentLoading())
+      hls.on(Hls.Events.FRAG_LOADING, (_event, data) => {
+        instance.noteFragmentLoading()
+        const frag = (data as { frag?: { url?: string } } | undefined)?.frag
+        lastFragmentUrlRef.current = typeof frag?.url === 'string' ? frag.url : null
+      })
       // hls.js 1.7 no longer emits FRAG_LOAD_PROGRESS, so "bytes are still
       // arriving" is read from the media element itself: `buffered.end()` grows
       // as the fragment is appended and is the one progress signal both the
       // hls.js path and the native path share.
       const onProgress = () => {
+        // Data is moving again: a stall that was being timed has recovered.
+        clearStallTimer()
         const buffered = video.buffered
         instance.noteProgress(buffered.length > 0 ? buffered.end(buffered.length - 1) : video.currentTime)
       }
       video.addEventListener('progress', onProgress)
-      hls.on(Hls.Events.FRAG_LOADED, () => instance.noteProgress(Number.MAX_SAFE_INTEGER))
+      hls.on(Hls.Events.FRAG_LOADED, () => {
+        clearStallTimer()
+        instance.noteProgress(Number.MAX_SAFE_INTEGER)
+      })
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
+        // A buffer stall is not a dead provider: hls.js recovers by itself. It is
+        // recorded at once with the fragment that was in flight, and only
+        // escalated once it has outlived the watchdog's no-progress budget.
+        if (isBufferStall(data.details)) {
+          const reported = describeBufferStall({ fragmentUrl: lastFragmentUrlRef.current, stalledForMs: 0 })
+          logPlayerEvent(reported.code, reported.detail)
+          if (!stallTimerRef.current) {
+            const startedAt = Date.now()
+            stallTimerRef.current = setTimeout(() => {
+              stallTimerRef.current = null
+              handlePlaybackFailure(describeBufferStall({
+                fragmentUrl: lastFragmentUrlRef.current,
+                stalledForMs: Date.now() - startedAt,
+              }))
+            }, STALL_GRACE_MS)
+          }
+          return
+        }
+
         const described = describeHlsError(data)
         if (!data.fatal) {
           // Non-fatal noise (a retried fragment, a subtitle track) is recorded
@@ -494,6 +533,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       instance.start()
 
       detach.push(() => {
+        clearStallTimer()
         video.removeEventListener('progress', onProgress)
         hls.destroy()
         if (hlsInstanceRef.current === hls) hlsInstanceRef.current = null

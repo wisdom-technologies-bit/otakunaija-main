@@ -79,9 +79,15 @@ export interface HlsConfigInput {
  * `abrEwmaDefaultEstimate` seeds that choice low (~480p, 800 kbit/s) so the
  * first fragment is small and the picture starts instead of stalling on a
  * multi-megabyte 1080p segment. `capLevelToPlayerSize` stops a phone from being
- * handed a level its viewport cannot show. The loader timeouts are deliberately
- * generous: a cold provider resolve plus a proxied manifest can take longer than
- * hls.js's 10 s default, and a timeout there looks identical to a dead provider.
+ * handed a level its viewport cannot show.
+ *
+ * The two loader budgets are deliberately different. The MANIFEST keeps a
+ * generous 20 s, because a cold provider resolve plus a proxied manifest can take
+ * longer than hls.js's 10 s default and a timeout there looks identical to a dead
+ * provider. A FRAGMENT gets 15 s instead of 30 s: a stalled fragment is what the
+ * viewer sees as a frozen picture, and 30 s of nothing before the first retry is
+ * longer than anyone waits. Four retries with a 750 ms delay still ride out a
+ * transient CDN stall without a visible gap.
  */
 export function buildHlsConfig(input: HlsConfigInput = {}) {
   return {
@@ -92,10 +98,11 @@ export function buildHlsConfig(input: HlsConfigInput = {}) {
     maxMaxBufferLength: 60,
     manifestLoadingTimeOut: 20_000,
     manifestLoadingMaxRetry: 2,
-    levelLoadingTimeOut: 20_000,
+    levelLoadingTimeOut: 15_000,
     levelLoadingMaxRetry: 3,
-    fragLoadingTimeOut: 30_000,
+    fragLoadingTimeOut: 15_000,
     fragLoadingMaxRetry: 4,
+    fragLoadingRetryDelay: 750,
     ...(typeof input.playerWidth === 'number' && input.playerWidth > 0
       ? { capLevelToPlayerSize: true }
       : {}),

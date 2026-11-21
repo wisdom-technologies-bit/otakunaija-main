@@ -79,10 +79,16 @@ describe('buildHlsConfig', () => {
     expect(config.capLevelToPlayerSize).toBe(true)
   })
 
-  it('gives the loaders more time than the hls.js defaults', () => {
+  it('keeps the manifest budget but fails a stalled fragment quickly', () => {
     const config = buildHlsConfig()
-    expect(config.manifestLoadingTimeOut).toBeGreaterThan(10_000)
-    expect(config.fragLoadingTimeOut).toBeGreaterThan(20_000)
-    expect(config.fragLoadingMaxRetry).toBeGreaterThanOrEqual(3)
+    // A cold provider resolve plus a proxied manifest can still take 20 s.
+    expect(config.manifestLoadingTimeOut).toBe(20_000)
+    expect(config.manifestLoadingMaxRetry).toBe(2)
+    expect(config.levelLoadingTimeOut).toBe(15_000)
+    // A fragment that never arrives must not hold the picture for 30 s.
+    expect(config.fragLoadingTimeOut).toBe(15_000)
+    expect(config.fragLoadingMaxRetry).toBe(4)
+    expect(config.fragLoadingRetryDelay).toBeGreaterThanOrEqual(500)
+    expect(config.fragLoadingRetryDelay).toBeLessThanOrEqual(1_000)
   })
 })
