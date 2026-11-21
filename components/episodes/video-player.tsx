@@ -3,11 +3,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Loader2, Play } from 'lucide-react'
+import { Loader2, Play, RotateCcw } from 'lucide-react'
 import * as PlyrModule from 'plyr'
 
 const Plyr = PlyrModule.default
 import 'plyr/dist/plyr.css'
+
+import {
+  buildHlsConfig,
+  choosePlaybackMode,
+  type PlaybackMode,
+} from '@/lib/player/playback-strategy'
+import {
+  describeHlsError,
+  describeMediaError,
+  describeResolveStatus,
+  describeTimeout,
+  logPlayerEvent,
+  overlayMessage,
+  recentPlayerEvents,
+  redactUrl,
+  resetPlayerEvents,
+  subscribePlayerEvents,
+  type PlayerCode,
+  type PlayerEvent,
+  type PlayerFailure,
+} from '@/lib/player/diagnostics'
+import { StartWatchdog } from '@/lib/player/start-watchdog'
 
 interface VideoPlayerProps {
   videoUrl: string | null
@@ -41,6 +63,9 @@ interface ResolvedPlayback {
   server: string | null
 }
 
+/** Plyr's constructor type is a namespace in its own typings; only destroy is used. */
+type PlyrInstance = { destroy: () => void }
+
 function isHlsStream(url: string, type: string): boolean {
   try {
     return type === 'hls' || /\.m3u8$/i.test(new URL(url, window.location.origin).pathname)
@@ -51,6 +76,8 @@ function isHlsStream(url: string, type: string): boolean {
 
 const PLAY_RESOLVE_BASE_URL = 'https://play.otakunaija.name.ng'
 const MAX_RETRY_ATTEMPTS = 4
+/** A resolve that never answers is a spinner forever; the old code had no limit. */
+const RESOLVE_TIMEOUT_MS = 30_000
 
 export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playId, nextEpisode = null }: VideoPlayerProps) {
   const router = useRouter()
@@ -61,20 +88,23 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   const [showSkipOutro, setShowSkipOutro] = useState(false)
   const [resolvedPlayback, setResolvedPlayback] = useState<ResolvedPlayback | null>(null)
   const [isResolving, setIsResolving] = useState(Boolean(playId?.trim()))
-  const [resolveFailed, setResolveFailed] = useState(false)
+  const [failure, setFailure] = useState<(PlayerFailure & { detail?: string }) | null>(null)
   const [excludedCandidates, setExcludedCandidates] = useState<string[]>([])
   const [retryAttempt, setRetryAttempt] = useState(0)
   const [retryStatus, setRetryStatus] = useState<'idle' | 'retrying' | 'exhausted'>('idle')
+  const [playbackMode, setPlaybackMode] = useState<PlaybackMode | null>(null)
+  const [debugEvents, setDebugEvents] = useState<PlayerEvent[]>([])
+  const [debugEnabled, setDebugEnabled] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const playerRef = useRef<Plyr | null>(null)
+  const playerRef = useRef<PlyrInstance | null>(null)
   const hlsInstanceRef = useRef<import('hls.js').default | null>(null)
   const retryStatusRef = useRef(retryStatus)
-  const playbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const plyrInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nextEpisodeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const sourceGenerationRef = useRef(0)
-  const [hlsMode, setHlsMode] = useState<'pending' | 'native' | 'hls' | 'fallback'>('pending')
   const [playerEpoch, setPlayerEpoch] = useState(0)
+  /** Set once, when the native path fails and hls.js is available to take over. */
+  const [forceHls, setForceHls] = useState(false)
 
   // Plyr mutates the video subtree. Destroy it before React replaces that subtree
   // so Plyr cannot remove nodes that React has already detached.
@@ -96,6 +126,11 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
   useEffect(() => {
     retryStatusRef.current = retryStatus
   }, [retryStatus])
+
+  useEffect(() => {
+    setDebugEnabled(new URLSearchParams(window.location.search).get('debug') === '1')
+    return subscribePlayerEvents(setDebugEvents)
+  }, [])
 
   const clearNextEpisodeInterval = useCallback(() => {
     if (nextEpisodeIntervalRef.current) {
@@ -135,12 +170,17 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
     }, 1000)
   }
 
-  const resolvePlayback = useCallback(async (excludeList: string[]) => {
+  const fail = useCallback((next: PlayerFailure & { detail?: string }) => {
+    logPlayerEvent(next.code, next.detail ?? '')
+    setFailure(next)
+  }, [])
+
+  const resolvePlayback = useCallback(async (excludeList: string[], attempt = 0) => {
     const normalizedPlayId = playId?.trim()
     if (!normalizedPlayId) return
 
     const controller = new AbortController()
-    let retryingWithoutStream = false
+    const timer = setTimeout(() => controller.abort(), RESOLVE_TIMEOUT_MS)
 
     // Clean up third-party DOM mutations before React changes the player state.
     // This prevents Plyr from trying to remove nodes React has already detached.
@@ -153,27 +193,50 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
         `${PLAY_RESOLVE_BASE_URL}/api/watch/${encodeURIComponent(normalizedPlayId)}${query}`,
         { signal: controller.signal },
       )
-      if (!response.ok) throw new Error(`Playback resolution failed: ${response.status}`)
+      if (!response.ok) {
+        let bodyError = ''
+        try {
+          const body: unknown = await response.json()
+          if (body && typeof body === 'object' && typeof (body as { error?: unknown }).error === 'string') {
+            bodyError = (body as { error: string }).error
+          }
+        } catch {
+          // A non-JSON error page (an edge 5xx) is still an error status.
+        }
+        const next = describeResolveStatus(response.status, bodyError)
+        fail({ ...next, detail: `playId=${normalizedPlayId} status=${response.status}${bodyError ? ` error=${bodyError}` : ''}` })
+        setFailure({ ...next, detail: bodyError })
+        if (next.retryable && attempt < MAX_RETRY_ATTEMPTS) {
+          setRetryStatus('exhausted')
+          retryStatusRef.current = 'exhausted'
+        }
+        return
+      }
       const data = await response.json()
       if (typeof data.streamUrl !== 'string' || !data.streamUrl) {
         const provider = typeof data.provider === 'string' ? data.provider : ''
         const server = typeof data.server === 'string' ? data.server : ''
-        const unavailableCandidate = provider ? `${provider}:${server || 'default'}` : null
-        const nextExcludedList = unavailableCandidate
-          ? Array.from(new Set([...excludeList, unavailableCandidate]))
+        const candidate = provider ? `${provider}:${server || 'default'}` : null
+        const nextExcludedList = candidate
+          ? Array.from(new Set([...excludeList, candidate]))
           : excludeList
 
-        if (unavailableCandidate && nextExcludedList.length > excludeList.length && excludeList.length < MAX_RETRY_ATTEMPTS) {
-          retryingWithoutStream = true
+        if (candidate && nextExcludedList.length > excludeList.length && attempt < MAX_RETRY_ATTEMPTS) {
           setExcludedCandidates(nextExcludedList)
-          setRetryAttempt((attempt) => attempt + 1)
+          setRetryAttempt(attempt + 1)
           setRetryStatus('retrying')
           retryStatusRef.current = 'retrying'
-          await resolvePlayback(nextExcludedList)
+          await resolvePlayback(nextExcludedList, attempt + 1)
           return
         }
 
-        throw new Error('Missing stream URL')
+        fail({
+          code: 'PLAY_NO_STREAM_URL',
+          message: 'The play service returned no stream',
+          retryable: attempt < MAX_RETRY_ATTEMPTS,
+          detail: `playId=${normalizedPlayId} provider=${provider || 'none'}`,
+        })
+        return
       }
       const subtitles: ResolvedSubtitle[] = Array.isArray(data.subtitles)
         ? data.subtitles.flatMap((track: { url?: unknown; srclang?: unknown; label?: unknown; default?: unknown }) => {
@@ -195,13 +258,15 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
           ? { start: candidate.start, end: candidate.end }
           : null
       }
-      if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current)
 
       setShowSkipIntro(false)
       setShowSkipOutro(false)
 
       sourceGenerationRef.current += 1
       setPlayerEpoch((epoch) => epoch + 1)
+      const provider = typeof data.provider === 'string' ? data.provider : ''
+      const server = typeof data.server === 'string' ? data.server : null
+      logPlayerEvent('PLAY_RESOLVE_OK', `provider=${provider || 'unknown'} server=${server ?? 'default'} type=${typeof data.type === 'string' ? data.type : 'mp4'}`)
       setResolvedPlayback({
         streamUrl: data.streamUrl.startsWith('http') ? data.streamUrl : `${PLAY_RESOLVE_BASE_URL}${data.streamUrl}`,
         subtitleUrl: rawSubtitleUrl
@@ -214,59 +279,71 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
         intro: normalizeRange(data.intro),
         outro: normalizeRange(data.outro),
         type: typeof data.type === 'string' ? data.type : 'mp4',
-        provider: typeof data.provider === 'string' ? data.provider : '',
-        server: typeof data.server === 'string' ? data.server : null,
+        provider,
+        server,
       })
-      setResolveFailed(false)
+      setFailure(null)
       setRetryStatus('idle')
       retryStatusRef.current = 'idle'
     } catch (error: unknown) {
-      if (error instanceof DOMException && error.name === 'AbortError') return
-      console.error('Failed to resolve episode playback', error)
-      if (retryStatusRef.current === 'retrying') {
-        // Keep the "Switching provider..." overlay visible for a moment before the error
-        await new Promise((resolve) => setTimeout(resolve, 1200))
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        fail({
+          code: 'PLAY_RESOLVE_TIMEOUT',
+          message: 'The play service did not answer',
+          retryable: true,
+          detail: `playId=${normalizedPlayId} after ${RESOLVE_TIMEOUT_MS}ms`,
+        })
+        return
       }
-      if (retryStatusRef.current === 'retrying' && excludeList.length > 0) {
-        setRetryStatus('exhausted')
-        retryStatusRef.current = 'exhausted'
-      }
-      setResolveFailed(true)
+      // A rejected fetch is what the browser reports for CORS, DNS and offline.
+      // It carries no status, which is exactly why it needs its own code.
+      fail({
+        code: 'PLAY_RESOLVE_NETWORK',
+        message: 'Could not reach the play service',
+        retryable: true,
+        detail: `playId=${normalizedPlayId} ${error instanceof Error ? error.name : 'unknown'}`,
+      })
     } finally {
-      if (!controller.signal.aborted && !retryingWithoutStream) setIsResolving(false)
+      clearTimeout(timer)
+      setIsResolving(false)
     }
-  }, [destroyPlayer, playId])
+  }, [fail, playId])
 
-  const handlePlaybackFailure = useCallback(() => {
+  const handlePlaybackFailure = useCallback((next: PlayerFailure & { detail?: string }) => {
     if (retryStatusRef.current === 'retrying') return
-    if (retryAttempt >= MAX_RETRY_ATTEMPTS || !resolvedPlayback) {
+    fail(next)
+
+    if (!next.retryable || retryAttempt >= MAX_RETRY_ATTEMPTS || !resolvedPlayback) {
       setRetryStatus('exhausted')
       retryStatusRef.current = 'exhausted'
-      setResolveFailed(true)
+      logPlayerEvent('PLAYER_EXHAUSTED', `${next.code} attempts=${retryAttempt}`)
       return
     }
 
     const candidate = `${resolvedPlayback.provider}:${resolvedPlayback.server ?? 'default'}`
     const newExcludedList = Array.from(new Set([...excludedCandidates, candidate]))
     setExcludedCandidates(newExcludedList)
-    setRetryAttempt((attempt) => attempt + 1)
+    setRetryAttempt(retryAttempt + 1)
     setRetryStatus('retrying')
     retryStatusRef.current = 'retrying'
     hlsInstanceRef.current?.destroy()
     hlsInstanceRef.current = null
-    resolvePlayback(newExcludedList)
-  }, [destroyPlayer, excludedCandidates, resolvePlayback, resolvedPlayback, retryAttempt])
+    resolvePlayback(newExcludedList, retryAttempt + 1)
+  }, [excludedCandidates, fail, resolvePlayback, resolvedPlayback, retryAttempt])
 
   useEffect(() => {
     const normalizedPlayId = playId?.trim()
     destroyPlayer()
+    resetPlayerEvents()
     setExcludedCandidates([])
     setRetryAttempt(0)
     setRetryStatus('idle')
     retryStatusRef.current = 'idle'
     setResolvedPlayback(null)
-    setResolveFailed(false)
+    setFailure(null)
     setIsPlaying(false)
+    setForceHls(false)
+    setPlaybackMode(null)
     if (!normalizedPlayId) {
       setIsResolving(false)
       return
@@ -280,81 +357,155 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
   useEffect(() => {
     let cancelled = false
-    if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current)
+    let watchdog: StartWatchdog | null = null
+    const detach: Array<() => void> = []
 
-    if (!isPlaying || !sourceUrl || !sourceIsHls || !videoRef.current) {
-      hlsInstanceRef.current?.destroy()
-      hlsInstanceRef.current = null
-      setHlsMode(sourceIsHls ? 'pending' : 'native')
-      if (isPlaying && sourceUrl && videoRef.current) {
-        const generation = sourceGenerationRef.current
-        playbackTimeoutRef.current = setTimeout(() => {
-          const readyState = videoRef.current?.readyState ?? 0
-          if (!cancelled && generation === sourceGenerationRef.current && readyState <= 1) handlePlaybackFailure()
-        }, 12000)
-      }
-      return () => {
-        cancelled = true
-        if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current)
-      }
+    hlsInstanceRef.current?.destroy()
+    hlsInstanceRef.current = null
+
+    const cleanup = () => {
+      cancelled = true
+      watchdog?.cancel()
+      watchdog = null
+      for (const off of detach) off()
     }
+
+    if (!isPlaying || !sourceUrl || !videoRef.current) return cleanup
 
     const video = videoRef.current
-    const clearPlaybackTimeout = () => {
-      if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current)
-    }
-    video.addEventListener('canplay', clearPlaybackTimeout)
-    video.addEventListener('loadeddata', clearPlaybackTimeout)
     const generation = sourceGenerationRef.current
-    playbackTimeoutRef.current = setTimeout(() => {
-      if (generation === sourceGenerationRef.current && video.readyState <= 1) handlePlaybackFailure()
-    }, 12000)
+    const alive = () => !cancelled && generation === sourceGenerationRef.current
 
-    const nativeHlsSupported = video.canPlayType('application/vnd.apple.mpegurl') !== ''
-    if (nativeHlsSupported) {
-      setHlsMode('native')
-      return () => {
-        cancelled = true
-        clearPlaybackTimeout()
-        video.removeEventListener('canplay', clearPlaybackTimeout)
-        video.removeEventListener('loadeddata', clearPlaybackTimeout)
-        hlsInstanceRef.current?.destroy()
-        hlsInstanceRef.current = null
-      }
+    const watch = (onExpire: (reason: 'no-fragment' | 'no-progress' | 'hard-cap') => void) => {
+      const instance = new StartWatchdog({
+        onExpire: (reason) => {
+          if (alive()) onExpire(reason)
+        },
+      })
+      watchdog = instance
+      return instance
     }
 
-    setHlsMode('pending')
+    // A progressive file needs no hls.js: the <source> below is enough.
+    if (!sourceIsHls) {
+      setPlaybackMode('native')
+      const instance = watch((reason) => handlePlaybackFailure(describeTimeout(reason)))
+      const ready = () => instance.notePlaying()
+      video.addEventListener('canplay', ready)
+      video.addEventListener('loadeddata', ready)
+      detach.push(() => {
+        video.removeEventListener('canplay', ready)
+        video.removeEventListener('loadeddata', ready)
+      })
+      instance.start()
+      return cleanup
+    }
+
     import('hls.js').then(({ default: Hls }) => {
-      if (cancelled) return
-      if (!Hls.isSupported()) {
-        setHlsMode('fallback')
+      if (cancelled || !alive()) return
+
+      const nativeSupport = video.canPlayType('application/vnd.apple.mpegurl')
+      const decision = forceHls
+        ? { mode: 'hlsjs' as PlaybackMode, reason: 'forced-after-native-error', userAgentClass: 'unknown' as const }
+        : choosePlaybackMode({
+            nativeHlsSupport: nativeSupport,
+            hlsJsSupported: Hls.isSupported(),
+            userAgent: typeof navigator === 'undefined' ? '' : navigator.userAgent,
+          })
+      // The one line that makes a phone screenshot diagnosable.
+      logPlayerEvent(
+        'PLAYER_MODE',
+        `${decision.mode} reason=${decision.reason} canPlayType=${nativeSupport || 'empty'} mse=${Hls.isSupported()}`,
+      )
+      setPlaybackMode(decision.mode)
+
+      if (decision.mode === 'native') {
+        // No MSE: the browser's own HLS player is the only option. Its failures
+        // used to surface as a silent 12 s timeout; now they carry a code.
+        const instance = watch((reason) => handlePlaybackFailure(describeTimeout(reason)))
+        const ready = () => instance.notePlaying()
+        const onError = () => {
+          if (!alive()) return
+          instance.cancel()
+          handlePlaybackFailure(describeMediaError(video.error))
+        }
+        video.addEventListener('canplay', ready)
+        video.addEventListener('loadeddata', ready)
+        video.addEventListener('error', onError)
+        detach.push(() => {
+          video.removeEventListener('canplay', ready)
+          video.removeEventListener('loadeddata', ready)
+          video.removeEventListener('error', onError)
+        })
+        instance.start()
         return
       }
 
-      const hls = new Hls()
+      if (decision.mode === 'fallback' || !Hls.isSupported()) {
+        setPlaybackMode('fallback')
+        return
+      }
+
+      const hls = new Hls(buildHlsConfig())
       hlsInstanceRef.current = hls
+      const instance = watch((reason) => handlePlaybackFailure(describeTimeout(reason)))
+      let recoveredMedia = false
+
+      hls.on(Hls.Events.MANIFEST_LOADED, () => instance.noteManifestLoaded())
+      hls.on(Hls.Events.MANIFEST_PARSED, () => instance.noteManifestLoaded())
+      hls.on(Hls.Events.FRAG_LOADING, () => instance.noteFragmentLoading())
+      // hls.js 1.7 no longer emits FRAG_LOAD_PROGRESS, so "bytes are still
+      // arriving" is read from the media element itself: `buffered.end()` grows
+      // as the fragment is appended and is the one progress signal both the
+      // hls.js path and the native path share.
+      const onProgress = () => {
+        const buffered = video.buffered
+        instance.noteProgress(buffered.length > 0 ? buffered.end(buffered.length - 1) : video.currentTime)
+      }
+      video.addEventListener('progress', onProgress)
+      hls.on(Hls.Events.FRAG_LOADED, () => instance.noteProgress(Number.MAX_SAFE_INTEGER))
+
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) handlePlaybackFailure()
+        const described = describeHlsError(data)
+        if (!data.fatal) {
+          // Non-fatal noise (a retried fragment, a subtitle track) is recorded
+          // but never ends playback.
+          logPlayerEvent(described.code, described.detail)
+          return
+        }
+        instance.cancel()
+        // One media-error recovery before blaming the provider: a decoder
+        // hiccup on a valid segment is not a dead stream.
+        if (/mediaError/i.test(String(data.type ?? '')) && !recoveredMedia) {
+          recoveredMedia = true
+          logPlayerEvent(described.code, `${described.detail} recovering`)
+          try {
+            hls.recoverMediaError()
+            return
+          } catch {
+            // fall through to the normal failure path
+          }
+        }
+        handlePlaybackFailure(described)
       })
+
       hls.loadSource(sourceUrl)
       hls.attachMedia(video)
-      setHlsMode('hls')
-    }).catch((error) => {
-      if (!cancelled) {
-        console.error('Failed to initialize HLS playback', error)
-        setHlsMode('fallback')
-      }
+      instance.start()
+
+      detach.push(() => {
+        video.removeEventListener('progress', onProgress)
+        hls.destroy()
+        if (hlsInstanceRef.current === hls) hlsInstanceRef.current = null
+      })
+    }).catch(() => {
+      if (cancelled) return
+      logPlayerEvent('HLS_FATAL_OTHER', 'hls.js chunk failed to load')
+      setPlaybackMode('fallback')
     })
 
-    return () => {
-      cancelled = true
-      clearPlaybackTimeout()
-      video.removeEventListener('canplay', clearPlaybackTimeout)
-      video.removeEventListener('loadeddata', clearPlaybackTimeout)
-      hlsInstanceRef.current?.destroy()
-      hlsInstanceRef.current = null
-    }
-  }, [handlePlaybackFailure, isPlaying, sourceIsHls, sourceUrl])
+    return cleanup
+  }, [forceHls, handlePlaybackFailure, isPlaying, sourceIsHls, sourceUrl])
 
   useEffect(() => {
     // Only initialize Plyr when user clicks play
@@ -398,6 +549,23 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
   const handlePlayClick = () => {
     setIsPlaying(true)
+  }
+
+  /** Retry from the overlay: clears every bit of retry state and resolves again. */
+  const handleRetry = () => {
+    destroyPlayer()
+    hlsInstanceRef.current?.destroy()
+    hlsInstanceRef.current = null
+    setExcludedCandidates([])
+    setRetryAttempt(0)
+    setRetryStatus('idle')
+    retryStatusRef.current = 'idle'
+    setResolvedPlayback(null)
+    setFailure(null)
+    setForceHls(false)
+    setPlaybackMode(null)
+    setIsPlaying(false)
+    resolvePlayback([])
   }
 
   const handleTimeUpdate = () => {
@@ -461,29 +629,58 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
 
   const hasPlayId = Boolean(playId?.trim())
 
+  const debugPanel = debugEnabled ? (
+    <div className="pointer-events-none absolute left-2 top-2 z-30 max-w-[min(22rem,90%)] rounded bg-black/80 p-2 font-mono text-[10px] leading-tight text-white/90">
+      <div className="mb-1 font-semibold text-white/60">player debug</div>
+      {debugEvents.length === 0 && <div className="text-white/50">no events yet</div>}
+      {debugEvents.map((event, index) => (
+        <div key={`${event.at}-${index}`} className="truncate">
+          {event.code}
+          {event.detail ? ` ${event.detail}` : ''}
+        </div>
+      ))}
+    </div>
+  ) : null
+
   if (hasPlayId && isResolving && !isPlaying) {
     return (
-      <div key="loading" className="flex aspect-video w-full flex-col items-center justify-center bg-black" role="status">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
-        {retryStatus === 'retrying' && <span className="mt-2 text-sm text-white">Switching provider...</span>}
+      <div className="relative">
+        {debugPanel}
+        <div className="flex aspect-video w-full flex-col items-center justify-center bg-black" role="status">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
+          {retryStatus === 'retrying' && <span className="mt-2 text-sm text-white">Switching provider...</span>}
+        </div>
       </div>
     )
   }
 
-  if (hasPlayId && resolveFailed) {
+  if (hasPlayId && failure) {
     return (
-      <div key="error" className="flex aspect-video w-full items-center justify-center bg-black px-6 text-center text-sm text-white">
-        This episode is currently unavailable
+      <div className="relative">
+        {debugPanel}
+        <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-black px-6 text-center text-sm text-white">
+          <p>{overlayMessage(failure)}</p>
+          <p className="font-mono text-[11px] text-white/60">code: {failure.code}</p>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-md border border-white/40 px-4 py-2 text-sm font-medium hover:bg-white/10"
+            onClick={handleRetry}
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            Retry
+          </button>
+        </div>
       </div>
     )
   }
 
   if (isPlaying) {
     const trackUrl = resolvedPlayback?.subtitleUrl ?? subtitlesUrl
-    const shouldRenderSource = !sourceIsHls || hlsMode === 'native' || hlsMode === 'fallback'
+    const shouldRenderSource = !sourceIsHls || playbackMode === 'native' || playbackMode === 'fallback'
 
     return (
       <div key="player" className="relative w-full bg-black">
+        {debugPanel}
         {hasPlayId && isResolving && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 text-center text-white" role="status">
             <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading" />
@@ -499,7 +696,12 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
           className="h-auto w-full plyr-react"
           title={title}
           crossOrigin="anonymous"
-          onError={handlePlaybackFailure}
+          onError={() => {
+            // The hls.js path reports through Hls.Events.ERROR; only the native
+            // path needs the DOM error, otherwise one failure is counted twice.
+            if (playbackMode === 'hlsjs') return
+            handlePlaybackFailure(describeMediaError(videoRef.current?.error))
+          }}
           onEnded={handleVideoEnded}
           onTimeUpdate={handleTimeUpdate}
         >
@@ -518,6 +720,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
                   srcLang={track.srclang}
                   label={track.label}
                   default={track.default || !resolvedPlayback.subtitles.some((subtitle) => subtitle.default) && track === resolvedPlayback.subtitles[0]}
+                  onError={() => logPlayerEvent('SUBTITLE_LOAD_ERROR', redactUrl(track.url))}
                 />
               ))
             : trackUrl && (
@@ -527,6 +730,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
                   srcLang="en"
                   label="English"
                   default
+                  onError={() => logPlayerEvent('SUBTITLE_LOAD_ERROR', redactUrl(trackUrl))}
                 />
               )}
           Your browser does not support the video tag.
@@ -582,7 +786,6 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       </div>
     )
   }
-
   return (
     <div
       className="relative w-full cursor-pointer bg-black"
@@ -598,6 +801,7 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       tabIndex={0}
       aria-label={`Play video: ${title}`}
     >
+      {debugPanel}
       {/* Poster Image */}
       <Image
         src={thumbnailUrl}
