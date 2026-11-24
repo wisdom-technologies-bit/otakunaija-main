@@ -455,6 +455,27 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       const instance = watch((reason) => handlePlaybackFailure(describeTimeout(reason)))
       let recoveredMedia = false
 
+      // Playback is real: settle the start watchdog.
+      //
+      // The native branch above has always settled it on `canplay`. The hls.js
+      // branch never did, so a healthy stream kept BOTH clocks armed for its
+      // whole life: the 25 s no-progress budget (re-armed by every fragment
+      // request, so it only bites when loading pauses) and the 60 s hard cap,
+      // which is never extended. Measured 2026-11-25 against the deployed
+      // play.otakunaija.name.ng stream for playId 21-1180: the cap fired at
+      // exactly 60.0 s with the picture at 00:57, readyState 4 and
+      // `still playing=true`. The player reported PLAYBACK_TIMEOUT ("The stream
+      // is taking too long to start") and answered it by destroying hls.js,
+      // excluding a perfectly good provider and restarting the stream - which is
+      // what the viewer sees as "it plays, then it stops".
+      const markPlaying = () => instance.notePlaying()
+      video.addEventListener('playing', markPlaying)
+      video.addEventListener('canplay', markPlaying)
+      detach.push(() => {
+        video.removeEventListener('playing', markPlaying)
+        video.removeEventListener('canplay', markPlaying)
+      })
+
       hls.on(Hls.Events.MANIFEST_LOADED, () => instance.noteManifestLoaded())
       const clearStallTimer = () => {
         if (stallTimerRef.current) {
@@ -482,7 +503,13 @@ export function VideoPlayer({ videoUrl, thumbnailUrl, title, subtitlesUrl, playI
       video.addEventListener('progress', onProgress)
       hls.on(Hls.Events.FRAG_LOADED, () => {
         clearStallTimer()
-        instance.noteProgress(Number.MAX_SAFE_INTEGER)
+        // A loaded fragment is bytes on the wire, but the watchdog's high-water
+        // mark has to stay a real number. Reporting MAX_SAFE_INTEGER made every
+        // later progress report look like "no increase", so the grace clock was
+        // never re-armed again after the very first fragment. `buffered.end()`
+        // is the same signal `onProgress` uses, and it keeps climbing.
+        const buffered = video.buffered
+        if (buffered.length > 0) instance.noteProgress(buffered.end(buffered.length - 1))
       })
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
