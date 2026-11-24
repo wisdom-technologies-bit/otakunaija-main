@@ -242,3 +242,22 @@
 }
 
 /* Hero progress bar */
+
+/* Announcement bell: a short "ring" every 10s (timed in announcement-host.tsx). */
+@keyframes announcement-bell-shake {
+  0%, 100% { transform: rotate(0); }
+  10% { transform: rotate(18deg); }
+  20% { transform: rotate(-16deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-12deg); }
+  50% { transform: rotate(9deg); }
+  60% { transform: rotate(-6deg); }
+  70% { transform: rotate(3deg); }
+  80% { transform: rotate(-1.5deg); }
+}
+.announcement-bell-shake {
+  animation: announcement-bell-shake 0.9s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .announcement-bell-shake { animation: none; }
+}
