@@ -302,6 +302,26 @@ export const pollVoteSubmissions = pgTable('poll_vote_submissions', {
   submittedAt: timestamp('submitted_at').notNull().defaultNow(),
 }, (table) => [unique('poll_vote_submissions_poll_voter_unique').on(table.pollId, table.voterHash)])
 
+// Exactly two slots (1, 2): the CHECK constraint + primary key live in
+// docs/sql/announcements.sql so the database can never hold a third row.
+export const siteAnnouncements = pgTable('site_announcements', {
+  slot: integer('slot').primaryKey(),
+  title: text('title'),
+  bodyMarkdown: text('body_markdown').notNull(),
+  imageUrl: text('image_url'),
+  ctaLabel: text('cta_label'),
+  ctaUrl: text('cta_url'),
+  isActive: boolean('is_active').notNull().default(true),
+  targets: text('targets').array().notNull().default(sql`'{}'::text[]`),
+  // 'page' | 'site'
+  seenScope: text('seen_scope').notNull().default('page'),
+  startsAt: timestamp('starts_at', { withTimezone: true }),
+  endsAt: timestamp('ends_at', { withTimezone: true }),
+  revision: integer('revision').notNull().default(1),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const animeMatchCandidates = pgTable('anime_match_candidates', {
   id: serial('id').primaryKey(),
   seriesId: integer('series_id').notNull().references(() => series.id),

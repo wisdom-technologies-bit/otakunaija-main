@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { HideV0Badge } from "@/components/HideV0Badge"
 import { OneSignalInit } from "@/components/push/onesignal-init"
 import { ScrollToTop } from "@/components/ScrollToTop"
+import { AnnouncementHost } from "@/components/announcements/announcement-host"
 import "./globals.css"
 import "./listings.css"
 
@@ -191,6 +192,7 @@ export default function RootLayout({
   <HideV0Badge />
   <ScrollToTop />
   {children}
+  <AnnouncementHost />
   <Toaster richColors position="top-center" />
 </ThemeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
